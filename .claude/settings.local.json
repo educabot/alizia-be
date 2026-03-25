@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(docker rm:*)",
+      "Bash(./scripts/reset_db.sh)",
+      "Bash(docker exec:*)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(uvicorn main:app --reload)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:3000)"
+    ]
+  }
+}
