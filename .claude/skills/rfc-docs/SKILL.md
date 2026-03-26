@@ -9,12 +9,12 @@ Generás y organizás la documentación RFC de Alizia v2 siguiendo la estructura
 
 ## Ubicación
 
-Toda la documentación vive en `docs/rfc/epicas/`.
+Toda la documentación vive en `docs/rfc-alizia/epicas/`.
 
 ## Estructura de directorios
 
 ```
-docs/rfc/epicas/
+docs/rfc-alizia/epicas/
 ├── epicas.md                              ← Índice general de todas las épicas
 ├── XX-nombre-epica.md                     ← Summary suelto (épicas sin desglosar)
 ├── XX-nombre-epica/                       ← Épica desglosada
@@ -206,7 +206,7 @@ Si se agrega una HU entre existentes, renumerar las siguientes. Si se mueve una 
 
 ## Índice general (epicas.md)
 
-Cuando se crea una nueva épica, actualizar `docs/rfc/epicas/epicas.md` con la nueva entrada en la tabla correspondiente (MVP o Post-MVP).
+Cuando se crea una nueva épica, actualizar `docs/rfc-alizia/epicas/epicas.md` con la nueva entrada en la tabla correspondiente (MVP o Post-MVP).
 
 ## Estados de tareas
 
@@ -237,11 +237,11 @@ Cuando se crea una nueva épica, actualizar `docs/rfc/epicas/epicas.md` con la n
 Antes de crear, verificar qué épicas ya están desglosadas:
 ```bash
 # Ver estructura actual
-find docs/rfc/epicas -type d | sort
+find docs/rfc-alizia/epicas -type d | sort
 
 # Ver épicas sueltas (sin desglosar)
-ls docs/rfc/epicas/*.md
+ls docs/rfc-alizia/epicas/*.md
 
 # Ver épicas desglosadas
-ls -d docs/rfc/epicas/*/
+ls -d docs/rfc-alizia/epicas/*/
 ```

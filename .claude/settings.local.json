@@ -20,7 +20,15 @@
       "Bash(mv T-1.4.3-error-handling.md T-1.3.3-error-handling.md)",
       "Bash(mv T-1.4.4-tests-authz.md T-1.3.4-tests-authz.md)",
       "Bash(ls:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(for dir:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $dir ===\")",
+      "Read(//c/Users/Educabot/Desktop/Educabot/Repositorios/demo-alizia/docs/rfc-alizia/epicas/04-documento-coordinacion/**)",
+      "Read(//c/Users/Educabot/Desktop/Educabot/Repositorios/demo-alizia/docs/rfc-alizia/epicas/04-documento-coordinacion/$dir/**)",
+      "Bash(echo \"=== $dir/tareas ===\")",
+      "Bash(done)",
+      "Bash(head:*)"
     ]
   }
 }

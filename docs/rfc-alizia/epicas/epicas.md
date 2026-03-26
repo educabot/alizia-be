@@ -8,7 +8,7 @@
 |---|-------|------|--------|
 | 0 | [Setup e infraestructura](./00-setup-infraestructura/00-setup-infraestructura.md) | Fase 1 | MVP |
 | 1 | [Roles y accesos](./01-roles-accesos/01-roles-accesos.md) | Fase 1–2 | MVP |
-| 3 | [Integración](./03-integracion.md) | Fase 2 | MVP |
+| 3 | [Integración](./03-integracion/03-integracion.md) | Fase 2 | MVP |
 | 4 | [Documento de coordinación](04-documento-coordinacion/04-documento-coordinacion.md) | Fase 3 | MVP |
 | 5 | [Planificación docente](05-planificacion-docente/05-planificacion-docente.md) | Fase 5 | MVP (parcial) |
 | 6 | [Asistente IA](06-assistente-ia/06-asistente-ia.md) | Fase 4 | MVP |
