@@ -1,8 +1,10 @@
 # Architecture Decision: Auth Microservice + Monolith Strategy
 
+> **NOTA: Este documento describe el plan futuro de un auth-service propio. Alizia v2 arranca con Auth0 (mismo sistema que tich-cronos). El auth-service es un plan a futuro para reemplazar Auth0 cuando sea conveniente.**
+
 ## Context
 
-The v2 proposal defines ~26 tables for the educational planning system. Additionally, TiCh Cronos currently uses Auth0 for authentication, which we want to deprecate. This document defines the architectural strategy for both concerns.
+The v2 proposal defines ~26 tables for the educational planning system. TiCh Cronos currently uses Auth0 for authentication, which Alizia v2 will also use for launch. A custom auth-service is planned for the future to eventually replace Auth0. This document defines the architectural strategy for both concerns.
 
 ---
 
@@ -254,24 +256,31 @@ The monolith should only be split further when **real pain appears**, not specul
 
 ---
 
-## Migration Path from Auth0
+## Migration Path from Auth0 (PLAN FUTURO)
 
-### Phase 1: Build Auth Service
+> Alizia v2 lanza con Auth0. Esta migración se ejecutará en el futuro cuando sea conveniente.
+
+### Phase 0: Launch with Auth0 (CURRENT)
+- Alizia v2 and tich-cronos use Auth0 for authentication
+- team-ai-toolkit/tokens validates JWT via Auth0 JWKS
+- No custom auth-service needed for launch
+
+### Phase 1: Build Auth Service (FUTURE)
 - Implement user/org/role tables
 - JWT issuance with RS256
 - Login, register, password reset endpoints
 - Import existing Auth0 users (email + metadata)
 
-### Phase 2: Integrate with Alizia v2
+### Phase 2: Integrate with Alizia v2 (FUTURE)
 - Alizia v2 validates JWTs from Auth Service
 - Remove Auth0 SDK dependency from Alizia
 
-### Phase 3: Migrate TiCh Cronos
+### Phase 3: Migrate TiCh Cronos (FUTURE)
 - Replace Auth0 calls with Auth Service calls
 - Validate JWTs with same public key
 - Remove Auth0 SDK dependency
 
-### Phase 4: Deprecate Auth0
+### Phase 4: Deprecate Auth0 (FUTURE)
 - Disable Auth0 tenant
 - Cancel Auth0 subscription
 

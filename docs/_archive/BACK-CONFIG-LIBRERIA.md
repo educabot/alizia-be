@@ -2,7 +2,9 @@
 
 ## Qué es
 
-Módulo Go reutilizable (`github.com/educabot/back-config`) que contiene toda la infraestructura común entre los proyectos backend de Educabot. Cualquier proyecto nuevo importa `back-config` y arranca con: servidor HTTP, auth JWT, conexión a DB, logging, paginación, errores estandarizados y abstracción de framework.
+Módulo Go reutilizable (`github.com/educabot/back-config`) que contiene toda la infraestructura común entre los proyectos backend de Educabot. Cualquier proyecto nuevo importa `back-config` y arranca con: servidor HTTP, auth JWT (via Auth0 JWKS), conexión a DB, logging, paginación, errores estandarizados y abstracción de framework.
+
+> **NOTA:** Alizia v2 y tich-cronos arrancan con **Auth0** para autenticación. El auth-service propio descrito en este documento es un **plan futuro**. El diagrama de ecosistema a continuación muestra la arquitectura futura; la arquitectura actual usa Auth0 en lugar del auth-service.
 
 **No contiene lógica de dominio.** Solo infraestructura que no depende de ningún proyecto específico.
 
@@ -12,20 +14,21 @@ Módulo Go reutilizable (`github.com/educabot/back-config`) que contiene toda la
 
 ```
                     ┌──────────────────────┐
-                    │    Auth Service       │  ← Microservicio propio (repo separado)
+                    │    Auth0 (SaaS)       │  ← Servicio actual de autenticación
                     │                      │
                     │  - Login / Register   │
-                    │  - JWT RS256 (firma)  │
+                    │  - JWT (JWKS)         │
                     │  - Refresh tokens     │
                     │  - Password reset     │
                     │  - organizations      │
                     │  - users + roles      │
-                    │  - sessions           │
                     │                      │
-                    │  DB: auth_db          │
+                    │  (Futuro: auth-service│
+                    │   propio reemplaza    │
+                    │   Auth0)              │
                     └──────────┬───────────┘
                                │
-                               │ JWT firmado con private key
+                               │ JWT firmado por Auth0
                                │
           ┌────────────────────┼─────────────────────┐
           │                    │                      │
@@ -53,76 +56,33 @@ Módulo Go reutilizable (`github.com/educabot/back-config`) que contiene toda la
 
 | Repo | Tipo | Propósito |
 |------|------|-----------|
-| `educabot/auth-service` | Microservicio (deploy propio) | Emite y gestiona JWT. Base de datos propia con users, orgs, roles, sessions |
+| `educabot/auth-service` | Microservicio (futuro, no en uso) | Planificado para reemplazar Auth0 en el futuro. Emitirá y gestionará JWT con base de datos propia |
 | `educabot/back-config` | Librería Go (no se deploya) | Infraestructura compartida. Se importa en `go.mod` |
 | `educabot/alizia-api` | Monolito (deploy propio) | Plataforma Alizia. Importa back-config |
 | `educabot/tich-cronos` | Monolito (deploy propio) | Plataforma TiCh. Importa back-config |
 
 ---
 
-## Auth Service — El microservicio
+## Autenticación actual — Auth0
 
-### Qué hace
+### Qué se usa hoy
 
-Es el **único servicio que maneja credenciales y emite tokens**. Los demás proyectos nunca tocan passwords, nunca crean tokens, solo los validan.
+Alizia v2 y tich-cronos usan **Auth0** como servicio de autenticación. Auth0 maneja credenciales, emite tokens JWT, y expone un endpoint JWKS para validación.
 
-### Endpoints
-
-```
-POST /auth/login              → Email + password → JWT access + refresh token
-POST /auth/register           → Crea usuario + org (o asigna a org existente)
-POST /auth/refresh            → Refresh token → nuevo JWT access
-POST /auth/password-reset     → Envía email con link de reset
-POST /auth/password-reset/confirm → Nuevo password con token del email
-GET  /auth/me                 → Info del usuario autenticado
-```
-
-### JWT emitido (RS256)
-
-```json
-{
-  "sub": 42,
-  "org_id": 1,
-  "roles": ["teacher", "coordinator"],
-  "email": "carlos@school.edu",
-  "name": "Carlos Coordinador",
-  "iat": 1742486400,
-  "exp": 1742490000
-}
-```
-
-Firmado con **private key** (solo el auth service la tiene).
-
-### Base de datos (auth_db)
-
-```sql
-organizations (id, name, slug, config, created_at)
-users (id, organization_id, email, password_hash, name, avatar_url, created_at)
-user_roles (id, user_id, role, UNIQUE(user_id, role))
-refresh_tokens (id, user_id, token_hash, expires_at, created_at)
-```
-
-### Comunicación con los otros servicios
-
-**Zero HTTP calls en runtime.** Los proyectos que consumen el auth service solo necesitan la **public key** para validar tokens. Si el auth service se cae, los usuarios ya logueados siguen trabajando.
+Los backends validan los JWT usando **Auth0 JWKS** (JSON Web Key Set) via `back-config/tokens`. No se necesita una RSA key pair propia.
 
 ```
-Login (HTTP call al auth service, solo 1 vez)
-  → Auth service devuelve JWT
+Login (HTTP call a Auth0, solo 1 vez)
+  → Auth0 devuelve JWT
     → Frontend guarda JWT
       → Cada request envía JWT en Authorization header
-        → Backend valida JWT con PUBLIC KEY (local, sin HTTP)
+        → Backend valida JWT via Auth0 JWKS (cached, sin HTTP en cada request)
           → Extrae user_id, org_id, roles del token
 ```
 
-### El auth service importa back-config también
+### Auth Service propio (FUTURO)
 
-```go
-// auth-service/go.mod
-require github.com/educabot/back-config v1.x.x
-```
-
-Usa: `boot/`, `web/`, `dbconn/`, `applog/`, `config/`, `errors/`. No usa `tokens/` (él es el que CREA los tokens, no los valida).
+> El auth-service propio está planificado como reemplazo de Auth0 a futuro. No es necesario para el lanzamiento de Alizia v2. Ver ARQUITECTURA-AUTH-SERVICE.md para los detalles del diseño futuro.
 
 ---
 
@@ -160,16 +120,18 @@ back-config/
 │                                        #   MaxOpenConns: 25, MaxIdleConns: 10
 │                                        #   ConnMaxLifetime: 5min
 │
-├── tokens/                              # Cliente JWT del Auth Service
-│   ├── jwt.go                           # ValidateJWT(token, publicKey) → (*Claims, error)
-│   │                                    #   Parsea y valida RS256
+├── tokens/                              # Validación JWT (Auth0 JWKS o RSA public key)
+│   ├── jwt.go                           # ValidateJWT(token, validator) → (*Claims, error)
+│   │                                    #   Valida JWT via Auth0 JWKS (o RSA public key futuro)
 │   │                                    #   Verifica exp, iat
+│   ├── auth0.go                         # NewAuth0Validator(domain, audience) → Validator
+│   │                                    #   Descarga JWKS de Auth0 y cachea las keys
 │   ├── claims.go                        # Claims struct
 │   │                                    #   UserID int64, OrgID int64
 │   │                                    #   Roles []string, Email string, Name string
-│   ├── middleware.go                    # NewAuthInterceptor(publicKey) → web.Interceptor
+│   ├── middleware.go                    # NewAuthInterceptor(validator) → web.Interceptor
 │   │                                    #   Extrae Bearer token de Authorization header
-│   │                                    #   Valida JWT, inyecta Claims en context
+│   │                                    #   Valida JWT via JWKS, inyecta Claims en context
 │   │                                    #   Retorna 401 si falta o es inválido
 │   ├── tenant.go                        # NewTenantInterceptor() → web.Interceptor
 │   │                                    #   Lee OrgID del Claims ya validado
@@ -218,7 +180,7 @@ back-config/
 │   ├── env.go                           # EnvOr(key, fallback) string
 │   │                                    #   MustEnv(key) string — panic si falta
 │   └── base.go                          # BaseConfig struct
-│                                        #   Port, Env, DatabaseURL, AuthPublicKey
+│                                        #   Port, Env, DatabaseURL, Auth0Domain, Auth0Audience
 │                                        #   AllowedOrigins []string
 │                                        #   LoadBase() → BaseConfig
 │
@@ -261,7 +223,7 @@ package config
 import bcfg "github.com/educabot/back-config/config"
 
 type Config struct {
-    bcfg.BaseConfig                     // Port, Env, DatabaseURL, AuthPublicKey, AllowedOrigins
+    bcfg.BaseConfig                     // Port, Env, DatabaseURL, Auth0Domain, Auth0Audience, AllowedOrigins
     AzureOpenAIKey      string
     AzureOpenAIEndpoint string
     AzureOpenAIModel    string
@@ -294,8 +256,9 @@ func NewApp(cfg *config.Config) *App {
     db := dbconn.MustConnect(cfg.DatabaseURL)
     engine := boot.NewEngine(cfg.Env, cfg.AllowedOrigins)
 
-    // Auth middleware del auth service compartido
-    authMw := tokens.NewAuthInterceptor(cfg.AuthPublicKey)
+    // Auth middleware — valida JWT via Auth0 JWKS (mismo sistema que tich-cronos)
+    validator, _ := tokens.NewAuth0Validator(cfg.Auth0Domain, cfg.Auth0Audience)
+    authMw := tokens.NewAuthInterceptor(validator)
     tenantMw := tokens.NewTenantInterceptor()
 
     // ... wiring de repos, usecases, handlers
@@ -348,22 +311,24 @@ func Load() *Config {
 import (
     "github.com/educabot/back-config/boot"
     "github.com/educabot/back-config/dbconn"
-    "github.com/educabot/back-config/tokens"     // MISMO auth service
+    "github.com/educabot/back-config/tokens"     // MISMA validación Auth0 JWKS
     "github.com/educabot/back-config/applog"
 )
 ```
 
-### Auth Service
+### Auth Service (FUTURO — no en uso actualmente)
+
+> El auth-service es un plan futuro para reemplazar Auth0. Actualmente se usa Auth0 directamente.
 
 ```go
-// go.mod
+// auth-service/go.mod (FUTURO)
 module github.com/educabot/auth-service
 
 require github.com/educabot/back-config v1.x.x
 ```
 
 ```go
-// Usa de back-config:
+// Usará de back-config:
 import (
     "github.com/educabot/back-config/boot"       // Server bootstrap
     "github.com/educabot/back-config/web"         // Handler abstraction
@@ -374,8 +339,8 @@ import (
     "github.com/educabot/back-config/pagination"  // Si tiene listados
 )
 
-// NO usa tokens/ (él CREA los tokens, no los valida)
-// En su lugar tiene su propio paquete interno:
+// NO usará tokens/ (él CREARÁ los tokens, no los valida)
+// En su lugar tendrá su propio paquete interno:
 //   internal/jwt/issuer.go → SignJWT(claims, privateKey) → token string
 ```
 
@@ -391,7 +356,7 @@ import (
 | `web/gin/` | Adaptador Gin | Todos (hoy) |
 | `boot/` | Server lifecycle, timeouts, shutdown | Todos |
 | `dbconn/` | Conexión PostgreSQL con sqlx | Todos |
-| `tokens/` | Validación JWT del auth service | Alizia, tich-cronos, futuros |
+| `tokens/` | Validación JWT via Auth0 JWKS (o RSA key futuro) | Alizia, tich-cronos, futuros |
 | `applog/` | Setup de slog | Todos |
 | `pagination/` | Parse page/per_page + response wrapper | Todos |
 | `transactions/` | RunInTx(), DBTX interface | Todos |
@@ -411,7 +376,7 @@ import (
 | Config struct completo | Cada proyecto tiene campos distintos | `proyecto/config/` |
 | AI client | Alizia usa Azure OpenAI, cronos puede usar otro | `proyecto/src/repositories/ai/` |
 | Mocks | Mockean interfaces propias del proyecto | `proyecto/src/mocks/` |
-| JWT issuer (private key) | Solo el auth service firma tokens | `auth-service/internal/jwt/` |
+| JWT issuer (private key) | Solo el auth service (futuro) firmará tokens. Hoy Auth0 firma | `auth-service/internal/jwt/` (futuro) |
 | Prompts/schemas AI | Contenido específico del producto | `proyecto/src/repositories/ai/prompts/` |
 
 ---
@@ -444,14 +409,14 @@ educabot/
 │   ├── web/                     #   Abstracción HTTP
 │   ├── boot/                    #   Server bootstrap
 │   ├── dbconn/                  #   PostgreSQL connection
-│   ├── tokens/                  #   JWT validation (client del auth service)
+│   ├── tokens/                  #   JWT validation (Auth0 JWKS)
 │   ├── applog/                  #   Logging
 │   ├── pagination/              #   Paginación
 │   ├── transactions/            #   Transacciones DB
 │   ├── errors/                  #   Errores compartidos
 │   └── config/                  #   Config helpers + BaseConfig
 │
-├── auth-service/                # Microservicio de autenticación (deploy propio)
+├── auth-service/                # Microservicio de autenticación (FUTURO — no en uso)
 │   ├── cmd/                     #   Entry point
 │   ├── internal/                #   JWT issuer (private key), bcrypt, sessions
 │   ├── db/migrations/           #   organizations, users, user_roles, refresh_tokens
@@ -482,7 +447,7 @@ educabot/
 | **¿Se deploya?** | No. Se importa como dependencia en `go.mod` |
 | **¿Qué contiene?** | web/, boot/, dbconn/, tokens/, applog/, pagination/, transactions/, errors/, config/ |
 | **¿Quién lo usa?** | Alizia v2, tich-cronos, auth-service, futuros proyectos |
-| **¿Qué es auth-service?** | Microservicio propio que reemplaza Auth0. Emite JWT RS256 |
-| **¿Cómo se relacionan?** | Auth service firma tokens. back-config/tokens/ los valida. Los proyectos importan back-config |
+| **¿Qué es auth-service?** | Microservicio propio planificado para el futuro. Actualmente se usa Auth0 (mismo sistema que tich-cronos) |
+| **¿Cómo se relacionan?** | Auth0 firma tokens. back-config/tokens/ los valida via JWKS. Los proyectos importan back-config |
 | **¿Qué NO va?** | Lógica de dominio, entities, usecases, handlers, migraciones |
 | **¿Cómo se versiona?** | Semver via Go modules (v1.0.0, v1.1.0, v2.0.0) |

@@ -11,7 +11,7 @@
 | **Base de datos** | SQLite WAL / PostgreSQL | PostgreSQL | PostgreSQL |
 | **DI** | Manual (1 archivo) | Google Wire (compile-time) | Manual (1 archivo por responsabilidad) |
 | **Deploy** | Docker Compose → VPS | Cloud Functions + local | Cloud Functions agrupadas (5 por módulo) |
-| **Auth** | Webhook secret simple | Auth0 JWT + Bearer | JWT RS256 (auth service propio) |
+| **Auth** | Webhook secret simple | Auth0 JWT + Bearer | Auth0 JWT + Bearer (mismo sistema que tich-cronos) |
 | **Logging** | stdlib `log` | Interfaz custom + Bugsnag | slog (stdlib Go 1.21+) + Bugsnag |
 | **Testing** | 56 archivos, 190+ tests | 80+ archivos, target 80% | Target 80%, PostgreSQL real, sin E2E |
 | **Linting** | `go vet` basico | GolangCI Lint (20 linters) | GolangCI Lint (15+ linters) |
@@ -101,7 +101,7 @@ team-ai-toolkit/
 ├── web/                   # Abstraccion HTTP (Request, Response, Handler)
 │   └── gin/               # Adaptador Gin (Adapt, AdaptMiddleware)
 ├── boot/                  # Server bootstrap (NewEngine, NewServer, Shutdown)
-├── tokens/                # JWT RS256 validation + middleware + claims
+├── tokens/                # JWT validation (Auth0 JWKS) + middleware + claims
 ├── dbconn/                # PostgreSQL connection con sqlx
 ├── errors/                # Sentinel errors + HandleError()
 ├── pagination/            # ParseFromQuery + PaginatedResponse
@@ -313,7 +313,7 @@ container := NewHandlers(usecases, cfg)
 **Alizia v2 toma:**
 - De ai-assistant: struct inmutable, sin singleton, sin godotenv
 - De tich-cronos: carpeta `config/` separada, soporte multi-ambiente
-- Nuevo: `BaseConfig` en team-ai-toolkit con campos comunes (Port, Env, DatabaseURL, AuthPublicKey, BugsnagAPIKey), cada proyecto embebe y agrega los suyos
+- Nuevo: `BaseConfig` en team-ai-toolkit con campos comunes (Port, Env, DatabaseURL, Auth0Domain, Auth0Audience, BugsnagAPIKey), cada proyecto embebe y agrega los suyos
 
 ---
 
@@ -474,7 +474,7 @@ container := NewHandlers(usecases, cfg)
 - ~~Wire~~ → DI manual
 - ~~Singleton config~~ → struct inmutable
 - Cloud Functions agrupadas por módulo (5 funciones, no 55+ ni Cloud Run)
-- ~~Auth0~~ → auth service propio
+- Auth0 se mantiene (mismo sistema que tich-cronos). Auth service propio es plan futuro
 - ~~stdlib log~~ → slog
 - Bugsnag se mantiene (stack de la empresa)
 - ~~Custom error wrapping~~ → fmt.Errorf estandar

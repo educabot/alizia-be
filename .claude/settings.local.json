@@ -9,7 +9,18 @@
       "Bash(uvicorn main:app --reload)",
       "Bash(npm run:*)",
       "Bash(curl -s http://localhost:5173)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(mv US-1.2-autenticacion-auth0 US-1.1-autenticacion-auth0)",
+      "Bash(mv US-1.3-modelo-usuarios-roles US-1.2-modelo-usuarios-roles)",
+      "Bash(mv US-1.4-middleware-autorizacion US-1.3-middleware-autorizacion)",
+      "Bash(mv US-1.5-asignacion-organizacional US-1.4-asignacion-organizacional)",
+      "Bash(mv T-1.4.1-require-role.md T-1.3.1-require-role.md)",
+      "Bash(mv T-1.4.2-interceptor-chain.md T-1.3.2-interceptor-chain.md)",
+      "Bash(mv T-1.4.3-error-handling.md T-1.3.3-error-handling.md)",
+      "Bash(mv T-1.4.4-tests-authz.md T-1.3.4-tests-authz.md)",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
