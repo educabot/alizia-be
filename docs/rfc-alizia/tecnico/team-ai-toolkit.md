@@ -1,12 +1,12 @@
-# team-ai-toolkit — Librería compartida de infraestructura Go
+# team-ai-toolkit — Libreria compartida de infraestructura Go
 
-## Qué es
+## Que es
 
-Módulo Go reutilizable (`github.com/educabot/team-ai-toolkit`) que contiene toda la infraestructura común entre los proyectos backend de Educabot. Cualquier proyecto nuevo importa `team-ai-toolkit` y arranca con: servidor HTTP, auth JWT (via team-ai-toolkit/tokens JWKS), conexión a DB, logging, paginación, errores estandarizados y abstracción de framework.
+Modulo Go reutilizable (`github.com/educabot/team-ai-toolkit`) que contiene toda la infraestructura comun entre los proyectos backend de Educabot. Cualquier proyecto nuevo importa `team-ai-toolkit` y arranca con: servidor HTTP (Gin), autenticacion JWT con HMAC-HS256, conexion a DB via GORM, logging con Bugsnag, paginacion, manejo de errores estandarizado, transacciones y abstraccion de framework.
 
-> **NOTA:** Alizia y tich-cronos usan **JWT authentication via team-ai-toolkit/tokens**. El auth-service propio descrito en este documento es un **plan futuro**. El diagrama de ecosistema a continuación muestra la arquitectura futura; la arquitectura actual usa JWT via team-ai-toolkit/tokens en lugar del auth-service.
+> **NOTA:** Alizia y tich-cronos usan **JWT con HMAC-HS256** via `team-ai-toolkit/tokens`. El paquete `tokens` **crea y valida** JWT usando un secreto compartido (`JWT_SECRET`). El auth-service propio es un **plan futuro**. La arquitectura actual usa `tokens.Toker` para emitir y validar tokens directamente en cada proyecto.
 
-**No contiene lógica de dominio.** Solo infraestructura que no depende de ningún proyecto específico.
+**No contiene logica de dominio.** Solo infraestructura que no depende de ningun proyecto especifico.
 
 ---
 
@@ -14,34 +14,34 @@ Módulo Go reutilizable (`github.com/educabot/team-ai-toolkit`) que contiene tod
 
 ```
                     ┌──────────────────────┐
-                    │  JWT Auth Service     │  ← Autenticación via JWT
-                    │  (team-ai-toolkit/   │
-                    │   tokens)             │
-                    │  - JWT (JWKS)         │
-                    │  - Bearer tokens      │
-                    │                      │
-                    │  (Futuro: auth-service│
-                    │   propio centraliza   │
-                    │   emisión de tokens)  │
-                    └──────────┬───────────┘
+                    │  auth-service         │  (FUTURO)
+                    │  Centralizara la      │
+                    │  emision de JWT       │
+                    │                       │
+                    │  Hoy: cada proyecto   │
+                    │  usa tokens.Toker     │
+                    │  con JWT_SECRET       │
+                    └──────────┬────────────┘
                                │
-                               │ JWT firmado
+                               │ JWT firmado (HMAC-HS256)
                                │
           ┌────────────────────┼─────────────────────┐
           │                    │                      │
           ▼                    ▼                      ▼
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│    Alizia       │  │  tich-cronos    │  │  Futuro proyecto │
-│   (monolito)    │  │  (refactorizado)│  │                 │
-│                 │  │                 │  │                 │
-│  DB: alizia_db  │  │  DB: cronos_db  │  │  DB: propia     │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+│    alizia-api   │  │  tich-cronos    │  │  Futuro proyecto │
+│   (monolito)    │  │  (Cloud Fns)    │  │                  │
+│                 │  │                 │  │                  │
+│  boot.NewRouter │  │  boot.Functions │  │                  │
+│  boot.NewServer │  │                 │  │                  │
+│  DB: GORM       │  │  DB: GORM       │  │  DB: GORM        │
+└────────┬────────┘  └────────┬────────┘  └────────┬─────────┘
          │                    │                     │
          └────────────────────┼─────────────────────┘
                               │
                               ▼
                     ┌──────────────────────┐
-                    │    team-ai-toolkit        │  ← Esta librería
+                    │  team-ai-toolkit     │  ← Esta libreria
                     │                      │
                     │  Importada por todos  │
                     │  los proyectos como   │
@@ -51,158 +51,345 @@ Módulo Go reutilizable (`github.com/educabot/team-ai-toolkit`) que contiene tod
 
 **3 repos separados:**
 
-| Repo | Tipo | Propósito |
+| Repo | Tipo | Proposito |
 |------|------|-----------|
-| `educabot/auth-service` | Microservicio (futuro, no en uso) | Planificado para centralizar emisión de JWT en el futuro. Emitirá y gestionará JWT con base de datos propia |
-| `educabot/team-ai-toolkit` | Librería Go (no se deploya) | Infraestructura compartida. Se importa en `go.mod` |
-| `educabot/alizia-api` | Monolito (deploy propio) | Plataforma Alizia. Importa team-ai-toolkit |
-| `educabot/tich-cronos` | Monolito (deploy propio) | Plataforma TiCh. Importa team-ai-toolkit |
+| `educabot/auth-service` | Microservicio (futuro, no en uso) | Planificado para centralizar emision de JWT en el futuro |
+| `educabot/team-ai-toolkit` | Libreria Go (no se deploya) | Infraestructura compartida. Se importa en `go.mod` |
+| `educabot/alizia-api` | Monolito (deploy propio) | Plataforma Alizia. Usa `boot.NewRouter` + `boot.NewServer` |
+| `educabot/tich-cronos` | Cloud Functions (deploy propio) | Plataforma TiCh. Usa `boot.Functions` |
 
 ---
 
-## Autenticación actual — JWT via team-ai-toolkit/tokens
+## Autenticacion — JWT con HMAC-HS256 via tokens.Toker
 
-### Qué se usa hoy
+### Como funciona
 
-Alizia y tich-cronos usan **JWT authentication via team-ai-toolkit/tokens**. El sistema de autenticación emite tokens JWT, y expone un endpoint JWKS para validación.
+El paquete `tokens` contiene `Toker`, una struct que **crea y valida** JWT usando HMAC-HS256 con un secreto compartido (`JWT_SECRET`).
 
-Los backends validan los JWT usando **JWKS** (JSON Web Key Set) via `team-ai-toolkit/tokens`. No se necesita una RSA key pair propia.
+```go
+// Crear un Toker
+toker := tokens.New(cfg.JWTSecret) // HMAC-HS256 shared secret
 
+// Crear un JWT
+token, err := toker.Create(id, name, email, roles, duration)
+
+// Validar un JWT
+claims, err := toker.Validate(tokenString)
 ```
-Login (1 vez)
-  → Sistema de auth devuelve JWT
+
+**Flujo:**
+```
+Login
+  → toker.Create(id, name, email, roles, duration) → JWT firmado con HMAC-HS256
     → Frontend guarda JWT
-      → Cada request envía JWT en Authorization header
-        → Backend valida JWT via JWKS (cached, sin HTTP en cada request)
-          → Extrae user_id, org_id, roles del token
+      → Cada request envia JWT en Authorization: Bearer header
+        → ValidateTokenMiddleware valida JWT con el mismo secret
+          → Extrae Claims: ID, Name, Email, Roles
 ```
+
+**Claims struct:**
+```go
+type Claims struct {
+    ID     string   `json:"id"`
+    Name   string   `json:"name"`
+    Email  string   `json:"email"`
+    Avatar string   `json:"avatar"`
+    Roles  []string `json:"roles"`
+    jwt.RegisteredClaims
+}
+```
+
+**Metodos de Claims:** `HasRole(role)`, `HasAnyRole(roles...)`
+
+**Middlewares disponibles:**
+- `ValidateTokenMiddleware(toker, env)` — Valida Bearer JWT; en env `Test` auto-mockea claims
+- `OptionalTokenMiddleware(toker, env)` — Igual pero permite requests sin autenticacion
+- `RequireRole(roles...)` — Verifica roles, retorna 403 si no los tiene
+- `ValidateServiceCredentials(allowedServices, serviceSecret)` — Basic auth para comunicacion service-to-service
+- `GetClaims(req)` — Extrae `*Claims` del contexto del request
+
+**Constantes:** `ClaimsKey`, `IDKey`, `EmailKey`, `TokenKey`, `TestUserID`
 
 ### Auth Service propio (FUTURO)
 
-> El auth-service propio está planificado para centralizar la emisión de tokens a futuro. No es necesario para el lanzamiento de Alizia. Ver ARQUITECTURA-AUTH-SERVICE.md para los detalles del diseño futuro.
+> El auth-service esta planificado para centralizar la emision de tokens a futuro. No es necesario para el lanzamiento de Alizia.
 
 ---
 
-## team-ai-toolkit — Estructura de la librería
+## Modulo y dependencias
+
+```
+module github.com/educabot/team-ai-toolkit
+
+go 1.25.0
+```
+
+```
+require (
+    github.com/gin-gonic/gin              v1.12.0
+    github.com/gin-contrib/cors            v1.7.6
+    github.com/bugsnag/bugsnag-go/v2       v2.6.3
+    github.com/bugsnag/bugsnag-go-gin      v1.0.0
+    github.com/golang-jwt/jwt/v5           v5.3.1
+    github.com/google/uuid                 v1.6.0
+    github.com/stretchr/testify            v1.11.1
+    gorm.io/gorm                           v1.31.1
+    gorm.io/driver/postgres                v1.6.0
+)
+```
+
+---
+
+## Estructura de la libreria
 
 ```
 team-ai-toolkit/
 │
-├── web/                                 # Abstracción HTTP framework-agnostic
+├── config/                              # Configuracion y variables de entorno
+│   ├── environment.go                   # Environment type: Local, Develop, Staging, Production, Test
+│   ├── base.go                          # BaseConfig struct + LoadBase()
+│   └── env.go                           # Helpers: EnvOr(), MustEnv(), EnvSplit(), GetEnvUint()
+│
+├── web/                                 # Abstraccion HTTP framework-agnostic
 │   ├── request.go                       # Request interface
-│   │                                    #   Param(), Query(), Header(), Body()
-│   │                                    #   Bind(), Set(), Get(), Next()
-│   ├── response.go                      # Response struct
-│   │                                    #   JSON(status, body), Err(status, code, msg)
-│   ├── handler.go                       # Handler func(Request) Response
-│   ├── interceptor.go                   # Interceptor func(Request) Response (middleware)
-│   ├── error.go                         # Error response helpers
+│   │                                    #   Param(), Query(), Header()
+│   │                                    #   Bind(), BindJSON(), BindQuery()
+│   │                                    #   Set(), Get(), Context(), Next()
+│   ├── response.go                      # Response struct { Status int, Body any }
+│   │                                    #   JSON(), OK(), Created(), NoContent()
+│   │                                    #   Err(), ErrResponse()
+│   ├── handler.go                       # Handler = func(req Request) Response
+│   ├── interceptor.go                   # Interceptor = func(req Request) Response
+│   ├── mock_request.go                  # MockRequest para testing
 │   │
-│   └── gin/                             # Adaptador Gin (reemplazable por chi/, echo/, etc.)
-│       ├── handler.go                   # Adapt(web.Handler) → gin.HandlerFunc
-│       ├── request.go                   # GinRequest implementa web.Request
-│       ├── middleware.go                # AdaptMiddleware(web.Interceptor) → gin.HandlerFunc
-│       └── engine.go                    # Helpers
+│   └── gin/                             # Adaptador Gin
+│       ├── handler.go                   # Adapt(h web.Handler) gin.HandlerFunc
+│       ├── middleware.go                # AdaptMiddleware(m web.Interceptor) gin.HandlerFunc
+│       └── request.go                   # NewRequest(c *gin.Context) *Request
 │
 ├── boot/                                # Bootstrap de servidor HTTP
-│   ├── server.go                        # Server struct
-│   │                                    #   NewServer(port, engine) → *Server
-│   │                                    #   Run() — ListenAndServe con timeouts
-│   │                                    #   Shutdown() — graceful con context timeout
-│   └── gin.go                           # NewEngine(env, allowedOrigins) → *gin.Engine
-│                                        #   Recovery, CORS, slog middleware, /health
+│   ├── router.go                        # NewRouter(env, allowedOrigins, middleware...) *gin.Engine
+│   │                                    #   Configura Recovery, Logger, CORS
+│   ├── server.go                        # NewServer(port, engine) *Server
+│   │                                    #   Timeouts: Read=10s, Write=30s, Idle=60s
+│   │                                    #   Run() — ListenAndServe
+│   │                                    #   Shutdown() — graceful con 10s timeout
+│   └── functions.go                     # Functions type para Cloud Functions (usado por tich-cronos)
+│                                        #   NewFunctions(), Add(), POST/GET/PUT/DELETE/PATCH()
+│                                        #   Path(), WithAuth()
+│                                        #   Public(), Private(), Optional(), Internal()
 │
-├── dbconn/                              # Conexión a PostgreSQL
-│   └── postgres.go                      # MustConnect(dsn) → *sqlx.DB
-│                                        #   MaxOpenConns: 25, MaxIdleConns: 10
-│                                        #   ConnMaxLifetime: 5min
+├── dbconn/                              # Conexion a PostgreSQL via GORM
+│   └── postgres.go                      # PostgresConfig struct
+│                                        #   URL, Charset, Timeout
+│                                        #   MaxOpenConnections, MaxIdleConnections
+│                                        # NewPostgresConnector(config) PostgresConnector
+│                                        # PostgresConnector.Connect() (*gorm.DB, error)
 │
-├── tokens/                              # Validación JWT (JWKS o RSA public key)
-│   ├── jwt.go                           # ValidateJWT(token, validator) → (*Claims, error)
-│   │                                    #   Valida JWT via JWKS (o RSA public key futuro)
-│   │                                    #   Verifica exp, iat
-│   ├── jwks.go                          # NewJWKSValidator(domain, audience) → Validator
-│   │                                    #   Descarga JWKS y cachea las keys
+├── tokens/                              # Creacion y validacion de JWT (HMAC-HS256)
+│   ├── toker.go                         # Toker struct
+│   │                                    #   New(secret string) Toker
+│   │                                    #   Toker.Create(id, name, email, roles, duration) (string, error)
+│   │                                    #   Toker.Validate(tokenString) (*Claims, error)
 │   ├── claims.go                        # Claims struct
-│   │                                    #   UserID int64, OrgID int64
-│   │                                    #   Roles []string, Email string, Name string
-│   ├── middleware.go                    # NewAuthInterceptor(validator) → web.Interceptor
-│   │                                    #   Extrae Bearer token de Authorization header
-│   │                                    #   Valida JWT via JWKS, inyecta Claims en context
-│   │                                    #   Retorna 401 si falta o es inválido
-│   ├── tenant.go                        # NewTenantInterceptor() → web.Interceptor
-│   │                                    #   Lee OrgID del Claims ya validado
-│   │                                    #   Lo inyecta en context para multi-tenancy
-│   ├── roles.go                         # RequireRole(roles...) → web.Interceptor
-│   │                                    #   Chequea que Claims.Roles contenga al menos 1
-│   │                                    #   Retorna 403 si no tiene permisos
-│   └── context.go                       # MustClaimsFromContext(req) → Claims
-│                                        #   UserIDFromContext(req) → int64
-│                                        #   OrgIDFromContext(req) → int64
-│
-├── applog/                              # Logging con slog
-│   ├── logger.go                        # Setup(env string)
-│   │                                    #   prod/staging → JSON a stdout
-│   │                                    #   local/develop → text con colores
-│   └── test_logger.go                   # SetupTest() — logger silencioso para tests
-│
-├── pagination/                          # Paginación
-│   ├── pagination.go                    # Pagination struct {Page, PerPage, Offset()}
-│   │                                    #   ParseFromQuery(req web.Request) → Pagination
-│   │                                    #   Defaults: page=1, per_page=20, max=100
-│   └── response.go                      # PaginatedResponse[T] {Data, Total, Page, PerPage}
-│
-├── transactions/                        # Transacciones con sqlx
-│   ├── transactor.go                    # RunInTx(ctx, db, func(tx) error) error
-│   │                                    #   Begin → fn(tx) → Commit o Rollback
-│   ├── dbtx.go                          # DBTX interface
-│   │                                    #   GetContext, SelectContext, ExecContext
-│   │                                    #   Implementado por *sqlx.DB y *sqlx.Tx
-│   └── mock.go                          # MockDBTX para tests
+│   │                                    #   ID string, Name string, Email string
+│   │                                    #   Avatar string, Roles []string
+│   │                                    #   Embeds jwt.RegisteredClaims
+│   │                                    #   HasRole(role), HasAnyRole(roles...)
+│   ├── middleware.go                    # ValidateTokenMiddleware(toker, env) web.Interceptor
+│   │                                    #   Extrae Bearer token, valida JWT, inyecta Claims
+│   │                                    #   En env Test: auto-mockea claims
+│   │                                    # OptionalTokenMiddleware(toker, env) web.Interceptor
+│   │                                    #   Igual pero permite requests sin auth
+│   ├── roles.go                         # RequireRole(roles...) web.Interceptor
+│   │                                    #   Chequea Claims.Roles, retorna 403 si no tiene
+│   ├── service.go                       # ValidateServiceCredentials(allowedServices, serviceSecret)
+│   │                                    #   Basic auth para service-to-service
+│   └── context.go                       # GetClaims(req) *Claims
+│                                        # Constantes: ClaimsKey, IDKey, EmailKey, TokenKey, TestUserID
 │
 ├── errors/                              # Errores compartidos + mapeo HTTP
-│   ├── errors.go                        # Sentinel errors comunes
+│   ├── errors.go                        # Sentinel errors:
 │   │                                    #   ErrNotFound, ErrValidation, ErrUnauthorized
 │   │                                    #   ErrForbidden, ErrDuplicate, ErrConflict
-│   └── handler.go                       # HandleError(err) → web.Response
-│                                        #   errors.Is() → mapea a HTTP status + code
-│                                        #   not_found → 404
-│                                        #   validation_error → 400
-│                                        #   unauthorized → 401
-│                                        #   forbidden → 403
-│                                        #   duplicate → 409
-│                                        #   default → 500 + log
+│   │                                    # Re-exports: Is, As, New (de stdlib)
+│   └── handler.go                       # HandleError(err) web.Response
+│                                        #   NotFound → 404, Validation → 400
+│                                        #   Unauthorized → 401, Forbidden → 403
+│                                        #   Duplicate → 409, Conflict → 409
+│                                        #   default → 500
 │
-├── config/                              # Helpers de configuración
-│   ├── env.go                           # EnvOr(key, fallback) string
-│   │                                    #   MustEnv(key) string — panic si falta
-│   └── base.go                          # BaseConfig struct
-│                                        #   Port, Env, DatabaseURL, JWKSDomain, JWKSAudience
-│                                        #   AllowedOrigins []string
-│                                        #   LoadBase() → BaseConfig
+├── pagination/                          # Paginacion con patron "has more"
+│   ├── pagination.go                    # Pagination struct { Limit uint, Offset uint }
+│   │                                    #   ApplyDefaults(defaultLimit, maxLimit)
+│   │                                    #   FetchLimit() — retorna Limit+1 para check "has more"
+│   │                                    #   Scope(p) func(db *gorm.DB) *gorm.DB — GORM scope
+│   └── response.go                      # PaginatedResponse[T] { Items []T, More bool }
+│                                        #   NewPaginatedResponse[S,T](records, limit, transform)
+│                                        #   HasMore[T](records, limit) — trim + bool
 │
-├── go.mod                               # module github.com/educabot/team-ai-toolkit
+├── transactions/                        # Transacciones con GORM y patron Persistor
+│   ├── transactor.go                    # Transactor interface: Run(task, dep, deps...) error
+│   │                                    # New(db *gorm.DB) Transactor → TransactorImpl
+│   │                                    # TransactorImpl.Run() — begin tx, wrap, execute, commit/rollback
+│   ├── persistor.go                     # Persistor interface: With(tx *gorm.DB) Persistor
+│   │                                    # Dependencies = []Persistor
+│   │                                    # Task = func(dependencies Dependencies) error
+│   ├── helpers.go                       # OfType[P Persistor](deps) P — generic helper
+│   └── mock.go                          # TransactorMock — ejecuta task sin transaccion real
+│
+├── applog/                              # Logging
+│   ├── logger.go                        # Logger interface: Error(msg, fields...), ConsoleError(msg, fields...)
+│   │                                    # Field struct { Key, Value }
+│   │                                    # NewField(key, value) Field
+│   ├── test_logger.go                   # NewTestLogger() *TestLogger — imprime errores a stdout
+│   ├── mock_logger.go                   # NewMockLogger() *MockLogger — no-op para tests silenciosos
+│   │
+│   └── bugsnag/                         # Integracion con Bugsnag
+│       └── bugsnag.go                   # BugsnagLogger struct — implementa Logger, envia a Bugsnag
+│                                        # NewBugsnagLogger() *BugsnagLogger
+│                                        # Configure(apiKey, env) — configura Bugsnag globalmente
+│                                        # GinMiddleware(apiKey, env, projectPackages) gin.HandlerFunc
+│
+├── wrappers/                            # Tipos custom para PostgreSQL
+│   ├── uuid_slice.go                    # UUIDSlice = []uuid.UUID con Scan/Value para arrays UUID
+│   ├── sql_time.go                      # SQLTime struct { Hour, Minute, Second }
+│   │                                    #   Scan/Value para columnas TIME de PostgreSQL
+│   │
+│   └── date/                            # Tipo Date sin componente de hora
+│       └── date.go                      # Date struct { Year, Month, Day }
+│                                        # New(), FromTime(), FromStr(), Parse()
+│                                        # IsZero(), ToTime(), String()
+│                                        # JSON marshal/unmarshal como "YYYY-MM-DD"
+│                                        # SQL Scan/Value driver interface
+│
+├── rest/                                # (legacy) Helpers de response
+│   └── response.go                      # ErrFormat, OkFormat[T] — funcionalidad ahora en web/response.go
+│
+├── go.mod
 └── go.sum
 ```
 
 ---
 
-## Dependencias de team-ai-toolkit
+## Variables de entorno (BaseConfig)
 
-```
-require (
-    github.com/gin-gonic/gin        v1.10.x
-    github.com/jmoiron/sqlx          v1.4.x
-    github.com/lib/pq                v1.10.x
-    github.com/golang-jwt/jwt/v5     v5.x.x
-)
+`config.LoadBase()` lee las siguientes variables de entorno:
+
+| Variable | Descripcion | Requerida |
+|----------|-------------|-----------|
+| `PORT` | Puerto del servidor HTTP | No (default segun proyecto) |
+| `ENV` | Entorno: `local`, `develop`, `staging`, `production`, `test` | No (default: `local`) |
+| `DATABASE_URL` | Connection string de PostgreSQL | Si |
+| `JWT_SECRET` | Secreto compartido para HMAC-HS256 JWT | Si |
+| `ALLOWED_ORIGINS` | Origenes CORS separados por coma | No |
+| `API_KEY_BUGSNAG` | API key de Bugsnag para error reporting | No |
+
+```go
+type BaseConfig struct {
+    Port           string
+    Env            Environment
+    DatabaseURL    string
+    JWTSecret      string
+    AllowedOrigins []string
+    BugsnagAPIKey  string
+}
 ```
 
-4 dependencias. Minimalista.
+**Helpers de config:**
+- `EnvOr(key, fallback)` — Lee variable de entorno o retorna fallback
+- `MustEnv(key)` — Lee variable de entorno o panic si no existe
+- `EnvSplit(key, sep)` — Lee y splitea por separador
+- `GetEnvUint(key, fallback)` — Lee como uint
+- `IsProduction()` — Retorna `true` para `Production` o `Staging`
 
 ---
 
-## Cómo lo importa cada proyecto
+## Patrones clave
+
+### Patron de paginacion "has more"
+
+En lugar de contar el total de registros (query extra), el toolkit usa el patron "fetch N+1":
+
+```go
+// 1. El request trae Limit y Offset
+var p pagination.Pagination
+req.BindQuery(&p)
+p.ApplyDefaults(20, 100) // default 20, max 100
+
+// 2. Se buscan Limit+1 registros
+var records []Entity
+db.Scopes(pagination.Scope(p)).Limit(p.FetchLimit()).Find(&records)
+
+// 3. Si vinieron Limit+1, hay mas paginas
+items, hasMore := pagination.HasMore(records, p.Limit)
+
+// 4. Response
+return pagination.PaginatedResponse[EntityDTO]{
+    Items: items,  // maximo Limit elementos (se recorta el +1)
+    More:  hasMore, // true si habia mas de Limit registros
+}
+```
+
+### Patron Transactor/Persistor
+
+Para transacciones que involucran multiples repositorios:
+
+```go
+// Cada repositorio implementa Persistor
+type UserRepo struct { db *gorm.DB }
+func (r *UserRepo) With(tx *gorm.DB) transactions.Persistor {
+    return &UserRepo{db: tx}
+}
+
+// El usecase recibe un Transactor
+type CreateUserUsecase struct {
+    transactor transactions.Transactor
+    userRepo   *UserRepo
+    auditRepo  *AuditRepo
+}
+
+// Ejecutar con transaccion
+err := uc.transactor.Run(
+    func(deps transactions.Dependencies) error {
+        userRepo := transactions.OfType[*UserRepo](deps)
+        auditRepo := transactions.OfType[*AuditRepo](deps)
+        // Ambos repos usan la misma transaccion
+        userRepo.Create(user)
+        auditRepo.Log(action)
+        return nil
+    },
+    uc.userRepo,  // persistors que seran wrapped con tx
+    uc.auditRepo,
+)
+// Si error → rollback automatico, si ok → commit
+```
+
+### Dos modos de deploy: Monolito vs Cloud Functions
+
+**Alizia** usa el modo monolito clasico:
+```go
+router := boot.NewRouter(cfg.Env, cfg.AllowedOrigins, authMiddleware)
+// Registrar rutas en el router Gin
+server := boot.NewServer(cfg.Port, router)
+server.Run()    // ListenAndServe
+server.Shutdown() // graceful shutdown
+```
+
+**tich-cronos** usa Cloud Functions:
+```go
+fns := boot.NewFunctions()
+fns.Add("createUser",
+    fns.POST("/users").
+        WithAuth().
+        Private(createUserHandler),
+)
+// Cada funcion se deploya individualmente
+```
+
+---
+
+## Como lo importa cada proyecto
 
 ### Alizia
 
@@ -220,11 +407,10 @@ package config
 import bcfg "github.com/educabot/team-ai-toolkit/config"
 
 type Config struct {
-    bcfg.BaseConfig                     // Port, Env, DatabaseURL, JWKSDomain, JWKSAudience, AllowedOrigins
+    bcfg.BaseConfig                     // Port, Env, DatabaseURL, JWTSecret, AllowedOrigins, BugsnagAPIKey
     AzureOpenAIKey      string
     AzureOpenAIEndpoint string
     AzureOpenAIModel    string
-    BugsnagAPIKey       string
 }
 
 func Load() *Config {
@@ -234,7 +420,6 @@ func Load() *Config {
         AzureOpenAIKey:      bcfg.MustEnv("AZURE_OPENAI_API_KEY"),
         AzureOpenAIEndpoint: bcfg.MustEnv("AZURE_OPENAI_ENDPOINT"),
         AzureOpenAIModel:    bcfg.EnvOr("AZURE_OPENAI_MODEL", "gpt-5-mini"),
-        BugsnagAPIKey:       os.Getenv("API_KEY_BUGSNAG"),
     }
 }
 ```
@@ -245,26 +430,31 @@ import (
     "github.com/educabot/team-ai-toolkit/boot"
     "github.com/educabot/team-ai-toolkit/dbconn"
     "github.com/educabot/team-ai-toolkit/tokens"
-    "github.com/educabot/team-ai-toolkit/applog"
+    "github.com/educabot/team-ai-toolkit/applog/bugsnag"
 )
 
 func NewApp(cfg *config.Config) *App {
-    applog.Setup(cfg.Env)
-    db := dbconn.MustConnect(cfg.DatabaseURL)
-    engine := boot.NewEngine(cfg.Env, cfg.AllowedOrigins)
+    // Logging + error reporting
+    bugsnag.Configure(cfg.BugsnagAPIKey, string(cfg.Env))
+    logger := bugsnag.NewBugsnagLogger()
 
-    // Auth middleware — valida JWT via JWKS (team-ai-toolkit/tokens)
-    validator, _ := tokens.NewJWKSValidator(cfg.JWKSDomain, cfg.JWKSAudience)
-    authMw := tokens.NewAuthInterceptor(validator)
-    tenantMw := tokens.NewTenantInterceptor()
+    // Database via GORM
+    connector := dbconn.NewPostgresConnector(dbconn.PostgresConfig{URL: cfg.DatabaseURL})
+    db, _ := connector.Connect()
 
-    // ... wiring de repos, usecases, handlers
-    server := boot.NewServer(cfg.Port, engine)
+    // JWT — crea y valida tokens con secreto compartido
+    toker := tokens.New(cfg.JWTSecret)
+    authMw := tokens.ValidateTokenMiddleware(toker, cfg.Env)
+
+    // Router + Server (monolito)
+    router := boot.NewRouter(string(cfg.Env), cfg.AllowedOrigins, authMw)
+    // ... registrar rutas ...
+    server := boot.NewServer(cfg.Port, router)
     return &App{db: db, server: server}
 }
 ```
 
-### tich-cronos (refactorizado)
+### tich-cronos
 
 ```go
 // go.mod
@@ -274,107 +464,52 @@ require github.com/educabot/team-ai-toolkit v1.x.x
 ```
 
 ```go
-// config/config.go
-package config
+// Usa boot.Functions para Cloud Functions en lugar de boot.NewRouter + boot.NewServer
+import "github.com/educabot/team-ai-toolkit/boot"
 
-import bcfg "github.com/educabot/team-ai-toolkit/config"
-
-type Config struct {
-    bcfg.BaseConfig
-    CanvasSigloClientID     string
-    CanvasSigloClientSecret string
-    CanvasSigloRedirectURI  string
-    LLMOpenAIKey            string
-    LLMOpenAIURL            string
-    ContentGeneratorURL     string
-    BugsnagAPIKey           string
-}
-
-func Load() *Config {
-    base := bcfg.LoadBase()
-    return &Config{
-        BaseConfig:              base,
-        CanvasSigloClientID:     bcfg.MustEnv("CANVAS_SIGLO_CLIENT_ID"),
-        LLMOpenAIKey:            bcfg.MustEnv("LLM_OPENAI_API_KEY"),
-        ContentGeneratorURL:     bcfg.MustEnv("CONTENT_GENERATOR_URL"),
-        BugsnagAPIKey:           os.Getenv("API_KEY_BUGSNAG"),
-        // ...
-    }
-}
-```
-
-```go
-// cmd/app.go — mismo patrón que Alizia
-import (
-    "github.com/educabot/team-ai-toolkit/boot"
-    "github.com/educabot/team-ai-toolkit/dbconn"
-    "github.com/educabot/team-ai-toolkit/tokens"     // MISMA validación JWT JWKS
-    "github.com/educabot/team-ai-toolkit/applog"
+fns := boot.NewFunctions()
+fns.Add("getStudents",
+    fns.GET("/students").
+        WithAuth().
+        Private(getStudentsHandler),
 )
-```
-
-### Auth Service (FUTURO — no en uso actualmente)
-
-> El auth-service es un plan futuro para centralizar la emisión de tokens. Actualmente se usa JWT via team-ai-toolkit/tokens.
-
-```go
-// auth-service/go.mod (FUTURO)
-module github.com/educabot/auth-service
-
-require github.com/educabot/team-ai-toolkit v1.x.x
-```
-
-```go
-// Usará de team-ai-toolkit:
-import (
-    "github.com/educabot/team-ai-toolkit/boot"       // Server bootstrap
-    "github.com/educabot/team-ai-toolkit/web"         // Handler abstraction
-    "github.com/educabot/team-ai-toolkit/dbconn"      // PostgreSQL connection
-    "github.com/educabot/team-ai-toolkit/applog"      // Logging
-    "github.com/educabot/team-ai-toolkit/config"      // EnvOr(), MustEnv()
-    "github.com/educabot/team-ai-toolkit/errors"      // ErrNotFound, HandleError()
-    "github.com/educabot/team-ai-toolkit/pagination"  // Si tiene listados
-)
-
-// NO usará tokens/ (él CREARÁ los tokens, no los valida)
-// En su lugar tendrá su propio paquete interno:
-//   internal/jwt/issuer.go → SignJWT(claims, privateKey) → token string
 ```
 
 ---
 
-## Qué va y qué NO va en team-ai-toolkit
+## Que va y que NO va en team-ai-toolkit
 
-### Va (infraestructura genérica)
+### Va (infraestructura generica)
 
-| Paquete | Qué resuelve | Quién lo usa |
+| Paquete | Que resuelve | Quien lo usa |
 |---------|-------------|-------------|
-| `web/` | Abstracción HTTP framework-agnostic | Todos |
-| `web/gin/` | Adaptador Gin | Todos (hoy) |
-| `boot/` | Server lifecycle, timeouts, shutdown | Todos |
-| `dbconn/` | Conexión PostgreSQL con sqlx | Todos |
-| `tokens/` | Validación JWT via JWKS (o RSA key futuro) | Alizia, tich-cronos, futuros |
-| `applog/` | Setup de slog | Todos |
-| `pagination/` | Parse page/per_page + response wrapper | Todos |
-| `transactions/` | RunInTx(), DBTX interface | Todos |
-| `errors/` | Sentinel errors + HandleError() | Todos |
-| `config/` | EnvOr(), MustEnv(), BaseConfig | Todos |
+| `config/` | Variables de entorno, BaseConfig, helpers | Todos |
+| `web/` | Abstraccion HTTP framework-agnostic (Handler, Request, Response) | Todos |
+| `web/gin/` | Adaptador Gin (Adapt, AdaptMiddleware, NewRequest) | Todos (hoy) |
+| `boot/` | Server lifecycle (NewRouter + NewServer) y Cloud Functions (Functions) | Todos |
+| `dbconn/` | Conexion PostgreSQL via GORM con pool | Todos |
+| `tokens/` | Creacion y validacion JWT HMAC-HS256, middlewares de auth y roles | Todos |
+| `errors/` | Sentinel errors + HandleError() mapeo a HTTP | Todos |
+| `pagination/` | Pagination struct, GORM scope, PaginatedResponse[T] con "has more" | Todos |
+| `transactions/` | Transactor/Persistor pattern con GORM | Todos |
+| `applog/` | Logger interface, TestLogger, MockLogger | Todos |
+| `applog/bugsnag/` | BugsnagLogger + GinMiddleware para error reporting | Todos |
+| `wrappers/` | UUIDSlice, SQLTime para PostgreSQL | Segun necesidad |
+| `wrappers/date/` | Date type (YYYY-MM-DD) con JSON y SQL support | Segun necesidad |
+| `rest/` | (legacy) ErrFormat, OkFormat — usar web/ en su lugar | Deprecado |
 
-### NO va (dominio específico)
+### NO va (dominio especifico)
 
-| Cosa | Por qué NO | Dónde vive |
+| Cosa | Por que NO | Donde vive |
 |------|-----------|------------|
 | Entities/modelos | Cada proyecto tiene su dominio | `proyecto/src/core/entities/` |
-| Providers/interfaces | Específicas del dominio | `proyecto/src/core/providers/` |
-| Usecases | Lógica de negocio propia | `proyecto/src/core/usecases/` |
+| Providers/interfaces | Especificas del dominio | `proyecto/src/core/providers/` |
+| Usecases | Logica de negocio propia | `proyecto/src/core/usecases/` |
 | Handlers | Endpoints propios | `proyecto/src/entrypoints/` |
 | Repositories | Queries propias | `proyecto/src/repositories/` |
 | Migraciones | Schema propio | `proyecto/db/migrations/` |
 | Config struct completo | Cada proyecto tiene campos distintos | `proyecto/config/` |
 | AI client | Alizia usa Azure OpenAI, cronos puede usar otro | `proyecto/src/repositories/ai/` |
-| Mocks | Mockean interfaces propias del proyecto | `proyecto/src/mocks/` |
-| JWT issuer (private key) | Solo el auth service (futuro) firmará tokens | `auth-service/internal/jwt/` (futuro) |
-| Prompts/schemas AI | Contenido específico del producto | `proyecto/src/repositories/ai/prompts/` |
 
 ---
 
@@ -383,13 +518,13 @@ import (
 team-ai-toolkit usa **Go modules + semver**:
 
 ```
-v1.0.0 → primera versión estable
-v1.1.0 → se agrega pagination/response.go (backward compatible)
-v1.2.0 → se agrega web/gin/engine.go (backward compatible)
-v2.0.0 → se cambia firma de tokens.ValidateJWT (breaking change)
+v1.0.0 → primera version estable
+v1.1.0 → se agrega wrappers/date (backward compatible)
+v1.2.0 → se agrega boot.Functions (backward compatible)
+v2.0.0 → cambio en firma de Toker (breaking change)
 ```
 
-Los proyectos fijan la versión en `go.mod`:
+Los proyectos fijan la version en `go.mod`:
 ```
 require github.com/educabot/team-ai-toolkit v1.2.0
 ```
@@ -398,53 +533,19 @@ Actualizar es un `go get github.com/educabot/team-ai-toolkit@latest` + correr te
 
 ---
 
-## Estructura final de los 4 repos
-
-```
-educabot/
-├── team-ai-toolkit/                 # Librería compartida (no se deploya)
-│   ├── web/                     #   Abstracción HTTP
-│   ├── boot/                    #   Server bootstrap
-│   ├── dbconn/                  #   PostgreSQL connection
-│   ├── tokens/                  #   JWT validation (JWKS)
-│   ├── applog/                  #   Logging
-│   ├── pagination/              #   Paginación
-│   ├── transactions/            #   Transacciones DB
-│   ├── errors/                  #   Errores compartidos
-│   └── config/                  #   Config helpers + BaseConfig
-│
-├── auth-service/                # Microservicio de autenticación (FUTURO — no en uso)
-│   ├── cmd/                     #   Entry point
-│   ├── internal/                #   JWT issuer (private key), bcrypt, sessions
-│   ├── db/migrations/           #   organizations, users, user_roles, refresh_tokens
-│   └── go.mod                   #   importa team-ai-toolkit
-│
-├── alizia-api/                  # Monolito Alizia (deploy propio)
-│   ├── cmd/                     #   Entry point + DI manual
-│   ├── src/                     #   core/, entrypoints/, repositories/, mocks/
-│   ├── config/                  #   Config propio (extiende BaseConfig)
-│   ├── db/migrations/           #   24 tablas de dominio educativo
-│   └── go.mod                   #   importa team-ai-toolkit
-│
-└── tich-cronos/                 # Monolito TiCh refactorizado (deploy propio)
-    ├── cmd/                     #   Entry point + DI manual (sin Wire)
-    ├── src/                     #   core/, entrypoints/, repositories/, mocks/
-    ├── config/                  #   Config propio (extiende BaseConfig)
-    ├── db/migrations/           #   26 tablas de dominio educativo
-    └── go.mod                   #   importa team-ai-toolkit
-```
-
----
-
 ## Resumen
 
 | Pregunta | Respuesta |
 |----------|-----------|
-| **¿Qué es team-ai-toolkit?** | Librería Go con infraestructura compartida |
-| **¿Se deploya?** | No. Se importa como dependencia en `go.mod` |
-| **¿Qué contiene?** | web/, boot/, dbconn/, tokens/, applog/, pagination/, transactions/, errors/, config/ |
-| **¿Quién lo usa?** | Alizia, tich-cronos, auth-service, futuros proyectos |
-| **¿Qué es auth-service?** | Microservicio propio planificado para el futuro. Actualmente se usa JWT via team-ai-toolkit/tokens |
-| **¿Cómo se relacionan?** | El sistema de auth firma tokens. team-ai-toolkit/tokens/ los valida via JWKS. Los proyectos importan team-ai-toolkit |
-| **¿Qué NO va?** | Lógica de dominio, entities, usecases, handlers, migraciones |
-| **¿Cómo se versiona?** | Semver via Go modules (v1.0.0, v1.1.0, v2.0.0) |
+| **Que es team-ai-toolkit?** | Libreria Go con infraestructura compartida |
+| **Se deploya?** | No. Se importa como dependencia en `go.mod` |
+| **Go version?** | 1.25.0 |
+| **DB?** | GORM (gorm.io/gorm + gorm.io/driver/postgres) |
+| **Auth?** | JWT con HMAC-HS256 via `tokens.Toker` (crea y valida tokens con `JWT_SECRET`) |
+| **Que contiene?** | config/, web/, web/gin/, boot/, dbconn/, tokens/, errors/, pagination/, transactions/, applog/, applog/bugsnag/, wrappers/, wrappers/date/, rest/ (legacy) |
+| **Quien lo usa?** | alizia-api (monolito), tich-cronos (Cloud Functions), futuros proyectos |
+| **Dos modos de deploy?** | `boot.NewRouter` + `boot.NewServer` (Alizia) o `boot.Functions` (tich-cronos) |
+| **Paginacion?** | Patron "has more": fetch N+1, trim, retorna `{ Items, More }` |
+| **Transacciones?** | Patron Transactor/Persistor: wrap repositorios con tx, commit/rollback automatico |
+| **Que NO va?** | Logica de dominio, entities, usecases, handlers, migraciones |
+| **Como se versiona?** | Semver via Go modules (v1.0.0, v1.1.0, v2.0.0) |

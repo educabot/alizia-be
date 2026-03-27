@@ -19,9 +19,9 @@ Documento de referencia para el equipo. Define estructura, patrones, convencione
 | ORM | GORM | Estándar de la empresa, ya usado en tich-cronos |
 | Base de datos | PostgreSQL | Multi-tenant, JSONB, triggers, enums |
 | Migraciones | golang-migrate | Up/down, embebidas en binario |
-| Auth | JWT + Bearer tokens (via team-ai-toolkit/tokens) | Validación via JWKS |
+| Auth | JWT + Bearer tokens (via team-ai-toolkit/tokens) | Validación via shared secret (HS256) |
 | AI | Azure OpenAI SDK | Requerimiento de negocio |
-| Logging | slog via team-ai-toolkit/applog | Structured logging nativo, sin dependencias |
+| Logging | applog.Logger via team-ai-toolkit/applog | Interfaz abstracta con implementación Bugsnag |
 | Error tracking | Bugsnag via team-ai-toolkit/applog/bugsnag | Stack actual de la empresa, ya integrado en tich-cronos |
 | Testing | testify + GORM | Mocks para unit, PostgreSQL real para integration |
 | Linting | golangci-lint | 15+ linters configurados |
@@ -67,12 +67,12 @@ No hay pasos manuales. Push a main = deploy automático.
 
 | Aspecto | Cómo se configura |
 |---|---|
-| **Environment variables** | Dashboard de Railway (DATABASE_URL, JWKS_DOMAIN, JWKS_AUDIENCE, API_KEY_BUGSNAG, etc.) |
+| **Environment variables** | Dashboard de Railway (DATABASE_URL, JWT_SECRET, API_KEY_BUGSNAG, etc.) |
 | **Puerto** | Railway detecta `PORT` automáticamente o se configura en dashboard |
 | **Dominio** | Railway asigna un dominio `.up.railway.app` + custom domain si se necesita |
 | **PostgreSQL** | Railway ofrece PostgreSQL managed en el mismo proyecto, o se conecta a una DB externa |
 | **Healthcheck** | Railway monitorea `GET /health` (ya existe en `boot/gin.go` de team-ai-toolkit) |
-| **Logs** | Railway captura stdout. slog en JSON (producción) se muestra en el dashboard |
+| **Logs** | Railway captura stdout. applog en JSON (produccion) se muestra en el dashboard |
 | **Scaling** | Vertical (más CPU/RAM) desde dashboard. Horizontal (réplicas) en plan Pro |
 | **Rollback** | Railway permite revertir a cualquier deploy anterior con un click |
 
@@ -91,9 +91,9 @@ Todo lo que está en `team-ai-toolkit` funciona sin cambios:
 |---|---|
 | `boot/server.go` | Railway le pasa `PORT` como env var, el server escucha ahí. Sin cambios |
 | `boot/gin.go` | `/health` ya existe, Railway lo usa para healthcheck. Sin cambios |
-| `applog/` | slog a stdout, Railway lo captura. Sin cambios |
+| `applog/` | applog.Logger a stdout, Railway lo captura. Sin cambios |
 | `dbconn/` | Se conecta por `DATABASE_URL` (env var). Sin cambios |
-| `tokens/` | Validación JWT via JWKS. Sin cambios |
+| `tokens/` | Validación JWT via shared secret. Sin cambios |
 | `web/` | Abstracción HTTP no sabe dónde corre. Sin cambios |
 
 #### ¿Y si mañana migran de Railway?
@@ -112,7 +112,7 @@ El Dockerfile es estándar. Se puede deployar en:
 Railway Project: alizia
 ├── Service: alizia-api          ← Este repo (Docker container)
 │   ├── Dockerfile               ← Build automático
-│   ├── Environment variables    ← DATABASE_URL, JWKS_DOMAIN, JWKS_AUDIENCE, etc.
+│   ├── Environment variables    ← DATABASE_URL, JWT_SECRET, API_KEY_BUGSNAG, etc.
 │   └── Custom domain            ← api.alizia.com (opcional)
 │
 └── Service: postgres            ← PostgreSQL managed (o externo)
@@ -120,9 +120,9 @@ Railway Project: alizia
     └── Backups                  ← Automáticos
 ```
 
-### ¿Por qué slog y no una librería?
+### ¿Por qué applog.Logger?
 
-Go 1.21+ incluye `log/slog` con structured logging. Es estándar, no agrega dependencias, y soporta JSON output para producción + text output para desarrollo. Bugsnag captura los errores críticos por separado.
+`team-ai-toolkit/applog` define una interfaz `Logger` con implementación `applog/bugsnag`. Abstrae el logging y error tracking bajo una sola interfaz. En producción usa Bugsnag para errores críticos; en desarrollo loguea a stdout.
 
 ---
 
@@ -133,15 +133,17 @@ Go 1.21+ incluye `log/slog` con structured logging. Es estándar, no agrega depe
 │  team-ai-toolkit (librería compartida, no se deploya)    │
 │                                                         │
 │  web/          → Abstracción HTTP (Request, Response)   │
-│  web/gin/      → Adaptador Gin (Adapt, AdaptMiddleware) │
-│  boot/         → Server bootstrap (NewEngine, NewServer) │
-│  tokens/       → JWT JWKS validation, Claims, middleware │
-│  dbconn/       → PostgreSQL connection (GORM)            │
+│  web/gin/      → Adaptador Gin (handler.go, request.go) │
+│  boot/         → Server bootstrap (NewRouter, NewServer)  │
+│  tokens/       → JWT validation (HS256), Claims, middleware │
+│  dbconn/       → NewPostgresConnector(config).Connect()  │
 │  errors/       → Sentinel errors + HandleError()        │
-│  pagination/   → ParseFromQuery + PaginatedResponse     │
-│  transactions/ → RunInTx(), DBTX interface              │
-│  applog/       → Setup slog + ErrorTracker interface    │
+│  pagination/   → Limit/Offset + "has more" pattern      │
+│  transactions/ → Transactor/Persistor pattern            │
+│  applog/       → Logger interface + ErrorTracker         │
 │  applog/bugsnag/ → Bugsnag adapter                     │
+│  wrappers/     → Utility wrappers                       │
+│  wrappers/date/ → Date handling utilities               │
 │  config/       → EnvOr(), MustEnv(), BaseConfig        │
 └──────────────────────────┬──────────────────────────────┘
                            │
@@ -241,7 +243,7 @@ alizia-api/
 │   │   ├── teaching.go                          # TeachingContainer
 │   │   ├── resources.go                         # ResourcesContainer
 │   │   ├── containers.go                        # WebHandlerContainer (agrupa todos)
-│   │   └── rest/
+│   │   └── rest/                                # LEGACY — superseded by web/ in team-ai-toolkit
 │   │       ├── rest.go                          # HandleError() que extiende team-ai-toolkit/errors
 │   │       ├── admin/
 │   │       │   ├── create_area.go
@@ -352,7 +354,7 @@ alizia-api/
 **Lo que NO tiene este proyecto (viene de team-ai-toolkit):**
 - ~~web/~~ → `team-ai-toolkit/web`
 - ~~boot/~~ → `team-ai-toolkit/boot`
-- ~~packages/~~ → `team-ai-toolkit/tokens`, `dbconn`, `pagination`, `transactions`, `applog`, `errors`
+- ~~packages/~~ → `team-ai-toolkit/tokens`, `dbconn`, `pagination`, `transactions`, `applog`, `errors`, `wrappers`
 
 ---
 
@@ -385,7 +387,7 @@ cmd/
 - `core/` NO importa `repositories/`, `entrypoints/`, ni `team-ai-toolkit`
 - `usecases/` solo importa `providers/` (interfaces) y `entities/`
 - `entrypoints/` importa `usecases/` (interfaces), `entities/`, y `team-ai-toolkit/web`
-- `repositories/` importa `providers/`, `entities/`, y `team-ai-toolkit/dbconn` + `transactions`
+- `repositories/` importa `providers/`, `entities/`, y `team-ai-toolkit/dbconn` + `transactions` (Transactor/Persistor)
 - `cmd/` importa todo para hacer el wiring
 
 ---
@@ -402,7 +404,7 @@ import (
 )
 
 type Config struct {
-    bcfg.BaseConfig                     // Port, Env, DatabaseURL, JWKSDomain, JWKSAudience, AllowedOrigins, BugsnagAPIKey
+    bcfg.BaseConfig                     // Port, Env, DatabaseURL, JWTSecret, AllowedOrigins, BugsnagAPIKey
     AzureOpenAIKey      string
     AzureOpenAIEndpoint string
     AzureOpenAIModel    string
@@ -419,7 +421,7 @@ func Load() *Config {
 }
 ```
 
-`BaseConfig` ya trae Port, Env, DatabaseURL, JWKSDomain, JWKSAudience, AllowedOrigins, BugsnagAPIKey. Alizia solo agrega los campos específicos del proyecto (Azure OpenAI).
+`BaseConfig` ya trae Port, Env, DatabaseURL, JWTSecret, AllowedOrigins, BugsnagAPIKey. Alizia solo agrega los campos específicos del proyecto (Azure OpenAI).
 
 ---
 
@@ -432,14 +434,20 @@ package main
 import (
     "alizia-api/config"
     "github.com/educabot/team-ai-toolkit/applog"
+    "github.com/educabot/team-ai-toolkit/applog/bugsnag"
     "github.com/educabot/team-ai-toolkit/dbconn"
 )
 
 func main() {
     cfg := config.Load()
-    applog.Setup(cfg.Env)
+    logger := bugsnag.NewLogger(cfg.BugsnagAPIKey, cfg.Env)
+    applog.SetGlobal(logger)
 
-    db := dbconn.MustConnectGORM(cfg.DatabaseURL)
+    connector := dbconn.NewPostgresConnector(cfg.DatabaseURL)
+    db, err := connector.Connect()
+    if err != nil {
+        panic("failed to connect to database: " + err.Error())
+    }
     sqlDB, _ := db.DB()
     defer sqlDB.Close()
 
@@ -454,15 +462,15 @@ func main() {
 package main
 
 import (
-    "log/slog"
     "os"
     "os/signal"
     "syscall"
     "alizia-api/config"
     "alizia-api/src/entrypoints"
     appweb "alizia-api/src/app/web"
-    "github.com/educabot/team-ai-toolkit/boot"
+    "github.com/educabot/team-ai-toolkit/applog"
     "github.com/educabot/team-ai-toolkit/applog/bugsnag"
+    "github.com/educabot/team-ai-toolkit/boot"
     "gorm.io/gorm"
 )
 
@@ -481,7 +489,7 @@ func NewApp(cfg *config.Config, db *gorm.DB) *App {
     container := NewHandlers(usecases, cfg)
 
     // Boot: crea Gin engine con middleware global (viene de team-ai-toolkit)
-    engine := boot.NewEngine(cfg.Env, cfg.AllowedOrigins)
+    engine := boot.NewRouter(cfg.Env, cfg.AllowedOrigins)
 
     // Bugsnag middleware (si está configurado)
     if cfg.BugsnagAPIKey != "" {
@@ -502,7 +510,7 @@ func (a *App) Run() {
         sigCh := make(chan os.Signal, 1)
         signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
         sig := <-sigCh
-        slog.Info("shutting down", "signal", sig)
+        applog.Info("shutting down", "signal", sig)
         a.server.Shutdown()
     }()
 
@@ -510,7 +518,8 @@ func (a *App) Run() {
 }
 
 func (a *App) Close() {
-    a.db.Close()
+    sqlDB, _ := a.db.DB()
+    sqlDB.Close()
 }
 ```
 
@@ -612,10 +621,7 @@ import (
 )
 
 func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {
-    jwksValidator, err := tokens.NewJWKSValidator(cfg.JWKSDomain, cfg.JWKSAudience)
-    if err != nil {
-        panic("invalid JWT config: " + err.Error())
-    }
+    toker := tokens.New(cfg.JWTSecret)
 
     return &entrypoints.WebHandlerContainer{
         Admin: entrypoints.NewAdminContainer(
@@ -640,11 +646,14 @@ func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContai
             resh.NewCreate(uc.CreateResource),
             resh.NewGenerate(uc.GenerateResource),
         ),
-        AuthMiddleware:   tokens.NewAuthInterceptor(jwksValidator),
-        TenantMiddleware: tokens.NewTenantInterceptor(),
+        AuthMiddleware:   toker.AuthMiddleware(),
     }
 }
 ```
+
+> **Nota sobre autenticacion service-to-service:** Para comunicacion entre servicios internos, `tokens.ValidateServiceCredentials` soporta Basic auth. Esto permite que otros microservicios se autentiquen sin JWT.
+
+> **Nota sobre archivos de tokens/:** El paquete `team-ai-toolkit/tokens` contiene `toker.go` (Toker struct y New()), `middleware.go` (AuthMiddleware), y `api.go` (ValidateServiceCredentials). Los Claims tienen campos: `ID string`, `Name`, `Email`, `Avatar`, `Roles`.
 
 ### Cómo se registran las rutas
 
@@ -662,7 +671,6 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, c
 
     // Middleware (de team-ai-toolkit, adaptados via webgin)
     api.Use(webgin.AdaptMiddleware(h.AuthMiddleware))
-    api.Use(webgin.AdaptMiddleware(h.TenantMiddleware))
 
     // Admin routes
     api.POST("/areas", webgin.Adapt(h.Admin.CreateArea.Handle()))
@@ -867,7 +875,7 @@ func NewCreate(uc coorduc.CreateDocument) *CreateHandler {
 
 func (h *CreateHandler) Handle() web.Handler {
     return func(req web.Request) web.Response {
-        claims := tokens.MustClaims(req)
+        claims := tokens.MustClaims(req) // Claims: ID string, Name, Email, Avatar, Roles
 
         var body CreateDocumentRequest
         if err := req.Bind(&body); err != nil {
@@ -875,7 +883,7 @@ func (h *CreateHandler) Handle() web.Handler {
         }
 
         id, err := h.useCase.Execute(req.Context(), coorduc.CreateDocumentRequest{
-            OrgID:    claims.OrgID,
+            UserID:   claims.ID,
             Name:     body.Name,
             AreaID:   body.AreaID,
             TopicIDs: body.TopicIDs,

@@ -56,9 +56,9 @@ Antes de construir cualquier feature, el equipo necesita un proyecto base funcio
 | ORM | GORM | Estándar de la empresa (tich-cronos) |
 | Base de datos | PostgreSQL | Multi-tenant, JSONB, enums |
 | Migraciones | golang-migrate | Up/down, embebidas en binario |
-| Auth | JWT + Bearer tokens (via team-ai-toolkit/tokens) | Validación via JWKS |
+| Auth | JWT + Bearer tokens (via team-ai-toolkit/tokens) | Validación via JWT secret |
 | AI | Azure OpenAI SDK | Requerimiento de negocio |
-| Logging | slog via team-ai-toolkit/applog | Structured logging nativo |
+| Logging | applog.Logger via team-ai-toolkit/applog | Logger interface pattern |
 | Error tracking | Bugsnag via team-ai-toolkit/applog/bugsnag | Stack actual empresa |
 | Testing | testify + GORM | Mocks para unit, PostgreSQL real para integration |
 | Linting | golangci-lint | 15+ linters configurados |
@@ -75,13 +75,13 @@ Antes de construir cualquier feature, el equipo necesita un proyecto base funcio
 │                                                         │
 │  web/          → Abstracción HTTP (Request, Response)   │
 │  web/gin/      → Adaptador Gin (Adapt, AdaptMiddleware) │
-│  boot/         → Server bootstrap (NewEngine, NewServer) │
-│  tokens/       → JWT JWKS validation, Claims, middleware │
-│  dbconn/       → PostgreSQL connection (GORM)            │
+│  boot/         → Server bootstrap (NewRouter, NewServer)  │
+│  tokens/       → JWT validation (tokens.New), Claims     │
+│  dbconn/       → PostgreSQL (NewPostgresConnector)       │
 │  errors/       → Sentinel errors + HandleError()        │
-│  pagination/   → ParseFromQuery + PaginatedResponse     │
-│  transactions/ → RunInTx(), DBTX interface              │
-│  applog/       → Setup slog + ErrorTracker interface    │
+│  pagination/   → Form-tag binding + PaginatedResponse   │
+│  transactions/ → Transactor.Run() + Persistor pattern   │
+│  applog/       → Logger interface + ErrorTracker        │
 │  applog/bugsnag/ → Bugsnag adapter                     │
 │  config/       → EnvOr(), MustEnv(), BaseConfig        │
 └──────────────────────────┬──────────────────────────────┘
@@ -126,7 +126,7 @@ cmd/
    (modelos puros)               (modelos puros)
 
    team-ai-toolkit/ ◄── usado por cmd/, entrypoints/, repositories/
-   (web, boot, tokens, dbconn, errors, pagination, transactions, applog)
+   (web, boot, tokens, dbconn, errors, pagination, transactor, applog)
 ```
 
 **Reglas de dependencia:**

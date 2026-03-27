@@ -5,7 +5,7 @@ description: "Genera y organiza documentación RFC del proyecto: épicas, histor
 
 # RFC Documentation Generator
 
-Generás y organizás la documentación RFC de Alizia v2 siguiendo la estructura y convenciones establecidas.
+Generás y organizás la documentación RFC de Alizia siguiendo la estructura y convenciones establecidas.
 
 ## Ubicación
 
@@ -37,7 +37,7 @@ docs/rfc-alizia/epicas/
 Los archivos se nombran igual que su carpeta contenedora. Esto permite identificar el archivo cuando hay muchos tabs abiertos.
 
 - Carpeta `01-roles-accesos/` → archivo `01-roles-accesos.md`
-- Carpeta `HU-1.1-autenticacion-auth0/` → archivo `HU-1.1-autenticacion-auth0.md`
+- Carpeta `HU-1.1-autenticacion-jwt/` → archivo `HU-1.1-autenticacion-jwt.md`
 
 ### Prefijos
 | Prefijo | Significado | Ejemplo |
@@ -53,8 +53,8 @@ Los archivos se nombran igual que su carpeta contenedora. Esto permite identific
 
 ### Links internos
 Siempre apuntar al archivo explícito, nunca a la carpeta:
-- ✅ `./HU-1.1-autenticacion-auth0/HU-1.1-autenticacion-auth0.md`
-- ❌ `./HU-1.1-autenticacion-auth0/`
+- ✅ `./HU-1.1-autenticacion-jwt/HU-1.1-autenticacion-jwt.md`
+- ❌ `./HU-1.1-autenticacion-jwt/`
 
 ---
 
@@ -240,6 +240,32 @@ Cuando se crea una nueva épica, actualizar `docs/rfc-alizia/epicas/epicas.md` c
 2. Crear `HU-X.Y-nombre.md` y `tareas/` con sus tareas
 3. Actualizar la tabla de historias en el archivo principal de la épica
 4. Verificar que la numeración sea consistente
+
+## Convenciones de contenido técnico
+
+### Nombre del proyecto
+- El proyecto se llama **Alizia** (sin "V2", sin "v2"). Nunca escribir "Alizia V2" ni "Alizia v2".
+
+### Arquitectura
+- Clean Architecture **por capas** (no por módulos): `src/core/entities/`, `src/core/providers/`, `src/core/usecases/`, `src/entrypoints/`, `src/repositories/`
+- **No usar** la estructura `internal/` por módulo. Siempre `src/` por capa.
+
+### Import paths en código de ejemplo
+- Usar `go-alizia/src/...` (no `go-alizia-v2/src/...`)
+
+### Autenticación
+- El proyecto usa **JWT via team-ai-toolkit/tokens**. No usa Auth0.
+- Variables de entorno: `JWKS_DOMAIN`, `JWKS_AUDIENCE` (no `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`)
+- Validator: `NewJWKSValidator` (no `NewAuth0Validator`)
+
+### Naming de archivos de repository
+- Los archivos de repository no llevan sufijo `_postgres` (ej: `area.go`, no `area_postgres.go`)
+- El package `repositories/` ya implica la implementación concreta — el sufijo es redundante
+
+### Deploy
+- El proyecto usa **Railway** para deploy (no Cloud Run, no Cloud Functions)
+
+---
 
 ## Referencia rápida de archivos existentes
 

@@ -45,7 +45,8 @@
       "Bash(grep -r lesson_plan /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas/05-planificacion-docente/HU-5.1 --include=*.md)",
       "Bash(__NEW_LINE_5b899343c1d4de9d__ cat:*)",
       "Bash(/tmp/validation_summary.txt:*)",
-      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas -type f -name *)"
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas -type f -name *)",
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios -name *.go -type f)"
     ]
   }
 }
