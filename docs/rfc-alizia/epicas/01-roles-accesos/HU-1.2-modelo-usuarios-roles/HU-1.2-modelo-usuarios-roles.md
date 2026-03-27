@@ -1,4 +1,4 @@
-# HU-1.2: Modelo de usuarios y roles
+o # HU-1.2: Modelo de usuarios y roles
 
 > Como admin, necesito poder crear usuarios con roles asignados para que cada persona tenga los permisos correctos en la plataforma.
 

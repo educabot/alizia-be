@@ -28,7 +28,24 @@
       "Read(//c/Users/Educabot/Desktop/Educabot/Repositorios/demo-alizia/docs/rfc-alizia/epicas/04-documento-coordinacion/$dir/**)",
       "Bash(echo \"=== $dir/tareas ===\")",
       "Bash(done)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(cd:*)",
+      "Bash(mkdir -p \"C:/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas/06-assistente-ia/HU-6.5-customizacion-organizacion/tareas\")",
+      "Bash(mkdir -p \"C:/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas/06-assistente-ia/HU-6.6-asistencia-navegacion/tareas\")",
+      "Bash(for hu:*)",
+      "Bash(do mkdir:*)",
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia -type f -name *T-*migracion*.md -o -name *T-*modelo*.md -o -name *T-*entities*.md)",
+      "Bash(grep -E \"\\\\.md$\")",
+      "Bash(for hu_dir in /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas/02-onboarding/HU-*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/**)",
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas -type f -name HU-*.md)",
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas -name *.md -type f)",
+      "Bash(grep -r fonts /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas --include=*.md)",
+      "Bash(grep -r lesson_plan /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas/05-planificacion-docente/HU-5.1 --include=*.md)",
+      "Bash(__NEW_LINE_5b899343c1d4de9d__ cat:*)",
+      "Bash(/tmp/validation_summary.txt:*)",
+      "Bash(find /c/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be/docs/rfc-alizia/epicas -type f -name *)"
     ]
   }
 }

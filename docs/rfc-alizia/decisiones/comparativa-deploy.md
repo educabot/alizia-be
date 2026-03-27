@@ -110,7 +110,7 @@
 
 ---
 
-## Para nuestro caso específico (Alizia v2)
+## Para nuestro caso específico (Alizia)
 
 | Factor | Cloud Functions (1:1) | Cloud Functions agrupadas | Cloud Run | Observación |
 |---|---|---|---|---|

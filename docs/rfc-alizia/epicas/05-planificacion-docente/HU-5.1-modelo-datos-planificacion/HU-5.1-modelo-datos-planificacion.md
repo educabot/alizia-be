@@ -10,8 +10,11 @@
 
 ## Criterios de aceptacion
 
-- [ ] Tabla `teacher_lesson_plans` con: id, organization_id, course_subject_id, coordination_document_id, coord_doc_class_id, class_number, title, objective, status (enum), proposal (text), source_type (enum nullable), source_reference (text), created_at, updated_at
+- [ ] Tabla `teacher_lesson_plans` con: id, organization_id, course_subject_id, coordination_document_id, coord_doc_class_id, class_number, title, objective, knowledge_content, didactic_strategies, class_format, custom_instruction, resources_mode (enum), status (enum), proposal (text), source_type (enum nullable), source_reference (text), created_at, updated_at
 - [ ] Tabla `lesson_plan_activities` (junction: plan + momento + actividad + orden)
+- [ ] Tabla `lesson_plan_topics` (junction: plan ↔ topic, traceability desde coordinación)
+- [ ] Tabla `lesson_plan_moment_fonts` (junction: plan ↔ momento ↔ font, NULL moment = global)
+- [ ] Enum `resources_mode`: global, per_moment
 - [ ] Enum `lesson_plan_status`: pending, planned
 - [ ] Enum `source_type`: resource, custom (nullable — null = sin fuente)
 - [ ] FK a course_subjects, coordination_documents, coord_doc_classes
@@ -35,6 +38,7 @@
 - [HU-3.4: Cursos y asignaciones](../../03-integracion/HU-3.4-cursos-alumnos-asignaciones/HU-3.4-cursos-alumnos-asignaciones.md) — FK course_subject_id
 - [HU-3.6: Actividades didacticas](../../03-integracion/HU-3.6-actividades-didacticas/HU-3.6-actividades-didacticas.md) — FK activity_id, enum class_moment
 - [HU-4.1: Modelo de datos documento](../../04-documento-coordinacion/HU-4.1-modelo-datos-documento/HU-4.1-modelo-datos-documento.md) — FK coordination_document_id, coord_doc_class_id
+- [HU-8.1: Modelo de datos recursos](../../08-contenido-recursos/HU-8.1-modelo-datos-recursos/HU-8.1-modelo-datos-recursos.md) — FK font_id en lesson_plan_moment_fonts
 
 ## Diseno tecnico
 
@@ -42,7 +46,9 @@
 
 ```
 teacher_lesson_plans
-  └── lesson_plan_activities (plan ↔ moment ↔ activity + order)
+  ├── lesson_plan_activities (plan ↔ moment ↔ activity + order)
+  ├── lesson_plan_topics (plan ↔ topic — traceability)
+  └── lesson_plan_moment_fonts (plan ↔ moment ↔ font — fonts por momento o global)
 ```
 
 ### Relaciones
@@ -52,6 +58,8 @@ teacher_lesson_plans
 - `teacher_lesson_plans.coord_doc_class_id` → `coord_doc_classes.id` (que clase del plan)
 - `lesson_plan_activities.activity_id` → `activities.id` (que actividad)
 - `lesson_plan_activities.moment` usa el enum `class_moment` existente (opening, development, closing)
+- `lesson_plan_topics.topic_id` → `topics.id` (qué topics cubre el plan)
+- `lesson_plan_moment_fonts.font_id` → `fonts.id` (qué fonts se usan, de Épica 8)
 
 ## Test cases
 

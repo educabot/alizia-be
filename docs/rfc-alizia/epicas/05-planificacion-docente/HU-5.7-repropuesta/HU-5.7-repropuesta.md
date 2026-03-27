@@ -38,6 +38,15 @@ La repropuesta es la proactividad del sistema: no espera a que el docente planif
 - Requiere un modelo que "entienda" la progresión curricular para no sugerir retrocesos innecesarios
 - Las sugerencias afectan planes en estado `pending` y `planned` (el docente decide si acepta el cambio)
 
+## Tareas
+
+| # | Tarea | Archivo | Estado |
+|---|-------|---------|--------|
+| 5.7.1 | [Análisis de impacto de bitácora](./tareas/T-5.7.1-analisis-impacto.md) | usecases/ai/ | ⬜ |
+| 5.7.2 | [Modelo de datos de sugerencias](./tareas/T-5.7.2-modelo-sugerencias.md) | entities, migracion | ⬜ |
+| 5.7.3 | [Endpoints de sugerencias](./tareas/T-5.7.3-endpoints-sugerencias.md) | handlers/ | ⬜ |
+| 5.7.4 | [Tests](./tareas/T-5.7.4-tests.md) | tests/ | ⬜ |
+
 ## Dependencias
 
 - [HU-5.6: Bitácora de cotejo](../HU-5.6-bitacora-cotejo/HU-5.6-bitacora-cotejo.md) — Fuente de datos

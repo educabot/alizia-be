@@ -48,6 +48,16 @@ Docente termina la clase
 - **Privacidad:** Las observaciones sobre alumnos son sensibles y requieren política de acceso clara
 - **Adopción:** La clave es que sea rápido y natural. Si toma más de 2-3 minutos, los docentes no lo usarán
 
+## Tareas
+
+| # | Tarea | Archivo | Estado |
+|---|-------|---------|--------|
+| 5.6.1 | [Modelo de datos bitácora](./tareas/T-5.6.1-modelo-datos-bitacora.md) | entities, migracion | ⬜ |
+| 5.6.2 | [Transcripción de audio](./tareas/T-5.6.2-transcripcion-audio.md) | providers/audio_transcriber.go | ⬜ |
+| 5.6.3 | [Procesamiento estructurado y seguimiento](./tareas/T-5.6.3-procesamiento-estructurado.md) | usecases/ai/ | ⬜ |
+| 5.6.4 | [Endpoints CRUD de bitácora](./tareas/T-5.6.4-endpoints-bitacora.md) | handlers/ | ⬜ |
+| 5.6.5 | [Tests](./tareas/T-5.6.5-tests.md) | tests/ | ⬜ |
+
 ## Dependencias
 
 - [HU-5.5: Estados](../HU-5.5-estados-planificacion/HU-5.5-estados-planificacion.md) — Solo clases planned/dictadas

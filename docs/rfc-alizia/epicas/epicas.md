@@ -6,7 +6,7 @@
 
 | # | Épica | Fase | Estado |
 |---|-------|------|--------|
-| 0 | [Setup e infraestructura](./00-setup-infraestructura/00-setup-infraestructura.md) | Fase 1 | MVP |
+| 0 | [Setup e infraestructura](./00-setup-infraestructura/00-setup-infraestructura.md) | Fase 1 | MVP (9 tareas) |
 | 1 | [Roles y accesos](./01-roles-accesos/01-roles-accesos.md) | Fase 1–2 | MVP |
 | 3 | [Integración](./03-integracion/03-integracion.md) | Fase 2 | MVP |
 | 4 | [Documento de coordinación](04-documento-coordinacion/04-documento-coordinacion.md) | Fase 3 | MVP |

@@ -1,6 +1,6 @@
 # Épica 6: Asistente IA
 
-> Asistente de inteligencia artificial que genera, edita y aprende del uso de la plataforma.
+> Infraestructura de inteligencia artificial compartida: provider, prompts, function calling y contexto.
 
 **Estado:** MVP
 **Fase de implementación:** Fase 4
@@ -9,60 +9,72 @@
 
 ## Problema
 
-Los docentes y coordinadores necesitan producir documentos y planificaciones alineadas curricularmente, pero el proceso es lento y requiere expertise. Un asistente genérico no conoce el contexto provincial ni el historial del aula.
+Múltiples épicas necesitan generar texto, estructurar respuestas en JSON, ejecutar tools via function calling, y armar contexto rico para los prompts. Sin una infraestructura compartida, cada feature reimplementa la integración con Azure OpenAI, los prompts quedan hardcodeados y no son configurables por provincia, y no hay un patrón consistente para el function calling.
 
 ## Objetivos
 
-- Generar primeras versiones de documentos y planificaciones basadas en el diseño curricular
-- Permitir ediciones masivas o puntuales por instrucción natural del usuario
-- Incorporar el historial de clases (bitácora) para mejorar las recomendaciones futuras
-- Mantener todas las generaciones alineadas con las fuentes oficiales de la provincia
+- Proveer un AI Provider reutilizable con interfaz clara (texto, JSON, chat con tools)
+- Centralizar la gestión de prompts configurables por organización
+- Estandarizar el patrón de function calling con un motor de ejecución de tools
+- Construir context builders que enriquezcan los prompts con datos relevantes del dominio
+- Permitir customización del comportamiento IA por organización (tono, límites, fuentes)
 
 ## Alcance MVP
 
 **Incluye:**
 
-- Generación de documentos de coordinación (secciones + plan de clases)
-- Recomendación de actividades para cada momento de una clase
-- Edición asistida: el usuario da instrucciones en lenguaje natural y Alicia modifica el documento
-- Procesamiento de feedback post-clase (bitácora de cotejo) para ajustar futuras propuestas (post-MVP)
+- AI Provider con Azure OpenAI (GenerateText, GenerateJSON, ChatWithTools)
+- Sistema de prompts configurables por org con placeholders y JSON Schema
+- Motor de function calling: definición de tools, ejecución en loop, multi-turn
+- Context builders para documentos de coordinación y planificaciones
 
-## Principios de diseño
+**Post-MVP:**
 
-- **Curada y validada:** Las generaciones se basan en fuentes oficiales y criterio pedagógico colectivo.
-- **Propuesta, no imposición:** Alicia propone; el docente decide.
-- **Memoria del aula:** El feedback de clases anteriores informa las recomendaciones.
+- Customización por organización (tono, límites, fuentes permitidas) → validación con cada provincia
+- Asistencia de navegación contextual dentro de la plataforma → horizonte
 
-## Sub-épicas
+**No incluye:**
 
-| Componente | Descripción |
-|---|---|
-| Modificación de contenido | Edición asistida de documentos y planificaciones por instrucción natural |
-| Asistencia de uso y navegación | Ayuda contextual dentro de la plataforma |
-| Customización por cliente | Adaptación del comportamiento del asistente según la provincia o institución |
+- Entrenamiento de modelos custom → fuera de alcance
+- RAG con documentos curriculares → horizonte
+- Voice-to-text para bitácora → ver Épica 5 post-MVP
 
-## Decisiones del cliente
+---
 
-- La customización por cliente (tono, límites, fuentes permitidas) requiere definición por provincia
+## Historias de usuario
+
+| # | Historia | Descripción | Fase | Tareas |
+|---|---------|-------------|------|--------|
+| HU-6.1 | [AI Provider](./HU-6.1-ai-provider/HU-6.1-ai-provider.md) | Cliente Azure OpenAI con interfaz reutilizable | Fase 4 | 4 |
+| HU-6.2 | [Prompts configurables](./HU-6.2-prompts-configurables/HU-6.2-prompts-configurables.md) | Templates de prompts por org con placeholders y JSON Schema | Fase 4 | 3 |
+| HU-6.3 | [Motor de function calling](./HU-6.3-motor-function-calling/HU-6.3-motor-function-calling.md) | Framework para definir y ejecutar tools en conversations | Fase 4 | 4 |
+| HU-6.4 | [Contexto y enriquecimiento](./HU-6.4-contexto-enriquecimiento/HU-6.4-contexto-enriquecimiento.md) | Builders de contexto para diferentes entidades del dominio | Fase 4 | 3 |
+| HU-6.5 | [Customización por organización](./HU-6.5-customizacion-organizacion/HU-6.5-customizacion-organizacion.md) | Ajustar tono, límites y fuentes por provincia | Post-MVP | 5 |
+| HU-6.6 | [Asistencia de navegación](./HU-6.6-asistencia-navegacion/HU-6.6-asistencia-navegacion.md) | Ayuda contextual dentro de la plataforma | Post-MVP | 4 |
+
+---
 
 ## Decisiones técnicas
 
-- El asistente opera como una **LLM con tools** (function calling). Puede leer y modificar el documento que el usuario está editando, recomendar actividades, consultar la estructura curricular, y acceder a la bitácora de clases anteriores.
-- Cada sección generada por IA se define con un **prompt + JSON Schema** por organización. El prompt incorpora variables contextuales (tópicos seleccionados, disciplina, grilla horaria) y el schema fuerza el formato del output. Esto permite customización por provincia sin cambios de código.
-- El **planificador de clases** recibe todos los temas asignados al documento, las disciplinas involucradas y la cantidad de clases disponibles, y distribuye el contenido en el tiempo. Si hay mucho tiempo, lo esparce; si hay poco, lo compacta.
-- La generación de secciones del documento de coordinación (eje problemático, estrategia metodológica, criterios de evaluación) arranca con un prompt simple. Se prevé que habrá **mucho prueba y error** — la sofisticación vendrá con el uso real, no con sobre-ingeniería anticipada.
-- El asistente de chat permite al usuario pedir modificaciones en lenguaje natural ("cambiá la actividad del cierre por algo más dinámico") y el sistema modifica la sección correspondiente. Internamente es un chat con tools que opera sobre el documento activo.
+- Se usa **Azure OpenAI** (modelo `gpt-5-mini`) con `max_completion_tokens` en vez de `max_tokens`. No se customiza `temperature`.
+- El AI Provider expone tres métodos: `GenerateText` (texto libre), `GenerateJSON` (structured output con schema), `ChatWithTools` (conversation con function calling).
+- Los prompts se almacenan en `organizations.config` como templates con placeholders (`{variable}`). Cada sección generada por IA tiene su propio prompt.
+- El motor de function calling sigue un loop: enviar mensaje → si hay tool_calls → ejecutar → enviar resultados → repetir hasta respuesta final. Máximo 5 iteraciones por seguridad.
+- Los context builders son funciones puras que transforman entidades del dominio en strings optimizados para el prompt.
+- Se usa `team-ai-toolkit` como shared Go library cuando aplique.
 
-## Function calling tools
+## Decisiones de cada cliente
 
-| Tool | Descripción |
-|---|---|
-| `update_section(section_key, content)` | Actualiza una sección del documento. Valida que `section_key` exista en schema de la org |
-| `update_class(class_number, title, objective)` | Modifica una clase del plan |
-| `update_class_topics(class_number, topic_ids)` | Cambia topics de una clase |
+- Los prompts por sección son configurables por organización
+- El tono del asistente (formal, informal, rioplatense) se define por provincia (post-MVP)
+- Las fuentes curriculares permitidas varían por jurisdicción (post-MVP)
 
 ## Épicas relacionadas
 
-- **Documento de coordinación** — Alicia genera y edita el documento
-- **Planificación docente** — Alicia propone actividades y procesa la bitácora
-- **Contenido** — Alicia genera recursos didácticos
+- **[Épica 4: Documento de coordinación](../04-documento-coordinacion/04-documento-coordinacion.md)** — Consume GenerateText (HU-4.3), GenerateJSON (HU-4.4), ChatWithTools (HU-4.6)
+- **[Épica 5: Planificación docente](../05-planificacion-docente/05-planificacion-docente.md)** — Consume GenerateText para propuestas de clase (HU-5.4)
+- **[Épica 8: Contenido y recursos](../08-contenido-recursos/08-contenido-recursos.md)** — Consumirá GenerateText para generación de recursos didácticos
+
+## Test cases asociados
+
+- Fase 4: Tests 6.1–6.18 (AI provider, prompts, function calling, contexto)

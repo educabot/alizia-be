@@ -37,6 +37,18 @@ Los docentes necesitan recursos didácticos (fichas de cátedra, guías de lectu
 - **Fuentes curadas:** Los recursos se generan desde fuentes oficiales, no desde internet abierto.
 - **Listo para el aula:** El recurso generado debe ser usable directamente con los alumnos, incluyendo la información del aula.
 
+## Historias de usuario
+
+| # | Historia | Descripción | Fase | Tareas |
+|---|---------|-------------|------|--------|
+| HU-8.1 | [Modelo de datos recursos](./HU-8.1-modelo-datos-recursos/HU-8.1-modelo-datos-recursos.md) | Tablas para fonts, tipos de recurso, recursos y config por org | Fase 6 | 4 |
+| HU-8.2 | [Tipos de recurso y configuración](./HU-8.2-tipos-recurso-configuracion/HU-8.2-tipos-recurso-configuracion.md) | Gestión de tipos por org, resolución de prompt/schema | Fase 6 | 3 |
+| HU-8.3 | [Generación con IA](./HU-8.3-generacion-ia-recursos/HU-8.3-generacion-ia-recursos.md) | Generar recursos a partir de tipo, fuente y contexto | Fase 6 | 4 |
+| HU-8.4 | [Biblioteca y exploración](./HU-8.4-biblioteca-exploracion/HU-8.4-biblioteca-exploracion.md) | Listado, filtros y búsqueda de recursos de la org | Fase 6 | 3 |
+| HU-8.5 | [Edición y exportación](./HU-8.5-edicion-exportacion/HU-8.5-edicion-exportacion.md) | Edición manual/asistida, publicación y exportación | Fase 6 | 4 |
+
+---
+
 ## Sub-épicas
 
 | Componente | Descripción |

@@ -168,6 +168,7 @@ Ver [testing.md](../../operaciones/testing.md) para la matriz completa.
 **Historia:** HU-X.Y — Nombre de la historia
 **Tipo:** Backend | Frontend | Infra | CI/CD | Config | Testing | DB
 **Estado:** ⬜ Pendiente
+**Fase:** Post-MVP  ← (incluir solo si la tarea es Post-MVP)
 
 ---
 
@@ -184,6 +185,14 @@ Qué hay que hacer y por qué.
 - Nota técnica relevante
 - Decisión de diseño
 ```
+
+### Tareas Post-MVP
+
+Las HUs marcadas como Post-MVP **también deben tener tareas desglosadas** si tienen suficiente detalle técnico (entidades, tablas, endpoints, decisiones de diseño definidas). Cada tarea Post-MVP debe incluir:
+
+- `**Fase:** Post-MVP` en el header del archivo
+- Mismo nivel de detalle que las tareas MVP (migración, entities, endpoints, tests)
+- Código de referencia en Go siguiendo los patrones existentes del proyecto
 
 ---
 

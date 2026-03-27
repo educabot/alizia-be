@@ -41,7 +41,7 @@ La plataforma opera con múltiples roles (coordinador, docente, y potencialmente
 
 | # | Historia | Descripción | Fase | Tareas |
 |---|---------|-------------|------|--------|
-| HU-1.1 | [Autenticación con Auth0](./HU-1.1-autenticacion-auth0/HU-1.1-autenticacion-auth0.md) | JWT middleware, JWKS validation, tenant middleware | Fase 1 | 5 |
+| HU-1.1 | [Autenticación con Auth0](./HU-1.1-autenticacion-auth0/HU-1.1-autenticacion-auth0.md) | JWT middleware, JWKS validation, tenant middleware, refresh, CORS | Fase 1 | 6 |
 | HU-1.2 | [Modelo de usuarios y roles](./HU-1.2-modelo-usuarios-roles/HU-1.2-modelo-usuarios-roles.md) | Migración, entities, repository GORM, seed | Fase 2 | 6 |
 | HU-1.3 | [Middleware de autorización](./HU-1.3-middleware-autorizacion/HU-1.3-middleware-autorizacion.md) | RequireRole, interceptor chain, error handling | Fase 2 | 4 |
 | HU-1.4 | [Asignación organizacional](./HU-1.4-asignacion-organizacional/HU-1.4-asignacion-organizacional.md) | Area coordinators, admin endpoints, multi-tenancy | Fase 2 | 5 |

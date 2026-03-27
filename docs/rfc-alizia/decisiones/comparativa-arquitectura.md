@@ -2,8 +2,8 @@
 
 ## Resumen Ejecutivo
 
-| Aspecto | ai-assistant | tich-cronos | Alizia v2 |
-|---------|-------------|-------------|-----------|
+| Aspecto | ai-assistant | tich-cronos | Alizia |
+|---------|-------------|-------------|--------|
 | **Go Version** | 1.25.0 | 1.23.7 | 1.26 |
 | **LOC** | ~15,000 (estimado) | ~41,008 | Nuevo proyecto |
 | **Framework** | Gin (abstraido via `web/`) | Gin (directo) | Gin (abstraido via `web/` + `boot/`) |
@@ -113,15 +113,15 @@ team-ai-toolkit/
 
 ### Analisis comparativo
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|--------|
 | **Profundidad** | Plana (2-3 niveles) | Profunda (4-5 niveles) | Media (3-4 niveles) |
 | **Granularidad** | 1 paquete por capa | 1 paquete por feature por capa | 1 paquete por feature por capa |
 | **Navegabilidad** | Facil, todo junto | Requiere conocer la convencion | Estructura reconocible, menos archivos |
 | **Escalabilidad** | Limitada | Alta | Alta |
 | **Separacion de capas** | Suave (mismo paquete) | Estricta (compilador enforce) | Estricta (compilador enforce) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: `boot/`, `web/`, DI manual separado por archivos → ahora en team-ai-toolkit
 - De tich-cronos: `core/`, `entrypoints/`, `repositories/`
 - Nuevo: `mocks/` fuera de cualquier capa, `cmd/` con 1 archivo por responsabilidad, team-ai-toolkit como librería compartida
@@ -140,20 +140,20 @@ team-ai-toolkit/
 - Cada funcion tiene su propio router Gin aislado
 - Wire genera containers para ambos modos
 
-### Alizia v2
+### Alizia
 - **Dual potencial**: web server (primario) + Cloud Functions (a futuro)
 - `team-ai-toolkit/boot` crea engine + server con timeouts y graceful shutdown
 - `src/app/web/mapping.go` registra rutas separado de boot
 - `cmd/app.go` orquesta todo
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Complejidad boot** | Baja | Media (dual path) | Baja-media (boot/ separado) |
 | **Flexibilidad deploy** | Solo Docker | Cloud Functions + local | Cloud Functions agrupadas (5 funciones) |
 | **Cold start** | N/A | Relevante (55+ funciones) | Relevante pero solo 5 funciones |
 | **Graceful shutdown** | Signal handler | Gin default | Explicito en boot/server.go |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: `boot/` como paquete separado → ahora en team-ai-toolkit
 - De tich-cronos: dual deploy (web + functions), estructura `src/app/`
 - Nuevo: Cloud Functions agrupadas por módulo (5 funciones, no 55+), boot/ compartido via librería
@@ -181,7 +181,7 @@ var repositorySet = wire.NewSet(
 // wire_gen.go generado automaticamente
 ```
 
-### Alizia v2: Manual, 1 archivo por responsabilidad
+### Alizia: Manual, 1 archivo por responsabilidad
 ```go
 // cmd/repositories.go → cmd/usecases.go → cmd/handlers.go
 repos := NewRepositories(cfg, db)
@@ -189,15 +189,15 @@ usecases := NewUseCases(repos, cfg)
 container := NewHandlers(usecases, cfg)
 ```
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Transparencia** | Total | Parcial (generado) | Total |
 | **Mantenimiento** | 1 archivo crece | Wire gen + conflicts | Distribuido en 3 archivos |
 | **Type safety** | Compile-time | Compile-time | Compile-time |
 | **Escalabilidad** | Se complica | Escala con Wire sets | Escala (1 archivo por paso) |
 | **Herramienta externa** | No | Wire (deprecated) | No |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: DI manual sin framework externo
 - De tich-cronos: containers que agrupan features
 - Nuevo: separar en repositories.go → usecases.go → handlers.go (no un solo archivo gigante)
@@ -216,14 +216,14 @@ container := NewHandlers(usecases, cfg)
 - PostgreSQL exclusivo
 - Transactor pattern custom
 
-### Alizia v2: sqlx (punto medio)
+### Alizia: sqlw (punto medio)
 - `go:embed` para archivos .sql (de ai-assistant)
 - Mapeo automatico a structs sin reflection (sin `row.Scan`)
 - PostgreSQL exclusivo
 - Transactor con `RunInTx()` (de tich-cronos simplificado)
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|--------|
 | **Control SQL** | Total | Parcial | Total |
 | **Boilerplate** | Alto (row.Scan) | Bajo (GORM) | Bajo (sqlx mapea auto) |
 | **Performance** | Optima | Buena (reflection) | Optima (zero reflection) |
@@ -232,7 +232,7 @@ container := NewHandlers(usecases, cfg)
 | **Migraciones** | Solo up | up + down | up + down |
 | **Transacciones** | Manual | Transactor pattern | RunInTx() simplificado |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: SQL embebido con `go:embed`, control total
 - De tich-cronos: migraciones up/down, connection pooling, transactor
 - Nuevo: sqlx elimina `row.Scan` sin agregar reflection de GORM
@@ -247,19 +247,19 @@ container := NewHandlers(usecases, cfg)
 ### tich-cronos: Switch por handler
 - errors.Is() + switch repetitivo en cada handler
 
-### Alizia v2: HandleError() centralizado
+### Alizia: HandleError() centralizado
 - Sentinel errors en `providers/errors.go`
 - `fmt.Errorf("%w")` estandar (no custom wrapper)
 - `HandleError()` centralizado que mapea error → HTTP status + code
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Wrapping** | Custom Wrap/Wrapf | Go estandar | Go estandar (fmt.Errorf %w) |
 | **Mapeo HTTP** | En cada controller | Switch en cada handler | HandleError() centralizado |
 | **Error codes** | No | Si (alfanumericos) | Si (estandarizados) |
 | **Repeticion** | Baja | Alta (switch repetido) | Minima (1 funcion) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: sentinel errors granulares
 - De tich-cronos: error codes en response para frontend
 - Nuevo: `HandleError()` centralizado, `fmt.Errorf("%w")` estandar
@@ -278,22 +278,22 @@ container := NewHandlers(usecases, cfg)
 - Lock-in a Gin
 - Rapido de escribir
 
-### Alizia v2: Abstraccion via team-ai-toolkit
+### Alizia: Abstraccion via team-ai-toolkit
 - `team-ai-toolkit/web` para handler/request/response generico
 - `team-ai-toolkit/boot` para server lifecycle
 - `team-ai-toolkit/web/gin` para el adaptador Gin
 - Handlers usan `web.Request`/`web.Response`, nunca `gin.Context`
 - `webgin.Adapt()` en mapping.go convierte a Gin
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Acoplamiento framework** | Bajo | Alto | Bajo |
 | **Cambiar de Gin** | Cambiar `web/gin/` | Tocar todos los handlers | Cambiar `web/gin/` + `boot/gin.go` |
 | **Productividad** | Media | Alta | Media-alta |
 | **Testing handlers** | Mock Request | httptest + gin context | Mock Request |
 | **Server lifecycle** | En `boot/` | En `src/app/web/` | En `boot/` (separado de rutas) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: `web/` + `boot/` → extraidos a team-ai-toolkit (reutilizable entre proyectos)
 - De tich-cronos: mapping.go centralizado para rutas
 - Nuevo: infra HTTP compartida via librería, `boot/` maneja el COMO, `mapping.go` maneja el QUE
@@ -302,15 +302,15 @@ container := NewHandlers(usecases, cfg)
 
 ## 7. Configuracion
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Pattern** | Struct inmutable | Singleton global | Struct embebe team-ai-toolkit/BaseConfig |
 | **Loader** | `os.Getenv()` puro | godotenv + singleton | team-ai-toolkit: `MustEnv()` + `EnvOr()` |
 | **Validacion** | Ninguna | Minima | `mustEnv()` panic si falta |
 | **Testabilidad** | Pasas Config | Singleton dificulta | Pasas *Config |
 | **Dev experience** | Exportar vars manual | `.env.local` auto | docker-compose env / direnv |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: struct inmutable, sin singleton, sin godotenv
 - De tich-cronos: carpeta `config/` separada, soporte multi-ambiente
 - Nuevo: `BaseConfig` en team-ai-toolkit con campos comunes (Port, Env, DatabaseURL, Auth0Domain, Auth0Audience, BugsnagAPIKey), cada proyecto embebe y agrega los suyos
@@ -319,8 +319,8 @@ container := NewHandlers(usecases, cfg)
 
 ## 8. Testing
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Coverage target** | No definido | 80% | 80% |
 | **Mocks ubicacion** | `test/mocks.go` (centralizado) | `providers/mocks/` (dentro de capa) | `src/mocks/` (fuera de capas) |
 | **Mocks alcance** | Solo repos | Solo providers | Providers + usecases + lo que sea |
@@ -330,7 +330,7 @@ container := NewHandlers(usecases, cfg)
 | **Linting** | `go vet` | 20 linters | 15+ linters |
 | **Pre-commit** | No | Si | Si |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: sin E2E (de momento), race detection
 - De tich-cronos: 80% coverage, PostgreSQL real, golangci-lint, pre-commit hooks
 - Nuevo: `src/mocks/` fuera de cualquier capa (mockea providers, usecases, lo que sea)
@@ -339,8 +339,8 @@ container := NewHandlers(usecases, cfg)
 
 ## 9. Build, Deploy y CI/CD
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Dev server** | `make run` | `make run` (Air) | `make run` (Air) |
 | **CI pipelines** | 1 workflow | 5 workflows | 3 workflows (test, lint, deploy) |
 | **Deploy target** | Docker → VPS | Cloud Functions (55+ por endpoint) | Cloud Functions agrupadas (5 por módulo) |
@@ -351,7 +351,7 @@ container := NewHandlers(usecases, cfg)
 | **Pre-commit** | No | Si | Si |
 | **Vendor lock-in** | Ninguno | Alto (Cloud Functions) | Bajo (container estandar) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: deploy portable (Docker container)
 - De tich-cronos: Air, pre-commit hooks, Swagger validation
 - Nuevo: Cloud Functions agrupadas por módulo (5 funciones, mejora sobre las 55+ de tich-cronos)
@@ -360,15 +360,15 @@ container := NewHandlers(usecases, cfg)
 
 ## 10. Integraciones Externas
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Cantidad** | 14 (paquete flat) | 5 (paquetes separados) | 1 principal (Azure OpenAI) |
 | **Patron** | clients/ flat | repositories/ por feature | repositories/ai/ con prompts/ y schemas/ |
 | **Interfaces** | No (directo) | Si (providers) | Si (providers.AIClient) |
 | **Failover** | Si (primary → fallback) | No | No (de momento) |
 | **Prompts** | Inline en codigo | Archivos separados | Archivos embebidos (.txt) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: posibilidad de agregar failover a futuro
 - De tich-cronos: integraciones implementan interfaces, prompts/schemas separados
 - Nuevo: prompts como archivos .txt embebidos (reviewables en PRs)
@@ -377,8 +377,8 @@ container := NewHandlers(usecases, cfg)
 
 ## 11. Concurrencia
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Goroutines custom** | Si (cron, hooks, reminders) | No | Minimo (graceful shutdown) |
 | **Connection pooling** | No (SQLite) | GORM (25/15) | sqlx (25/10) |
 | **Transacciones** | Manual | Transactor pattern | RunInTx() |
@@ -388,8 +388,8 @@ container := NewHandlers(usecases, cfg)
 
 ## 12. Domain Modeling
 
-| Criterio | ai-assistant | tich-cronos | Alizia v2 |
-|----------|-------------|-------------|-----------|
+| Criterio | ai-assistant | tich-cronos | Alizia |
+|----------|-------------|-------------|----------|
 | **Ubicacion modelos** | `pkg/domain/` (1 paquete, 35 archivos) | `core/entities/` (separado) | `core/entities/` (separado) |
 | **Ubicacion interfaces** | `pkg/domain/` (mezclado) | `core/providers/` (separado) | `core/providers/` (separado) |
 | **Ubicacion errores** | `pkg/domain/errors.go` (mezclado) | `core/providers/errors.go` | `core/providers/errors.go` |
@@ -397,7 +397,7 @@ container := NewHandlers(usecases, cfg)
 | **Enums** | Constantes string | Custom types | Custom types |
 | **Validacion** | En domain (`Validate()`) | En usecases | En usecases (request DTOs) |
 
-**Alizia v2 toma:**
+**Alizia toma:**
 - De ai-assistant: nada (dominio flat no escala)
 - De tich-cronos: entities/ + providers/ separados, entities sin logica
 - Nuevo: tags `db:` de sqlx son mas livianos que tags GORM
@@ -420,14 +420,14 @@ container := NewHandlers(usecases, cfg)
 4. Containers agrupan features (Wire DI)
 5. Multi-tenancy + Auth profesional (Auth0)
 
-### Alizia v2 - Top 5 Fortalezas
+### Alizia - Top 5 Fortalezas
 1. Lo mejor de ambos (clean arch + simplicidad)
 2. team-ai-toolkit: infra compartida entre proyectos (web, boot, tokens, errors, etc.)
 3. sqlx: control de SQL sin boilerplate de `row.Scan`
 4. DI manual legible (sin Wire deprecated)
 5. Framework intercambiable via team-ai-toolkit (`web/` + `boot/`)
 
-### Alizia v2 - Posibles Riesgos
+### Alizia - Posibles Riesgos
 1. Mas archivos que ai-assistant (costo de Clean Architecture)
 2. Abstraccion `web/` es overhead si nunca cambian de Gin
 3. DI manual puede crecer mucho si suman 10+ modulos
@@ -436,7 +436,7 @@ container := NewHandlers(usecases, cfg)
 
 ---
 
-## 14. Que tomo Alizia v2 de cada proyecto
+## 14. Que tomo Alizia de cada proyecto
 
 ### De ai-assistant (6 decisiones):
 1. **DI manual** — sin Wire deprecated
@@ -488,10 +488,10 @@ container := NewHandlers(usecases, cfg)
 
 **tich-cronos** = **enterprise estricto**. Optimizado para equipos. Robusto pero con boilerplate y herramientas deprecated (Wire, GORM overhead).
 
-**Alizia v2** = **clean pragmatico**. Toma la estructura y disciplina de tich-cronos, la simplicidad y portabilidad de ai-assistant, y agrega decisiones nuevas (team-ai-toolkit como librería compartida, sqlx, mocks centralizados, cmd separado) para un equipo de 4+ devs que necesita escalar sin ahogarse en boilerplate. La infra común (web, boot, tokens, errors, DB, logging) vive en team-ai-toolkit y se comparte entre Alizia, tich-cronos y futuros proyectos.
+**Alizia** = **clean pragmatico**. Toma la estructura y disciplina de tich-cronos, la simplicidad y portabilidad de ai-assistant, y agrega decisiones nuevas (team-ai-toolkit como librería compartida, sqlx, mocks centralizados, cmd separado) para un equipo de 4+ devs que necesita escalar sin ahogarse en boilerplate. La infra común (web, boot, tokens, errors, DB, logging) vive en team-ai-toolkit y se comparte entre Alizia, tich-cronos y futuros proyectos.
 
-| Filosofia | ai-assistant | tich-cronos | Alizia v2 |
-|-----------|-------------|-------------|-----------|
+| Filosofia | ai-assistant | tich-cronos | Alizia |
+|-----------|-------------|-------------|----------|
 | **Principio** | KISS | Clean Architecture | Clean Architecture + KISS |
 | **Optimizado para** | 1 dev | Equipo grande | Equipo mediano (4-8 devs) |
 | **Trade-off** | Velocidad > estructura | Estructura > velocidad | Balance |

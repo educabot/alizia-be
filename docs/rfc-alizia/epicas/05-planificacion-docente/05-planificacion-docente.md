@@ -55,8 +55,8 @@ Los docentes planifican sus clases sin una conexión clara con lo acordado a niv
 | HU-5.3 | [Planificación por momentos](./HU-5.3-planificacion-por-momentos/HU-5.3-planificacion-por-momentos.md) | Crear y editar planificación con actividades, fuentes y notas | Fase 5 | 4 |
 | HU-5.4 | [Generación con IA](./HU-5.4-generacion-ia/HU-5.4-generacion-ia.md) | Generar propuesta detallada de clase con Azure OpenAI | Fase 5 | 4 |
 | HU-5.5 | [Estados de planificación](./HU-5.5-estados-planificacion/HU-5.5-estados-planificacion.md) | Gestión de estados pending → planned y reglas de visibilidad | Fase 5 | 3 |
-| HU-5.6 | [Bitácora de cotejo](./HU-5.6-bitacora-cotejo/HU-5.6-bitacora-cotejo.md) | Post-clase: el docente reporta cómo fue (audio + texto) | Post-MVP | — |
-| HU-5.7 | [Repropuesta](./HU-5.7-repropuesta/HU-5.7-repropuesta.md) | IA sugiere cambios a clases futuras basándose en bitácoras | Post-MVP | — |
+| HU-5.6 | [Bitácora de cotejo](./HU-5.6-bitacora-cotejo/HU-5.6-bitacora-cotejo.md) | Post-clase: el docente reporta cómo fue (audio + texto) | Post-MVP | 5 |
+| HU-5.7 | [Repropuesta](./HU-5.7-repropuesta/HU-5.7-repropuesta.md) | IA sugiere cambios a clases futuras basándose en bitácoras | Post-MVP | 4 |
 
 ---
 
