@@ -28,8 +28,11 @@
 - [Épicas](./epicas/epicas.md) — 11 épicas (0–10) con definición de producto + tareas técnicas
 - **Técnico**
   - [Arquitectura Go](./tecnico/arquitectura.md)
-  - [Modelo de datos](./tecnico/modelo-de-datos.md)
-  - [Endpoints API](./tecnico/endpoints.md)
+  - [Modelo de datos](./tecnico/modelo-de-datos.md) — tablas, triggers, índices
+  - [Endpoints API](./tecnico/endpoints.md) — request/response schemas completos
+  - [Catálogo de errores](./tecnico/errores.md) — códigos de error por dominio
+  - [Prompts de IA](./tecnico/prompts.md) — prompts, tools, schemas de generación
+  - [Integración frontend](./tecnico/frontend-integration.md) — guía para consumir la API
   - [team-ai-toolkit](./tecnico/team-ai-toolkit.md)
   - [Auth service (futuro)](./tecnico/auth-service-futuro.md)
 - **Operaciones**
@@ -248,7 +251,7 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 | 2 | Topics se seleccionan al nivel `topic_selection_level` | Si level=3, se eligen categorías, no núcleos | Back + Front |
 | 3 | Clases compartidas solo si `shared_classes_enabled` | 2 materias en mismo time_slot, ambas del mismo área | Back |
 | 4 | Secciones del doc son dinámicas según `coord_doc_sections` | Cada sección tiene key, label, type, ai_prompt, required | Back + Front |
-| 5 | Momentos didácticos son enum fijo: apertura, desarrollo, cierre | desarrollo permite 1 a `desarrollo_max_activities` actividades | Back |
+| 5 | Momentos didácticos son enum fijo: apertura, desarrollo, cierre | desarrollo permite 1 a `desarrollo_max_activities` actividades. **Enforcement**: aplicación (usecase layer), no DB. Ver [errores.md](./tecnico/errores.md#detalle-invalid_moment_activities) | Back |
 | 6 | Resource types pueden ser públicos (todas las orgs) o privados (1 org) | `organization_id IS NULL` = público | Back |
 | 7 | Un usuario puede tener múltiples roles | teacher + coordinator en la misma org | JWT + Back |
 | 8 | Mismo email puede existir en orgs distintas | `UNIQUE(email, organization_id)` | JWT + Back |
@@ -360,6 +363,14 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 | Deploy | Railway (Docker, auto-deploy desde GitHub) |
 
 Ver [arquitectura.md](./tecnico/arquitectura.md) para estructura de directorios completa, patrones de código, y decisiones técnicas detalladas.
+
+### Decisiones técnicas clave
+
+| Decisión | Elección | Alternativa evaluada | Justificación |
+|----------|----------|---------------------|---------------|
+| Deploy | **Railway** (Docker container) | Cloud Functions, Cloud Run | Monolito sin cold starts, zero vendor lock-in, equipo ya lo usa. Ver [comparativa](./decisiones/comparativa-deploy.md) |
+| ORM | **GORM** | sqlx, raw SQL | Estándar empresa (tich-cronos), CRUD rápido, equipo lo conoce. Raw SQL para queries complejas. Ver [comparativa](./decisiones/comparativa-db.md) |
+| Arquitectura | **Clean Architecture** (monolito modular) | Microservicios, Cloud Functions 1:1 | Balance entre simplicidad y separación de concerns. Ver [comparativa](./decisiones/comparativa-arquitectura.md) |
 
 ---
 

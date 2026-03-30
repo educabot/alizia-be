@@ -869,6 +869,189 @@ WHERE rt.is_active = true
 
 ---
 
+## Triggers
+
+### 1. validate_time_slot_subject (ya definido arriba)
+
+Valida que el `course_subject` pertenece al mismo `course` que el `time_slot`. Definido en la seccion de horarios.
+
+### 2. validate_time_slot_max_subjects
+
+Controla que no se excedan las materias por slot segun `shared_classes_enabled`.
+
+```sql
+CREATE OR REPLACE FUNCTION validate_time_slot_max_subjects() RETURNS TRIGGER AS $$
+DECLARE
+    current_count INTEGER;
+    shared_enabled BOOLEAN;
+    org_id INTEGER;
+BEGIN
+    -- Contar subjects actuales en el slot
+    SELECT count(*) INTO current_count
+    FROM time_slot_subjects
+    WHERE time_slot_id = NEW.time_slot_id;
+
+    -- Obtener config de la org
+    SELECT o.config->>'shared_classes_enabled' INTO shared_enabled
+    FROM time_slots ts
+    JOIN courses c ON c.id = ts.course_id
+    JOIN organizations o ON o.id = c.organization_id
+    WHERE ts.id = NEW.time_slot_id;
+
+    IF shared_enabled = true AND current_count >= 2 THEN
+        RAISE EXCEPTION 'time_slot already has 2 subjects (max for shared classes)';
+    END IF;
+
+    IF shared_enabled = false AND current_count >= 1 THEN
+        RAISE EXCEPTION 'shared classes disabled: time_slot can only have 1 subject';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validate_time_slot_max_subjects
+    BEFORE INSERT ON time_slot_subjects
+    FOR EACH ROW EXECUTE FUNCTION validate_time_slot_max_subjects();
+```
+
+### 3. validate_topic_level
+
+Valida que un topic no exceda `config.topic_max_levels` y calcula `level` automaticamente.
+
+```sql
+CREATE OR REPLACE FUNCTION validate_and_set_topic_level() RETURNS TRIGGER AS $$
+DECLARE
+    parent_level INTEGER;
+    max_levels INTEGER;
+BEGIN
+    -- Calcular level
+    IF NEW.parent_id IS NULL THEN
+        NEW.level := 1;
+    ELSE
+        SELECT level INTO parent_level FROM topics WHERE id = NEW.parent_id;
+        IF parent_level IS NULL THEN
+            RAISE EXCEPTION 'parent topic % does not exist', NEW.parent_id;
+        END IF;
+        NEW.level := parent_level + 1;
+    END IF;
+
+    -- Validar max levels
+    SELECT (config->>'topic_max_levels')::INTEGER INTO max_levels
+    FROM organizations
+    WHERE id = NEW.organization_id;
+
+    IF NEW.level > max_levels THEN
+        RAISE EXCEPTION 'topic level % exceeds max_levels % for organization %',
+            NEW.level, max_levels, NEW.organization_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_validate_topic_level
+    BEFORE INSERT OR UPDATE ON topics
+    FOR EACH ROW EXECUTE FUNCTION validate_and_set_topic_level();
+```
+
+### 4. cascade_topic_levels
+
+Cuando se mueve un topic (cambia `parent_id`), recalcula niveles de todos los descendientes.
+
+```sql
+CREATE OR REPLACE FUNCTION cascade_topic_levels() RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.parent_id IS DISTINCT FROM NEW.parent_id THEN
+        WITH RECURSIVE tree AS (
+            SELECT id, NEW.level + 1 AS new_level
+            FROM topics WHERE parent_id = NEW.id
+            UNION ALL
+            SELECT t.id, tree.new_level + 1
+            FROM topics t JOIN tree ON t.parent_id = tree.id
+        )
+        UPDATE topics SET level = tree.new_level
+        FROM tree WHERE topics.id = tree.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_cascade_topic_levels
+    AFTER UPDATE ON topics
+    FOR EACH ROW EXECUTE FUNCTION cascade_topic_levels();
+```
+
+### Resumen de triggers
+
+| Trigger | Tabla | Evento | Proposito |
+|---------|-------|--------|-----------|
+| `trg_validate_time_slot_subject` | `time_slot_subjects` | BEFORE INSERT/UPDATE | course_subject pertenece al mismo curso que el time_slot |
+| `trg_validate_time_slot_max_subjects` | `time_slot_subjects` | BEFORE INSERT | Max 1 o 2 subjects por slot segun config |
+| `trg_validate_topic_level` | `topics` | BEFORE INSERT/UPDATE | Calcula level y valida max_levels |
+| `trg_cascade_topic_levels` | `topics` | AFTER UPDATE | Recalcula levels de descendientes al mover topic |
+
+> **Nota:** Las validaciones de momentos didacticos (1 apertura, 1-3 desarrollo, 1 cierre) se hacen en la capa de aplicacion (usecase), no en DB, porque `teacher_lesson_plans.moments` es JSONB y no se puede validar con constraints SQL simples.
+
+---
+
+## Indices
+
+### Principios
+
+- Todas las FKs ya tienen indice implicito via GORM (o se crean explicitamente)
+- Se agregan indices adicionales para queries frecuentes de listado y filtrado
+- `organization_id` es filtro en casi todas las queries (multi-tenancy)
+
+### Indices adicionales
+
+```sql
+-- Multi-tenancy: filtro por org en todas las tablas principales
+CREATE INDEX idx_users_organization_id ON users(organization_id);
+CREATE INDEX idx_areas_organization_id ON areas(organization_id);
+CREATE INDEX idx_subjects_organization_id ON subjects(organization_id);
+CREATE INDEX idx_topics_organization_id ON topics(organization_id);
+CREATE INDEX idx_courses_organization_id ON courses(organization_id);
+CREATE INDEX idx_activities_organization_id ON activities(organization_id);
+CREATE INDEX idx_coordination_documents_organization_id ON coordination_documents(organization_id);
+CREATE INDEX idx_fonts_organization_id ON fonts(organization_id);
+CREATE INDEX idx_resources_organization_id ON resources(organization_id);
+
+-- Filtros frecuentes de listado
+CREATE INDEX idx_subjects_area_id ON subjects(area_id);
+CREATE INDEX idx_topics_parent_id ON topics(parent_id);
+CREATE INDEX idx_topics_level ON topics(organization_id, level);
+CREATE INDEX idx_students_course_id ON students(course_id);
+CREATE INDEX idx_time_slots_course_id ON time_slots(course_id);
+CREATE INDEX idx_course_subjects_course_id ON course_subjects(course_id);
+CREATE INDEX idx_course_subjects_teacher_id ON course_subjects(teacher_id);
+CREATE INDEX idx_course_subjects_subject_id ON course_subjects(subject_id);
+
+-- Coordination documents: filtro por area y status
+CREATE INDEX idx_coordination_documents_area_id ON coordination_documents(area_id);
+CREATE INDEX idx_coordination_documents_status ON coordination_documents(organization_id, status);
+
+-- Junction tables: FK lookup rapido (las UNIQUE ya cubren la PK compuesta)
+CREATE INDEX idx_coord_doc_subjects_doc_id ON coordination_document_subjects(coordination_document_id);
+CREATE INDEX idx_coord_doc_classes_subject_id ON coord_doc_classes(coord_doc_subject_id);
+
+-- Teaching
+CREATE INDEX idx_lesson_plans_course_subject ON teacher_lesson_plans(course_subject_id);
+CREATE INDEX idx_lesson_plans_coord_doc ON teacher_lesson_plans(coordination_document_id);
+
+-- Resources
+CREATE INDEX idx_resources_resource_type ON resources(resource_type_id);
+CREATE INDEX idx_resources_user ON resources(user_id);
+CREATE INDEX idx_fonts_area_id ON fonts(area_id);
+CREATE INDEX idx_fonts_validated ON fonts(area_id, is_validated) WHERE is_validated = true;
+```
+
+### Nota sobre GORM
+
+GORM crea indices automaticos para columnas con tag `index` en los structs. Los indices de arriba se definen explicitamente en las migraciones SQL para tener control total. No usar `AutoMigrate` en produccion.
+
+---
+
 ## Constraints UNIQUE en junction tables
 
 | Tabla | Constraint |

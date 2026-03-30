@@ -50,7 +50,10 @@
       "Bash(grep -E \"^-.*\\\\.md$|^d\")",
       "Bash(wc:*)",
       "Bash(grep -v \"^\\\\.$\")",
-      "Bash(grep -E \"^-.*\\\\.md$|^d\" echo \"\" fi done)"
+      "Bash(grep -E \"^-.*\\\\.md$|^d\" echo \"\" fi done)",
+      "Bash(grep -E \"^d|\\\\.md$\")",
+      "Bash(grep -E \"T-.*\\\\.md$\")",
+      "Bash(cat:*)"
     ]
   }
 }
