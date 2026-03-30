@@ -243,6 +243,7 @@ state = {
 - `/start` - Starts postgres, resets DB, runs migrations/seeds, starts uvicorn
 - `/data-entry` - **ALWAYS USE THIS** when the user asks to add, modify, or query database data
 - `/rfc-docs` - **ALWAYS USE THIS** when the user asks to create, desglosar, or modify épicas, historias de usuario (HU), or tareas (T) in the RFC documentation
+- `/audit-rfc` - **ALWAYS USE THIS** when the user asks to audit, review, or check the RFC documentation for completeness, consistency, or broken links
 
 ### Data Entry Skill (MANDATORY)
 
