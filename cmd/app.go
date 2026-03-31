@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -8,6 +9,7 @@ import (
 	"github.com/educabot/alizia-be/config"
 	appweb "github.com/educabot/alizia-be/src/app/web"
 	"github.com/educabot/team-ai-toolkit/boot"
+	"github.com/educabot/team-ai-toolkit/dbconn"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -18,7 +20,14 @@ type App struct {
 	server *boot.Server
 }
 
-func NewApp(cfg *config.Config, db *gorm.DB) *App {
+func NewApp(cfg *config.Config) *App {
+	db, err := dbconn.NewPostgresConnector(dbconn.PostgresConfig{
+		URL: cfg.DatabaseURL,
+	}).Connect()
+	if err != nil {
+		log.Fatal("failed to connect to database: ", err)
+	}
+
 	repos := NewRepositories(cfg, db)
 	usecases := NewUseCases(repos)
 	container := NewHandlers(usecases, cfg)
