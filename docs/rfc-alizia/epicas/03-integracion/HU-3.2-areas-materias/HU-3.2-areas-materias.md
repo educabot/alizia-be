@@ -1,6 +1,6 @@
-# HU-3.2: Áreas y materias
+# HU-3.2: Áreas y disciplinas
 
-> Como admin, necesito crear áreas y materias para estructurar la oferta curricular de la institución.
+> Como admin, necesito crear áreas y disciplinas para estructurar la oferta curricular de la institución.
 
 **Fase:** 2 — Admin/Integration
 **Prioridad:** Alta
@@ -14,9 +14,9 @@
 - [ ] Tabla `subjects` con: id, organization_id, area_id (FK), name, description, created_at
 - [ ] Tabla `area_coordinators` con: id, area_id, user_id, UNIQUE(area_id, user_id)
 - [ ] CRUD endpoints para áreas: POST, GET (listar), PUT
-- [ ] CRUD endpoints para materias: POST, GET (listar)
+- [ ] CRUD endpoints para disciplinas: POST, GET (listar)
 - [ ] Endpoint para asignar coordinador a área: `POST /api/v1/areas/:id/coordinators`
-- [ ] Listar áreas incluye las materias asociadas (preload)
+- [ ] Listar áreas incluye las disciplinas asociadas (preload)
 - [ ] Un coordinador puede coordinar múltiples áreas (M2M via area_coordinators)
 - [ ] Múltiples coordinadores pueden coordinar la misma área
 - [ ] Todos los queries filtran por organization_id del JWT
@@ -41,7 +41,7 @@
 ## Test cases
 
 - 3.4: POST area → 201 con area creada
-- 3.5: POST subject con area_id → materia asociada al área
+- 3.5: POST subject con area_id → disciplina asociada al área
 - 3.6: POST area coordinator → asignación exitosa
 - 3.7: GET areas → incluye subjects y coordinators preloaded
 - 3.8: Duplicar coordinador en misma área → 409 conflict

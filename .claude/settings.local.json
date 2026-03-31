@@ -53,7 +53,26 @@
       "Bash(grep -E \"^-.*\\\\.md$|^d\" echo \"\" fi done)",
       "Bash(grep -E \"^d|\\\\.md$\")",
       "Bash(grep -E \"T-.*\\\\.md$\")",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(__NEW_LINE_17cea151ce4444f0__ find:*)",
+      "Bash(__NEW_LINE_bc79666c0b6c5da9__ grep:*)",
+      "Bash(__NEW_LINE_bca74a0f800c583c__ grep:*)",
+      "Bash(__NEW_LINE_e5cbdc3787ee28e6__ grep:*)",
+      "Bash(__NEW_LINE_33030f2b9ef21215__ grep:*)",
+      "Bash(__NEW_LINE_02242a141dc334bb__ grep:*)",
+      "Bash(__NEW_LINE_530628e864995d8a__ grep:*)",
+      "Bash(__NEW_LINE_0e525d8e38d593f0__ grep:*)",
+      "Bash(grep:*)",
+      "Bash(sed -i 's/Prof\\\\. Garcia/Doc. García/g' tecnico/endpoints.md epicas/03-integracion/HU-3.4-cursos-alumnos-asignaciones/tareas/T-3.4.4-endpoints-handlers.md epicas/05-planificacion-docente/HU-5.2-cronograma-docente/HU-5.2-cronograma-docente.md epicas/03-integracion/HU-3.4-cursos-alumnos-asignaciones/tareas/T-3.4.5-seed-tests.md)",
+      "Bash(sed -i 's/Prof\\\\. García/Doc. García/g' tecnico/endpoints.md epicas/01-roles-accesos/HU-1.4-asignacion-organizacional/tareas/T-1.4.3-endpoints-admin.md epicas/07-dashboard/HU-7.1-dashboard-coordinador/tareas/T-7.1.1-endpoints-agregacion.md epicas/07-dashboard/HU-7.1-dashboard-coordinador/HU-7.1-dashboard-coordinador.md epicas/07-dashboard/HU-7.3-sistema-notificaciones/HU-7.3-sistema-notificaciones.md epicas/08-contenido-recursos/HU-8.4-biblioteca-exploracion/tareas/T-8.4.2-frontend-biblioteca.md epicas/08-contenido-recursos/HU-8.4-biblioteca-exploracion/tareas/T-8.4.1-endpoints-biblioteca.md epicas/07-dashboard/HU-7.2-dashboard-docente/tareas/T-7.2.1-endpoints-docente.md epicas/08-contenido-recursos/HU-8.3-generacion-ia-recursos/tareas/T-8.3.3-context-builder.md epicas/08-contenido-recursos/HU-8.3-generacion-ia-recursos/tareas/T-8.3.2-endpoint-generacion.md epicas/08-contenido-recursos/HU-8.1-modelo-datos-recursos/tareas/T-8.1.2-entities-providers.md epicas/05-planificacion-docente/HU-5.6-bitacora-cotejo/tareas/T-5.6.4-endpoints-bitacora.md epicas/05-planificacion-docente/HU-5.5-estados-planificacion/HU-5.5-estados-planificacion.md)",
+      "Bash(sed -i 's/Prof\\\\. Lopez/Doc. López/g' tecnico/endpoints.md epicas/03-integracion/HU-3.4-cursos-alumnos-asignaciones/tareas/T-3.4.5-seed-tests.md)",
+      "Bash(sed -i 's/Prof\\\\. López/Doc. López/g' epicas/07-dashboard/HU-7.2-dashboard-docente/tareas/T-7.2.1-endpoints-docente.md epicas/07-dashboard/HU-7.2-dashboard-docente/HU-7.2-dashboard-docente.md epicas/08-contenido-recursos/HU-8.4-biblioteca-exploracion/tareas/T-8.4.2-frontend-biblioteca.md)",
+      "Bash(sed -i 's/Prof\\\\. Martinez/Doc. Martínez/g' epicas/03-integracion/HU-3.4-cursos-alumnos-asignaciones/tareas/T-3.4.5-seed-tests.md)",
+      "Bash(find C:UsersEducabotDesktopEducabotRepositoriosalizia-bedocsrfc-aliziaepicas03-integracion -type f -name *seed* -o -name *data* -o -name *load*)",
+      "Bash(find C:UsersEducabotDesktopEducabotRepositoriosalizia-bedocsrfc-aliziaepicas03-integracionHU-3.1-organizaciones-configuraciontareas -type f -name *.md)",
+      "Bash(mkdir -p HU-8.6-creacion-libre-vinculo-plan)",
+      "Bash(mv \"HU-8.3-creacion-libre-vinculo-plan/HU-8.3-creacion-libre-vinculo-plan.md\" \"HU-8.6-creacion-libre-vinculo-plan/HU-8.6-creacion-libre-vinculo-plan.md\")",
+      "Bash(rmdir \"HU-8.3-creacion-libre-vinculo-plan\")"
     ]
   }
 }

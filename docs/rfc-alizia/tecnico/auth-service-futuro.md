@@ -1,12 +1,14 @@
 # Auth Service — Microservicio de autenticación Educabot
 
-> **NOTA: Este documento describe el auth-service propio planificado para el futuro. Alizia arranca con JWT authentication (via team-ai-toolkit/tokens). El auth-service NO es una dependencia bloqueante para el lanzamiento de Alizia.**
+> **NOTA: Este documento describe el auth-service propio planificado para el futuro. Alizia arranca con JWT authentication via HS256 shared secret (team-ai-toolkit/tokens). El auth-service NO es una dependencia bloqueante para el lanzamiento de Alizia.**
+>
+> **Estado actual (MVP):** Alizia usa JWT con HS256 (symmetric shared secret) via `tokens.New(cfg.JWTSecret)`. No hay JWKS ni RSA. Las referencias a JWKS/RSA en este documento describen la arquitectura futura cuando se implemente el auth-service propio.
 
 ## Qué es
 
 Microservicio Go planificado para centralizar la emisión de tokens en el futuro. Será el **único servicio que maneje credenciales y emita tokens**. Todos los demás proyectos (Alizia, tich-cronos, futuros) validarán tokens con la public key via team-ai-toolkit/tokens.
 
-**Estado actual:** Alizia y tich-cronos usan JWT authentication (via team-ai-toolkit/tokens). Este auth-service es un plan futuro.
+**Estado actual:** Alizia y tich-cronos usan JWT authentication via HS256 shared secret (team-ai-toolkit/tokens). Este auth-service es un plan futuro.
 
 ---
 
@@ -16,7 +18,7 @@ Microservicio Go planificado para centralizar la emisión de tokens en el futuro
 |---|---|
 | Login: JWT emitido por el sistema de autenticación actual | Login: `POST auth-service/auth/login` con bcrypt propio |
 | Signup: gestionado externamente | Signup: `POST auth-service/auth/register` |
-| JWT: firmado externamente, backends validan con JWKS via team-ai-toolkit/tokens | JWT: auth-service firma con private key RSA, backends validan con public key |
+| JWT: firmado con HS256 shared secret, backends validan via team-ai-toolkit/tokens | JWT: auth-service firma con private key RSA, backends validan con public key |
 | Canvas OAuth: cronos intercambia code → crea usuario | Canvas OAuth: cronos intercambia code → crea usuario directo en auth-service |
 | Refresh tokens: NO EXISTEN | Refresh tokens: rotación automática |
 | Password reset: NO EXISTE | Password reset: email con token temporal |
@@ -644,8 +646,8 @@ require (
 > Esta migración se realizará después del lanzamiento de Alizia. Alizia arranca con JWT authentication via team-ai-toolkit/tokens.
 
 ### Fase 0: Alizia lanza con JWT auth (ACTUAL)
-- Alizia usa JWT authentication via team-ai-toolkit/tokens
-- team-ai-toolkit/tokens valida JWT via JWKS
+- Alizia usa JWT authentication via HS256 shared secret (team-ai-toolkit/tokens)
+- team-ai-toolkit/tokens valida JWT via `tokens.New(cfg.JWTSecret)` (symmetric)
 - No se necesita RSA key pair propia ni auth-service
 
 ### Fase 1: Build auth service (FUTURO)
@@ -655,7 +657,7 @@ require (
 
 ### Fase 2: Migrar Alizia (FUTURO)
 - Cambiar Alizia del sistema actual a auth-service
-- team-ai-toolkit/tokens pasa de validar via JWKS a validar via RSA public key
+- team-ai-toolkit/tokens pasa de validar via HS256 shared secret a validar via RSA public key
 
 ### Fase 3: Migrar TiCh/Tuni (FUTURO)
 - Canvas OAuth callback apunta al auth-service en vez de cronos

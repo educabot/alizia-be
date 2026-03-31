@@ -10,14 +10,15 @@
 
 ## Criterios de aceptación
 
-- [ ] Estados: `draft` → `published` → `archived`
+- [ ] Estados: `pending` → `in_progress` → `published`
 - [ ] Solo coordinadores pueden cambiar estado
-- [ ] Al publicar, se valida que todos los topics del documento estén distribuidos entre las materias
+- [ ] Al publicar, se valida que todos los topics del documento estén distribuidos entre las disciplinas
 - [ ] Al publicar, se valida que todas las secciones requeridas tengan contenido
 - [ ] Documento publicado es visible para docentes (GET listar y detalle)
-- [ ] Solo documentos en `draft` se pueden eliminar (DELETE)
-- [ ] Documento publicado no se puede editar (secciones ni clases) → debe volverse a draft o archivarse
+- [ ] Solo documentos en `pending` se pueden eliminar (DELETE)
+- [ ] Documento publicado **sí se puede editar** — es un documento vivo. Al guardar cambios, mostrar advertencia: "Los cambios no se propagan automáticamente a planificaciones ya creadas"
 - [ ] DELETE en documento published → 403
+- [ ] La propagación automática de cambios a lesson plans existentes es **post-MVP** — el docente debe ajustar manualmente si el coordinador edita el documento
 
 ## Tareas
 
@@ -37,7 +38,7 @@
 ### Máquina de estados
 
 ```
-[draft] ──(publicar)──→ [published] ──(archivar)──→ [archived]
+[pending] ──(comenzar edición)──→ [in_progress] ──(publicar)──→ [published]
 ```
 
 ### Validaciones al publicar
@@ -66,7 +67,9 @@ WHERE cdt.coordination_document_id = $1
 - 4.19: Publicar con todos los topics distribuidos → published
 - 4.20: Publicar con topics sin distribuir → 422 con detalle
 - 4.21: Publicar con sección requerida vacía → 422
-- 4.22: DELETE en draft → ok
+- 4.22: DELETE en pending → ok
 - 4.23: DELETE en published → 403
-- 4.24: Archivar documento published → archived
+- 4.24: Comenzar edicion pending → in_progress
 - 4.25: Docente puede ver documento published → 200
+- 4.26: PATCH en documento published → 200 (documento vivo, editable)
+- 4.27: PATCH en documento published → response incluye warning de no-propagación

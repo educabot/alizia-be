@@ -2,8 +2,8 @@
 
 > Como docente, necesito que Alizia sugiera cambios a mis próximas clases basándose en lo que pasó en las anteriores.
 
-**Fase:** Post-MVP
-**Prioridad:** Baja
+**Fase:** Fase 5
+**Prioridad:** Media
 **Estimación:** —
 
 ---
@@ -36,7 +36,7 @@ La repropuesta es la proactividad del sistema: no espera a que el docente planif
 - Las sugerencias deben ser opt-in — el docente decide, no el sistema
 - La calidad de las sugerencias depende directamente de la calidad de las bitácoras
 - Requiere un modelo que "entienda" la progresión curricular para no sugerir retrocesos innecesarios
-- Las sugerencias afectan planes en estado `pending` y `planned` (el docente decide si acepta el cambio)
+- Las sugerencias afectan planes en estado `pending` e `in_progress` (el docente decide si acepta el cambio)
 
 ## Tareas
 
@@ -51,4 +51,4 @@ La repropuesta es la proactividad del sistema: no espera a que el docente planif
 
 - [HU-5.6: Bitácora de cotejo](../HU-5.6-bitacora-cotejo/HU-5.6-bitacora-cotejo.md) — Fuente de datos
 - [HU-5.4: Generación con IA](../HU-5.4-generacion-ia/HU-5.4-generacion-ia.md) — Regeneración de propuestas
-- [Épica 6: Asistente IA](../../06-assistente-ia/06-asistente-ia.md) — Análisis y generación de sugerencias
+- [Épica 6: Asistente IA](../../06-asistente-ia/06-asistente-ia.md) — Análisis y generación de sugerencias

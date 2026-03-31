@@ -132,7 +132,7 @@ Asignar coordinador a un area.
 
 ### `POST /api/v1/subjects`
 
-Crear materia.
+Crear disciplina.
 
 **Roles:** coordinator, admin
 
@@ -163,7 +163,7 @@ Crear materia.
 
 ### `GET /api/v1/subjects`
 
-Listar materias de la org.
+Listar disciplinas de la org.
 
 **Roles:** Todos
 
@@ -255,7 +255,7 @@ Detalle de curso con students y schedule.
           "subject_id": 1,
           "subject_name": "Matematicas",
           "teacher_id": 5,
-          "teacher_name": "Prof. Garcia"
+          "teacher_name": "Doc. García"
         }
       ]
     },
@@ -270,14 +270,14 @@ Detalle de curso con students y schedule.
           "subject_id": 1,
           "subject_name": "Matematicas",
           "teacher_id": 5,
-          "teacher_name": "Prof. Garcia"
+          "teacher_name": "Doc. García"
         },
         {
           "course_subject_id": 2,
           "subject_id": 2,
           "subject_name": "Fisica",
           "teacher_id": 6,
-          "teacher_name": "Prof. Lopez"
+          "teacher_name": "Doc. López"
         }
       ]
     }
@@ -406,7 +406,7 @@ Listar topics como arbol.
 
 ### `POST /api/v1/course-subjects`
 
-Crear asignacion curso + materia + docente.
+Crear asignacion curso + disciplina + docente.
 
 **Roles:** admin
 
@@ -543,7 +543,7 @@ Crear documento de coordinacion (wizard completo).
 ```
 
 - `topic_ids` (root): topics seleccionados al nivel `topic_selection_level`
-- `subjects[].topic_ids`: subconjunto asignado a cada materia
+- `subjects[].topic_ids`: subconjunto asignado a cada disciplina
 
 **Response `201`:**
 ```json
@@ -589,7 +589,7 @@ Listar documentos de coordinacion.
 
 **Roles:** coordinator, teacher
 
-**Query params:** `limit`, `offset`, `area_id` (opcional), `status` (opcional: `draft`, `published`, `archived`)
+**Query params:** `limit`, `offset`, `area_id` (opcional), `status` (opcional: `pending`, `in_progress`, `published`)
 
 **Response `200`:**
 ```json
@@ -747,7 +747,7 @@ Eliminar documento. Solo documentos en estado `draft`.
 
 ### `POST /api/v1/coordination-documents/:id/generate`
 
-Generar contenido con IA: secciones + plan de clases por materia.
+Generar contenido con IA: secciones + plan de clases por disciplina.
 
 **Roles:** coordinator
 
@@ -1034,7 +1034,7 @@ Cambiar estado del lesson plan.
 **Request:**
 ```json
 {
-  "status": "planned"
+  "status": "in_progress"
 }
 ```
 
@@ -1042,7 +1042,7 @@ Cambiar estado del lesson plan.
 ```json
 {
   "id": 1,
-  "status": "planned"
+  "status": "in_progress"
 }
 ```
 

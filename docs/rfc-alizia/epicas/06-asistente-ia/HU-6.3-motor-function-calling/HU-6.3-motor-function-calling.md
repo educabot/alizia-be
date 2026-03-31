@@ -32,6 +32,15 @@
 
 - HU-6.1 completada (AI Provider con metodo `ChatWithTools` y tipos `ChatMessage`, `ToolCall`, `ToolDefinition`)
 
+## Nota: tools genéricos por JSON Schema
+
+Las secciones del documento de coordinación varían por organización (JSON Schema en config). Los tools de edición deben ser genéricos: recibir el schema como contexto en el prompt y usar **JSON Path** para indicar qué parte del documento modificar. Alternativas evaluadas:
+
+1. **JSON Path genérico** (preferido): un tool `modify_document(json_path, value)` donde el LLM infiere el path a partir del schema. Simple, funciona con cualquier schema.
+2. **Tools dinámicos por sección**: detectar las secciones del schema y generar un tool por cada una. Más preciso pero más complejo de implementar.
+
+MVP: empezar con opción 1. Si el schema tiene máximo ~5 secciones, el LLM puede inferir el path correctamente con el schema en contexto.
+
 ## Test cases
 
 - 6.11: Registrar tool → disponible en el registry via `GetDefinitions`

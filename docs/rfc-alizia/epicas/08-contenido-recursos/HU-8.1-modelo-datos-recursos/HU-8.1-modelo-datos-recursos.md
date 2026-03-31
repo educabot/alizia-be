@@ -35,7 +35,7 @@
 - [HU-3.1: Organizaciones](../../03-integracion/HU-3.1-organizaciones-configuracion/HU-3.1-organizaciones-configuracion.md) — FK organization_id
 - [HU-3.4: Cursos y asignaciones](../../03-integracion/HU-3.4-cursos-alumnos-asignaciones/HU-3.4-cursos-alumnos-asignaciones.md) — FK course_subject_id
 - [HU-1.2: Modelo de usuarios y roles](../../01-roles-accesos/HU-1.2-modelo-usuarios-roles/HU-1.2-modelo-usuarios-roles.md) — FK created_by
-- [HU-3.2: Áreas y materias](../../03-integracion/HU-3.2-areas-materias/HU-3.2-areas-materias.md) — FK area_id en fonts
+- [HU-3.2: Áreas y disciplinas](../../03-integracion/HU-3.2-areas-materias/HU-3.2-areas-materias.md) — FK area_id en fonts
 
 ## Diseño técnico
 
@@ -50,7 +50,7 @@ resource_types (tipos globales + privados por org)
 resources (recursos generados)
   ├── resource_type_id → resource_types
   ├── font_id → fonts (fuente usada, si aplica)
-  ├── course_subject_id → course_subjects (contexto de materia/curso)
+  ├── course_subject_id → course_subjects (contexto de disciplina/curso)
   └── created_by → users
 ```
 

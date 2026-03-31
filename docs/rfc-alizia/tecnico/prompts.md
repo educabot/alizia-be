@@ -14,7 +14,7 @@ Sos Alizia, una asistente de planificacion educativa. Tu rol es ayudar a coordin
 Reglas:
 - Responde siempre en espanol rioplatense
 - Usa lenguaje pedagogico pero accesible
-- No inventes datos: trabaja solo con la informacion proporcionada (topics, materias, configuracion)
+- No inventes datos: trabaja solo con la informacion proporcionada (topics, disciplinas, configuracion)
 - Si te faltan datos para generar contenido, indica que informacion necesitas
 - Sé concisa: los textos generados deben ser utiles, no extensos
 ```
@@ -33,12 +33,12 @@ Genera un eje problematico que integre los siguientes temas/saberes para el area
 Topics seleccionados:
 {topics_list}
 
-Materias involucradas:
+Disciplinas involucradas:
 {subjects_list}
 
 El eje problematico debe:
 - Ser una pregunta o proposicion que articule los topics seleccionados
-- Ser interdisciplinario (vincular las materias del area)
+- Ser interdisciplinario (vincular las disciplinas del area)
 - Ser adecuado para el nivel educativo
 - Tener entre 2 y 4 oraciones
 
@@ -55,17 +55,17 @@ Genera una estrategia metodologica de tipo "{selected_option}" para el siguiente
 Area: {area_name}
 Eje problematico: {problem_edge_value}
 Topics: {topics_list}
-Materias: {subjects_list}
+Disciplinas: {subjects_list}
 Periodo: {start_date} a {end_date}
 
 Tipos de estrategia:
 - "proyecto": Aprendizaje basado en proyectos. Describir el proyecto integrador, etapas y producto final.
-- "taller_laboratorio": Aprendizaje experimental. Describir la dinamica de taller, materiales y actividades practicas.
+- "taller_laboratorio": Aprendizaje experimental. Describir la dinamica de taller, disciplinales y actividades practicas.
 - "ateneo_debate": Aprendizaje dialogico. Describir el formato de ateneo/debate, roles y criterios de argumentacion.
 
 La estrategia debe:
-- Describir como se articulan las materias en torno al eje problematico
-- Proponer actividades concretas para cada materia
+- Describir como se articulan las disciplinas en torno al eje problematico
+- Proponer actividades concretas para cada disciplina
 - Ser implementable en el periodo indicado
 - Tener entre 3 y 6 parrafos
 
@@ -87,24 +87,24 @@ Topics: {topics_list}
 Los criterios deben:
 - Ser observables y medibles
 - Estar alineados con los topics seleccionados
-- Incluir criterios por materia y criterios transversales
+- Incluir criterios por disciplina y criterios transversales
 - Formato: lista de criterios con indicadores
 
 Responde SOLO con los criterios, sin explicaciones adicionales.
 ```
 
-### Generar plan de clases por materia
+### Generar plan de clases por disciplina
 
 **Archivo:** `src/repositories/ai/prompts/generate_class_plan.txt`
 
 ```
-Genera un plan de clases para la materia "{subject_name}" en el contexto de esta planificacion:
+Genera un plan de clases para la disciplina "{subject_name}" en el contexto de esta planificacion:
 
 Area: {area_name}
 Eje problematico: {problem_edge_value}
 Estrategia metodologica: {methodological_strategy_value}
 Cantidad de clases: {class_count}
-Topics asignados a esta materia: {subject_topics_list}
+Topics asignados a esta disciplina: {subject_topics_list}
 Clases compartidas (numeros): {shared_class_numbers}
 
 Reglas:
@@ -155,7 +155,7 @@ Documento actual:
 - Area: {area_name}
 - Periodo: {start_date} a {end_date}
 - Topics: {topics_list}
-- Materias: {subjects_with_class_count}
+- Disciplinas: {subjects_with_class_count}
 - Secciones: {sections_summary}
 
 Tenes las siguientes herramientas para modificar el documento:
@@ -203,12 +203,12 @@ Reglas:
     "type": "function",
     "function": {
       "name": "update_class_title",
-      "description": "Cambia el titulo de una clase especifica de una materia",
+      "description": "Cambia el titulo de una clase especifica de una disciplina",
       "parameters": {
         "type": "object",
         "required": ["subject_id", "class_number", "title"],
         "properties": {
-          "subject_id": { "type": "integer", "description": "ID de la materia" },
+          "subject_id": { "type": "integer", "description": "ID de la disciplina" },
           "class_number": { "type": "integer", "description": "Numero de clase (1-indexed)" },
           "title": { "type": "string", "description": "Nuevo titulo de la clase" }
         }
@@ -261,7 +261,7 @@ Genera contenido para la actividad "{activity_name}" en el momento de {moment} d
 
 Clase: {class_title}
 Objetivo de la clase: {class_objective}
-Materia: {subject_name}
+Disciplina: {subject_name}
 Topics de esta clase: {class_topics}
 Actividad: {activity_name} — {activity_description}
 Duracion estimada: {duration_minutes} minutos
@@ -297,7 +297,7 @@ Genera una guia de lectura para el siguiente texto/fuente educativa:
 
 Fuente: {font_name}
 Descripcion: {font_description}
-Materia: {subject_name}
+Disciplina: {subject_name}
 Curso: {course_name}
 
 La guia debe incluir:
@@ -313,15 +313,15 @@ Responde en formato JSON segun el schema proporcionado.
 **Tabla:** `resource_types` donde `key = 'course_sheet'`
 
 ```
-Genera una ficha de curso para la siguiente materia:
+Genera una ficha de curso para la siguiente disciplina:
 
-Materia: {subject_name}
+Disciplina: {subject_name}
 Curso: {course_name}
 Periodo: {start_date} a {end_date}
 Topics principales: {topics_list}
 
 La ficha debe incluir:
-1. Presentacion de la materia (1 parrafo)
+1. Presentacion de la disciplina (1 parrafo)
 2. Objetivos del periodo (lista de 3-5 objetivos)
 3. Contenidos principales (organizados por tema)
 4. Metodologia de trabajo (como se va a trabajar en clase)

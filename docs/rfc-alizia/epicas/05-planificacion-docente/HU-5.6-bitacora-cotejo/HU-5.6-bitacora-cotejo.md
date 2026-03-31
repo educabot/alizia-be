@@ -2,8 +2,8 @@
 
 > Como docente, necesito registrar cómo fue la clase después de dictarla, para que el sistema aprenda y mejore las propuestas futuras.
 
-**Fase:** Post-MVP
-**Prioridad:** Media
+**Fase:** Fase 5
+**Prioridad:** Alta
 **Estimación:** —
 
 ---
@@ -60,5 +60,9 @@ Docente termina la clase
 
 ## Dependencias
 
-- [HU-5.5: Estados](../HU-5.5-estados-planificacion/HU-5.5-estados-planificacion.md) — Solo clases planned/dictadas
-- [Épica 6: Asistente IA](../../06-assistente-ia/06-asistente-ia.md) — Transcripción y procesamiento de audio
+- [HU-5.5: Estados](../HU-5.5-estados-planificacion/HU-5.5-estados-planificacion.md) — Solo clases published/dictadas
+- [Épica 6: Asistente IA](../../06-asistente-ia/06-asistente-ia.md) — Transcripción y procesamiento de audio
+
+## Notas
+
+> **Nota:** La "recoleccion activa de datos" que producto menciona (Alizia pregunta por informacion faltante o alumnos con seguimiento) se implementa dentro del chat de la bitacora. No es un flujo autonomo separado — Alizia hace estas preguntas como parte de la conversacion cuando detecta datos faltantes en el contexto.

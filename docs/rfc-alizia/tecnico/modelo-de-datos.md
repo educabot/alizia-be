@@ -5,12 +5,12 @@
 Sistema multi-tenant de planificacion educativa anual. Cada organizacion (colegio, universidad) es un tenant con configuracion propia via `organizations.config` (JSONB).
 
 **Roles:**
-- **Coordinador**: crea documentos de coordinacion que definen que se ensena por materia en un periodo (topics, plan de clases, secciones configurables por org)
+- **Coordinador**: crea documentos de coordinacion que definen que se ensena por disciplina en un periodo (topics, plan de clases, secciones configurables por org)
 - **Docente**: a partir del documento de coordinacion, crea lesson plans clase a clase (momentos con actividades, fuentes) y recursos (guias, fichas, etc.)
 - **Admin**: gestion de la organizacion, usuarios, configuracion
 
 **Flujo principal:**
-1. Coordinador crea **coordination_document** para un area → selecciona topics, asigna a materias, genera plan de clases con IA
+1. Coordinador crea **coordination_document** para un area → selecciona topics, asigna a disciplinas, genera plan de clases con IA
 2. Docente ve el plan y crea **teacher_lesson_plans** por clase → selecciona actividades por momento (apertura/desarrollo/cierre), IA genera contenido por actividad
 3. Docente crea **resources** (guias de lectura, fichas de curso, etc.) usando tipos configurables con generacion IA
 
@@ -19,8 +19,8 @@ Sistema multi-tenant de planificacion educativa anual. Cada organizacion (colegi
 ## Enums
 
 ```sql
-CREATE TYPE coord_doc_status AS ENUM ('draft', 'published', 'archived');
-CREATE TYPE lesson_plan_status AS ENUM ('pending', 'planned');
+CREATE TYPE coord_doc_status AS ENUM ('pending', 'in_progress', 'published');
+CREATE TYPE lesson_plan_status AS ENUM ('pending', 'in_progress', 'published');
 CREATE TYPE resources_mode AS ENUM ('global', 'per_moment');
 CREATE TYPE class_moment AS ENUM ('apertura', 'desarrollo', 'cierre');
 CREATE TYPE member_role AS ENUM ('teacher', 'coordinator', 'admin');
@@ -65,7 +65,7 @@ erDiagram
         VARCHAR name
         TEXT description
         TIMESTAMP created_at
-        ___ ___ "Agrupacion de materias (ej: Ciencias). Opcional segun config"
+        ___ ___ "Agrupacion de disciplinas (ej: Ciencias). Opcional segun config"
     }
 
     area_coordinators {
@@ -83,7 +83,7 @@ erDiagram
         VARCHAR name
         TEXT description
         TIMESTAMP created_at
-        ___ ___ "Materias individuales (ej: Matematicas). Pertenecen a un area"
+        ___ ___ "Disciplinas individuales (ej: Matematicas). Pertenecen a un area"
     }
 
     topics {
@@ -122,7 +122,7 @@ erDiagram
         DATE end_date
         INTEGER school_year
         TIMESTAMP created_at
-        ___ ___ "Instancia: curso + materia + docente + periodo lectivo"
+        ___ ___ "Instancia: curso + disciplina + docente + periodo lectivo"
     }
 
     time_slots {
@@ -150,7 +150,7 @@ erDiagram
         INTEGER area_id FK
         DATE start_date
         DATE end_date
-        coord_doc_status status "DEFAULT draft"
+        coord_doc_status status "DEFAULT pending"
         JSONB sections "dinamico segun org config coord_doc_sections"
         TIMESTAMP created_at
         TIMESTAMP updated_at
@@ -170,7 +170,7 @@ erDiagram
         INTEGER coordination_document_id FK
         INTEGER subject_id FK
         INTEGER class_count
-        ___ ___ "Materias incluidas en el doc con cantidad de clases en el periodo"
+        ___ ___ "Disciplinas incluidas en el doc con cantidad de clases en el periodo"
     }
 
     coord_doc_subject_topics {
@@ -178,7 +178,7 @@ erDiagram
         INTEGER coord_doc_subject_id FK
         INTEGER topic_id FK
         UNIQUE coord_doc_subject_id_topic_id
-        ___ ___ "Junction: topics asignados a una materia dentro del doc"
+        ___ ___ "Junction: topics asignados a una disciplina dentro del doc"
     }
 
     coord_doc_classes {
@@ -187,7 +187,7 @@ erDiagram
         INTEGER class_number
         VARCHAR title
         TEXT objective
-        ___ ___ "Plan de clases por materia generado por IA: numero, titulo, objetivo"
+        ___ ___ "Plan de clases por disciplina generado por IA: numero, titulo, objetivo"
     }
 
     coord_doc_class_topics {
@@ -220,12 +220,12 @@ erDiagram
         TEXT didactic_strategies
         VARCHAR class_format
         JSONB moments
-        lesson_plan_status status "DEFAULT pending"
+        lesson_plan_status status "DEFAULT pending → in_progress → published"
         TEXT custom_instruction
         resources_mode resources_mode
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        ___ ___ "Plan de clase del docente. Momentos con actividades + contenido IA"
+        ___ ___ "Planificación docente. Momentos con actividades + contenido IA"
     }
 
     lesson_plan_topics {
@@ -369,9 +369,9 @@ flowchart TD
     subgraph ADMIN["🔧 Admin — Setup de la org"]
         A1[Crear organizacion + config] --> A2[Crear usuarios y asignar roles]
         A2 --> A3[Crear areas y asignar coordinadores]
-        A3 --> A4[Crear materias en cada area]
+        A3 --> A4[Crear disciplinas en cada area]
         A4 --> A5[Crear cursos y alumnos]
-        A5 --> A6[Crear course_subjects\ncurso + materia + docente + periodo]
+        A5 --> A6[Crear course_subjects\ncurso + disciplina + docente + periodo]
         A6 --> A7[Definir time_slots\ngrilla horaria semanal]
         A7 --> A8{Clases compartidas?}
         A8 -- Si --> A9[2 time_slot_subjects\npor slot]
@@ -385,14 +385,14 @@ flowchart TD
         C1[Seleccionar area y curso] --> C2
 
         subgraph WIZARD["Wizard de creacion (3 pasos)"]
-            C2[Paso 1: Seleccionar topics\nal nivel topic_selection_level] --> C3[Paso 2: Definir periodo\n+ clases por materia]
-            C3 --> C4[Paso 3: Asignar topics\na cada materia]
+            C2[Paso 1: Seleccionar topics\nal nivel topic_selection_level] --> C3[Paso 2: Definir periodo\n+ clases por disciplina]
+            C3 --> C4[Paso 3: Asignar topics\na cada disciplina]
         end
 
         C4 --> C5[coordination_document creado\nstatus: draft]
         C5 --> C6[Completar secciones dinamicas\nsegun config.coord_doc_sections]
         C6 --> C7{Generar con IA?}
-        C7 -- Si --> C8[IA genera secciones\n+ plan de clases por materia]
+        C7 -- Si --> C8[IA genera secciones\n+ plan de clases por disciplina]
         C7 -- No --> C9[Edicion manual\nde secciones y clases]
         C8 --> C10[Revisar y ajustar]
         C9 --> C10
@@ -405,7 +405,7 @@ flowchart TD
 
     subgraph TEACHER["👩‍🏫 Docente — Lesson plans y recursos"]
         direction TB
-        T1[Ver doc de coordinacion\npublicado para su materia] --> T2[Seleccionar clase\nclass_number del plan]
+        T1[Ver doc de coordinacion\npublicado para su disciplina] --> T2[Seleccionar clase\nclass_number del plan]
         T2 --> T3[Crear teacher_lesson_plan\ntitulo, objetivo, topics]
         T3 --> T4[Seleccionar actividades por momento]
 
@@ -419,7 +419,7 @@ flowchart TD
         T5 --> T6{Generar con IA?}
         T6 -- Si --> T7[IA genera contenido\npor actividad: activityContent]
         T6 -- No --> T8[Edicion manual]
-        T7 --> T9[status: planned]
+        T7 --> T9[status: published]
         T8 --> T9
 
         T1 --> T10[Crear recursos]
@@ -447,23 +447,23 @@ flowchart TD
 | `organizations` | Tenant. Cada cliente (universidad, colegio) es una org con config custom |
 | `users` | Docentes, coordinadores, admins. Auth con `password_hash` (bcrypt). Pertenecen a una unica org via `organization_id` FK |
 | `user_roles` | Roles del usuario en su org (teacher, coordinator, admin). Un usuario puede tener varios roles |
-| `areas` | Agrupación de materias (ej: "Ciencias"). Opcional según config |
+| `areas` | Agrupación de disciplinas (ej: "Ciencias"). Opcional según config |
 | `area_coordinators` | Qué usuarios coordinan qué áreas (M2M) |
-| `subjects` | Materias (ej: "Matemáticas"). Siempre pertenecen a un área |
+| `subjects` | Disciplinas (ej: "Matemáticas"). Siempre pertenecen a un área |
 | `topics` | Jerarquía dinámica de temas/saberes. Self-referential con niveles configurables |
 | `courses` | Grupos de alumnos (ej: "2do 1era") |
 | `students` | Alumnos de un curso |
-| `course_subjects` | Instancia: curso + materia + docente + periodo lectivo |
+| `course_subjects` | Instancia: curso + disciplina + docente + periodo lectivo |
 | `time_slots` | Slots horarios semanales de un curso (día + hora inicio/fin) |
 | `time_slot_subjects` | Qué course_subject(s) se dictan en cada slot. 2 registros = clase compartida |
 | `coordination_documents` | Output principal: planificación anual. `sections` JSONB dinámico según `config.coord_doc_sections` |
 | `coord_doc_topics` | Junction: topics seleccionados para un documento de coordinación (antes `topic_ids[]`) |
-| `coordination_document_subjects` | Materias incluidas en un doc de coordinación con `class_count` (antes JSONB `subjects_data`) |
-| `coord_doc_subject_topics` | Junction: topics asignados a una materia dentro del documento (antes `subjects_data.*.category_ids[]`) |
-| `coord_doc_classes` | Plan de clase por materia: class_number, title, objective (antes JSONB `class_plan`) |
+| `coordination_document_subjects` | Disciplinas incluidas en un doc de coordinación con `class_count` (antes JSONB `subjects_data`) |
+| `coord_doc_subject_topics` | Junction: topics asignados a una disciplina dentro del documento (antes `subjects_data.*.category_ids[]`) |
+| `coord_doc_classes` | Plan de clase por disciplina: class_number, title, objective (antes JSONB `class_plan`) |
 | `coord_doc_class_topics` | Junction: topics de cada clase individual (antes `class_plan.*.topic_ids[]`) |
 | `activities` | Actividades didácticas con `moment` enum (apertura, desarrollo, cierre) |
-| `teacher_lesson_plans` | Plan de clase del docente: objetivo, contenido, momentos con actividades |
+| `teacher_lesson_plans` | Planificación docente: objetivo, contenido, momentos con actividades |
 | `lesson_plan_topics` | Junction: topics cubiertos en un lesson plan (antes `topic_ids[]`) |
 | `lesson_plan_moment_fonts` | Junction: font asignado por momento en un lesson plan (antes JSONB `moment_font_ids`) |
 | `fonts` | **Fuentes educativas** (del espanol "fuentes", NO tipografia). PDFs, videos, documentos de referencia curados. `is_validated = true` = aprobado por coordinadores y visible para docentes en la API. Pertenecen a un `area_id` |
@@ -702,11 +702,11 @@ WHERE cdt.coordination_document_id = $1;
 
 ### coordination_document_subjects
 
-Vincula un documento con sus materias. Cada materia tiene un `class_count` (cantidad de clases en el periodo). Reemplaza las keys del JSONB `subjects_data`.
+Vincula un documento con sus disciplinas. Cada disciplina tiene un `class_count` (cantidad de clases en el periodo). Reemplaza las keys del JSONB `subjects_data`.
 
 ### coord_doc_subject_topics
 
-Topics asignados a una materia específica dentro del documento (antes `subjects_data.*.category_ids[]`). Subconjunto de los `coord_doc_topics` del documento. Se usan para validar que todos los topics del documento estén distribuidos entre las materias.
+Topics asignados a una disciplina específica dentro del documento (antes `subjects_data.*.category_ids[]`). Subconjunto de los `coord_doc_topics` del documento. Se usan para validar que todos los topics del documento estén distribuidos entre las disciplinas.
 
 ```sql
 -- Topics asignados a Matemáticas en el documento 5
@@ -719,11 +719,11 @@ WHERE cds.coordination_document_id = 5 AND cds.subject_id = 1;
 
 ### coord_doc_classes
 
-Plan de clases por materia (antes `subjects_data.*.class_plan[]`). Cada registro es una clase con número, título y objetivo. Generados por IA via `/coordination-documents/{id}/generate`.
+Plan de clases por disciplina (antes `subjects_data.*.class_plan[]`). Cada registro es una clase con número, título y objetivo. Generados por IA via `/coordination-documents/{id}/generate`.
 
 ### coord_doc_class_topics
 
-Topics cubiertos en cada clase individual (antes `class_plan.*.category_ids[]`). Permite saber exactamente qué se enseña en cada clase y validar que todos los topics de la materia estén cubiertos en alguna clase.
+Topics cubiertos en cada clase individual (antes `class_plan.*.category_ids[]`). Permite saber exactamente qué se enseña en cada clase y validar que todos los topics de la disciplina estén cubiertos en alguna clase.
 
 ```sql
 -- Clases de Matemáticas en doc 5, con sus topics
@@ -744,7 +744,7 @@ Se eliminaron `topic_ids INTEGER[]` y `moment_font_ids JSONB`.
 
 ### lesson_plan_topics
 
-Topics cubiertos en un lesson plan (antes `teacher_lesson_plans.topic_ids[]`). Subconjunto de los topics asignados a esa materia en el documento de coordinación.
+Topics cubiertos en un lesson plan (antes `teacher_lesson_plans.topic_ids[]`). Subconjunto de los topics asignados a esa disciplina en el documento de coordinación.
 
 ```sql
 -- Topics del lesson plan 42
@@ -877,7 +877,7 @@ Valida que el `course_subject` pertenece al mismo `course` que el `time_slot`. D
 
 ### 2. validate_time_slot_max_subjects
 
-Controla que no se excedan las materias por slot segun `shared_classes_enabled`.
+Controla que no se excedan las disciplinas por slot segun `shared_classes_enabled`.
 
 ```sql
 CREATE OR REPLACE FUNCTION validate_time_slot_max_subjects() RETURNS TRIGGER AS $$
@@ -1111,7 +1111,7 @@ GORM crea indices automaticos para columnas con tag `index` en los structs. Los 
 | `area_coordinators` | Coordinadores ↔ Áreas (M2M) |
 | `topics` | Jerarquía dinámica de temas |
 | `time_slots` | Grilla horaria semanal |
-| `time_slot_subjects` | Materias por slot (shared classes) + trigger same-course |
+| `time_slot_subjects` | Disciplinas por slot (shared classes) + trigger same-course |
 | `coordination_document_subjects` | Normaliza doc ↔ subjects (antes JSONB `subjects_data`) |
 | `coord_doc_topics` | Junction doc ↔ topics (antes `topic_ids[]`) |
 | `coord_doc_subject_topics` | Junction subject-en-doc ↔ topics (antes `subjects_data.*.category_ids[]`) |

@@ -2,8 +2,8 @@
 
 > Como usuario (docente o coordinador), necesito ayuda contextual de Alizia mientras navego la plataforma, para entender funcionalidades, recibir sugerencias y resolver dudas sin salir de la aplicacion.
 
-**Fase:** Post-MVP
-**Prioridad:** Media
+**Fase:** Fase 4
+**Prioridad:** Alta
 **Estimacion:** --
 
 ---
@@ -27,7 +27,7 @@ El usuario pregunta "que es un nucleo problematico?". Alizia responde con una ex
 El usuario lleva tiempo en el wizard sin avanzar. Alizia detecta la inactividad y ofrece ayuda: "Necesitas una mano con este paso? Puedo explicarte que significa cada opcion."
 
 ### Resumen de documento publicado
-El usuario abre un documento ya publicado. Alizia ofrece un resumen de las decisiones clave: cantidad de clases por materia, categorias cubiertas, y si hay categorias sin asignar.
+El usuario abre un documento ya publicado. Alizia ofrece un resumen de las decisiones clave: cantidad de clases por disciplina, categorias cubiertas, y si hay categorias sin asignar.
 
 ## Criterios de aceptacion
 

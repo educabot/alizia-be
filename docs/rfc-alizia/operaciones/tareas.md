@@ -31,9 +31,9 @@
 |---|-------|--------|
 | 3.1 | Migración coordination (6 tablas) | ⬜ |
 | 3.2 | Crear documento (wizard 3 pasos) | ⬜ |
-| 3.3 | Asignar materias + topics a materias | ⬜ |
+| 3.3 | Asignar disciplinas + topics a disciplinas | ⬜ |
 | 3.4 | CRUD secciones dinámicas (sections JSONB) | ⬜ |
-| 3.5 | Status workflow (draft → published → archived) | ⬜ |
+| 3.5 | Status workflow (pending → in_progress → published) | ⬜ |
 | 3.6 | GET documento completo (con JOINs/Preloads) | ⬜ |
 | 3.7 | Tests | ⬜ |
 

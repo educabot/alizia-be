@@ -33,7 +33,7 @@
 
 - [HU-4.1: Modelo de datos](../HU-4.1-modelo-datos-documento/HU-4.1-modelo-datos-documento.md) — Tabla con campo sections JSONB
 - [HU-3.1: Organizaciones](../../03-integracion/HU-3.1-organizaciones-configuracion/HU-3.1-organizaciones-configuracion.md) — Config con coord_doc_sections
-- [Épica 6: Asistente IA](../../06-assistente-ia/06-asistente-ia.md) — Azure OpenAI para generación
+- [Épica 6: Asistente IA](../../06-asistente-ia/06-asistente-ia.md) — Azure OpenAI para generación
 
 ## Diseño técnico
 

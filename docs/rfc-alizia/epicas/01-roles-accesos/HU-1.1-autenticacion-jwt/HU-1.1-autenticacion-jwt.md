@@ -10,8 +10,8 @@
 
 ## Criterios de aceptación
 
-- [ ] JWT auth configurado con JWKS domain + audience para staging
-- [ ] JWT middleware valida tokens via JWKS (team-ai-toolkit/tokens)
+- [ ] JWT auth configurado con HS256 shared secret para staging
+- [ ] JWT middleware valida tokens via HS256 shared secret (team-ai-toolkit/tokens)
 - [ ] Claims extraídos del JWT: user_id, org_id, roles, email, name
 - [ ] Tenant middleware inyecta org_id en el contexto
 - [ ] Request sin token → 401 `missing_token`
@@ -27,7 +27,7 @@
 | # | Tarea | Archivo | Estado |
 |---|-------|---------|--------|
 | 1.1.1 | [Configurar JWT auth](./tareas/T-1.1.1-configurar-jwt.md) | — | ⬜ |
-| 1.1.2 | [Integrar JWT middleware (JWKS)](./tareas/T-1.1.2-jwt-middleware.md) | cmd/main.go | ⬜ |
+| 1.1.2 | [Integrar JWT middleware (HS256)](./tareas/T-1.1.2-jwt-middleware.md) | cmd/main.go | ⬜ |
 | 1.1.3 | [Integrar tenant middleware](./tareas/T-1.1.3-tenant-middleware.md) | cmd/main.go | ⬜ |
 | 1.1.4 | [Config: JWT auth env vars](./tareas/T-1.1.4-config-jwt.md) | config/config.go | ⬜ |
 | 1.1.5 | [Tests de autenticación](./tareas/T-1.1.5-tests-auth.md) | — | ⬜ |
@@ -36,7 +36,7 @@
 ## Dependencias
 
 - Épica 0 completada (/health respondiendo)
-- JWT auth configurado (JWKS domain + audience)
+- JWT auth configurado (HS256 shared secret)
 - team-ai-toolkit/tokens funcional
 
 ## Test cases

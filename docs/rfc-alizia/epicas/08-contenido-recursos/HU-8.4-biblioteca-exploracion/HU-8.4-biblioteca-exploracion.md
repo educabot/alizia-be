@@ -11,9 +11,9 @@
 ## Criterios de aceptación
 
 - [ ] El docente puede ver todos los recursos de su organización en una vista de biblioteca
-- [ ] Se puede filtrar por tipo de recurso, materia y creador
-- [ ] El filtro por materia es UX (restricción soft), no de permisos — un docente de matemáticas puede ver recursos de otras materias si quiere
-- [ ] Se muestra información clave: título, tipo, materia, creador, fecha
+- [ ] Se puede filtrar por tipo de recurso, disciplina y creador
+- [ ] El filtro por disciplina es UX (restricción soft), no de permisos — un docente de matemáticas puede ver recursos de otras disciplinas si quiere
+- [ ] Se muestra información clave: título, tipo, disciplina, creador, fecha
 - [ ] Click en un recurso abre el detalle con el contenido renderizado
 - [ ] Se pueden buscar recursos por texto en el título
 
@@ -33,5 +33,5 @@
 
 - 8.12: Listar recursos de la org → retorna todos los recursos
 - 8.13: Filtrar por tipo → solo recursos del tipo seleccionado
-- 8.14: Filtrar por materia → recursos vinculados a esa materia
+- 8.14: Filtrar por disciplina → recursos vinculados a esa disciplina
 - 8.15: Buscar por título → match parcial

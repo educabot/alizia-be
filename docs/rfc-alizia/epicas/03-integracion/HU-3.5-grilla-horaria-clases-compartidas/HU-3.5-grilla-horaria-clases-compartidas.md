@@ -1,6 +1,6 @@
 # HU-3.5: Grilla horaria y clases compartidas
 
-> Como admin, necesito definir la grilla horaria semanal de cada curso y marcar qué clases son compartidas entre dos materias.
+> Como admin, necesito definir la grilla horaria semanal de cada curso y marcar qué clases son compartidas entre dos disciplinas.
 
 **Fase:** 2 — Admin/Integration
 **Prioridad:** Alta

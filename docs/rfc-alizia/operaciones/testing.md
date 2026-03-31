@@ -42,7 +42,7 @@
 | 2.6 | Crear topic nivel 2 (parent_id=topic_level_1) | 201 + level=2 | Alta |
 | 2.7 | Crear topic nivel 4 cuando max_levels=3 | 400 `topic exceeds max level` | Alta |
 | 2.8 | Crear curso + students | 201 | Media |
-| 2.9 | Crear course_subject (curso + materia + docente) | 201 | Alta |
+| 2.9 | Crear course_subject (curso + disciplina + docente) | 201 | Alta |
 | 2.10 | Crear time_slot | 201 | Media |
 | 2.11 | Crear time_slot_subject | 201 | Alta |
 | 2.12 | Crear 2 time_slot_subjects en mismo slot (clase compartida) | 201 si shared_classes_enabled | Alta |
@@ -55,15 +55,15 @@
 | # | Caso | Resultado esperado | Prioridad |
 |---|------|--------------------|-----------|
 | 3.1 | Crear documento (wizard paso 1: topics) | 201 + doc en draft + coord_doc_topics creados | Alta |
-| 3.2 | Asignar materias + class_count al doc | coordination_document_subjects creados | Alta |
-| 3.3 | Asignar topics a cada materia | coord_doc_subject_topics creados | Alta |
-| 3.4 | Validar que todos los topics del doc estén distribuidos | Error si algún topic no asignado a ninguna materia | Alta |
+| 3.2 | Asignar disciplinas + class_count al doc | coordination_document_subjects creados | Alta |
+| 3.3 | Asignar topics a cada disciplina | coord_doc_subject_topics creados | Alta |
+| 3.4 | Validar que todos los topics del doc estén distribuidos | Error si algún topic no asignado a ninguna disciplina | Alta |
 | 3.5 | PATCH sections (actualizar sección dinámica) | sections JSONB actualizado | Alta |
 | 3.6 | PATCH sections con key inexistente en config | 400 `invalid section key` | Media |
-| 3.7 | Publicar documento (draft → published) | Status actualizado | Alta |
+| 3.7 | Publicar documento (in_progress → published) | Status actualizado | Alta |
 | 3.8 | Publicar documento ya publicado | 400 o idempotente | Media |
-| 3.9 | Archivar documento publicado | Status → archived | Media |
-| 3.10 | DELETE documento en draft | 200 + eliminado | Media |
+| 3.9 | Comenzar edición (pending → in_progress) | Status actualizado | Media |
+| 3.10 | DELETE documento en pending | 200 + eliminado | Media |
 | 3.11 | DELETE documento publicado | 400 `cannot delete published document` | Alta |
 | 3.12 | GET documento completo (con todas las junction tables) | Todas las relaciones cargadas | Alta |
 | 3.13 | Docente ve doc publicado | 200 (lectura) | Alta |
@@ -75,7 +75,7 @@
 | # | Caso | Resultado esperado | Prioridad |
 |---|------|--------------------|-----------|
 | 4.1 | POST /coordination-documents/:id/generate | Secciones populadas según ai_prompt de config | Alta |
-| 4.2 | Generación crea plan de clases por materia | coord_doc_classes creadas con class_number, title, objective | Alta |
+| 4.2 | Generación crea plan de clases por disciplina | coord_doc_classes creadas con class_number, title, objective | Alta |
 | 4.3 | Generación asigna topics a cada clase | coord_doc_class_topics creados | Alta |
 | 4.4 | Chat: "cambiá el eje problemático por algo más corto" | update_section ejecutado, sección actualizada | Alta |
 | 4.5 | Chat: update_section con key inválida | Error de validación | Media |
@@ -96,7 +96,7 @@
 | 5.7 | Seleccionar fonts modo global | lesson_plan_moment_fonts con moment=NULL | Media |
 | 5.8 | Seleccionar fonts por momento | lesson_plan_moment_fonts con moment=apertura/desarrollo/cierre | Media |
 | 5.9 | Generar contenido por actividad | activityContent populado en moments JSONB | Alta |
-| 5.10 | Status cambia a planned | Status actualizado | Media |
+| 5.10 | Status cambia a published | Status actualizado | Media |
 | 5.11 | Clase compartida muestra indicador | Respuesta incluye flag de shared class | Media |
 
 ### Fase 6: Resources

@@ -2,8 +2,8 @@
 
 > Como administrador de la plataforma, necesito personalizar el comportamiento de Alizia por organizacion, para que cada provincia tenga un asistente alineado con su estilo pedagogico y requerimientos curriculares.
 
-**Fase:** Post-MVP
-**Prioridad:** Media
+**Fase:** Fase 4
+**Prioridad:** Alta
 **Estimacion:** --
 
 ---

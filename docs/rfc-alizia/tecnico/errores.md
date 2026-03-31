@@ -54,7 +54,7 @@ Estos errores vienen de la libreria compartida y aplican a todos los endpoints.
 
 | HTTP | Code | Descripcion | Endpoint |
 |------|------|-------------|----------|
-| 409 | `DUPLICATE_SUBJECT` | Ya existe una materia con ese nombre en la misma area | POST /subjects |
+| 409 | `DUPLICATE_SUBJECT` | Ya existe una disciplina con ese nombre en la misma area | POST /subjects |
 
 ### Courses
 
@@ -66,7 +66,7 @@ Estos errores vienen de la libreria compartida y aplican a todos los endpoints.
 
 | HTTP | Code | Descripcion | Endpoint |
 |------|------|-------------|----------|
-| 409 | `DUPLICATE_COURSE_SUBJECT` | Ya existe esa combinacion curso + materia + school_year | POST /course-subjects |
+| 409 | `DUPLICATE_COURSE_SUBJECT` | Ya existe esa combinacion curso + disciplina + school_year | POST /course-subjects |
 
 ### Topics
 
@@ -98,8 +98,8 @@ Estos errores vienen de la libreria compartida y aplican a todos los endpoints.
 
 | HTTP | Code | Descripcion | Endpoint |
 |------|------|-------------|----------|
-| 400 | `SUBJECT_NOT_IN_AREA` | Una materia no pertenece al area del documento | POST /coordination-documents |
-| 400 | `TOPICS_NOT_FULLY_DISTRIBUTED` | No todos los topics del doc estan asignados a alguna materia | POST /coordination-documents |
+| 400 | `SUBJECT_NOT_IN_AREA` | Una disciplina no pertenece al area del documento | POST /coordination-documents |
+| 400 | `TOPICS_NOT_FULLY_DISTRIBUTED` | No todos los topics del doc estan asignados a alguna disciplina | POST /coordination-documents |
 
 ### Edicion y estados
 
@@ -114,8 +114,8 @@ Estos errores vienen de la libreria compartida y aplican a todos los endpoints.
 | HTTP | Code | Descripcion | Endpoint |
 |------|------|-------------|----------|
 | 400 | `DOCUMENT_MISSING_REQUIRED_SECTIONS` | Faltan secciones marcadas como `required` en la config | PATCH (status → published) |
-| 400 | `DOCUMENT_NO_CLASS_PLANS` | No hay plan de clases generado para alguna materia | PATCH (status → published) |
-| 400 | `TOPICS_NOT_FULLY_COVERED` | Hay topics de materia no asignados a ninguna clase | PATCH (status → published) |
+| 400 | `DOCUMENT_NO_CLASS_PLANS` | No hay plan de clases generado para alguna disciplina | PATCH (status → published) |
+| 400 | `TOPICS_NOT_FULLY_COVERED` | Hay topics de disciplina no asignados a ninguna clase | PATCH (status → published) |
 | 400 | `INVALID_STATUS_TRANSITION` | Transicion de estado no permitida (ej: archived → draft) | PATCH (status change) |
 
 ### Chat
@@ -132,10 +132,10 @@ Estos errores vienen de la libreria compartida y aplican a todos los endpoints.
 
 | HTTP | Code | Descripcion | Endpoint |
 |------|------|-------------|----------|
-| 400 | `NO_PUBLISHED_DOCUMENT` | No hay documento de coordinacion publicado para la materia | GET /course-subjects/:id/lesson-plans, POST /lesson-plans |
+| 400 | `NO_PUBLISHED_DOCUMENT` | No hay documento de coordinacion publicado para la disciplina | GET /course-subjects/:id/lesson-plans, POST /lesson-plans |
 | 409 | `LESSON_PLAN_ALREADY_EXISTS` | Ya existe un lesson plan para esa clase y course_subject | POST /lesson-plans |
 | 400 | `INVALID_MOMENT_ACTIVITIES` | Cantidad de actividades invalida por momento | POST, PATCH /lesson-plans |
-| 400 | `TOPIC_NOT_IN_DOCUMENT` | Un topic no esta asignado a la materia en el doc de coordinacion | POST /lesson-plans |
+| 400 | `TOPIC_NOT_IN_DOCUMENT` | Un topic no esta asignado a la disciplina en el doc de coordinacion | POST /lesson-plans |
 | 400 | `ACTIVITY_NOT_IN_MOMENT` | La actividad no corresponde al momento indicado | POST /lesson-plans/:id/generate-activity |
 | 400 | `LESSON_PLAN_INCOMPLETE` | El lesson plan no tiene todos los momentos completos | PATCH /lesson-plans/:id/status |
 
@@ -206,9 +206,8 @@ Errores de la API de Azure OpenAI se mapean asi:
 ### Coordination Document
 
 ```
-draft → published    (publicar)
-draft → archived     (archivar borrador)
-published → archived (archivar publicado)
+pending → in_progress    (comenzar edición)
+in_progress → published  (publicar)
 ```
 
 Cualquier otra transicion retorna `INVALID_STATUS_TRANSITION`.
@@ -216,7 +215,7 @@ Cualquier otra transicion retorna `INVALID_STATUS_TRANSITION`.
 ### Lesson Plan
 
 ```
-pending → planned    (marcar como planificado)
+pending → in_progress → published    (marcar como en progreso, luego publicar)
 ```
 
 ### Resource
@@ -249,7 +248,7 @@ var ErrInvalidSectionKey = errors.NewValidation("INVALID_SECTION_KEY", "La secci
 
 // Teaching
 var ErrInvalidMomentActivities = errors.NewValidation("INVALID_MOMENT_ACTIVITIES", "Cantidad de actividades invalida para el momento")
-var ErrLessonPlanAlreadyExists = errors.NewDuplicate("LESSON_PLAN_ALREADY_EXISTS", "Ya existe un plan de clase para esta clase")
+var ErrLessonPlanAlreadyExists = errors.NewDuplicate("LESSON_PLAN_ALREADY_EXISTS", "Ya existe una planificación docente para esta clase")
 
 // AI
 var ErrAIGeneration = errors.New("AI_GENERATION_ERROR", "Error al generar contenido con IA")

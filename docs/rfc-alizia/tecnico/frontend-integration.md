@@ -211,7 +211,7 @@ const canPublish = (doc: Document, config: SectionConfig[]): string[] => {
     }
   }
 
-  // Todas las materias deben tener plan de clases
+  // Todas las disciplinas deben tener plan de clases
   for (const subject of doc.subjects) {
     if (subject.classes.length === 0) {
       errors.push(`${subject.subject_name} no tiene plan de clases`);
@@ -312,7 +312,7 @@ Un time_slot con 2 subjects es una clase compartida:
 const isShared = (slot: TimeSlot) => slot.subjects.length > 1;
 ```
 
-Renderizar con badge o icono para indicar que dos materias se dictan en el mismo horario.
+Renderizar con badge o icono para indicar que dos disciplinas se dictan en el mismo horario.
 
 ### En el plan de clases (coordination document)
 
@@ -453,7 +453,7 @@ interface CoordinationDocument {
   area_name: string;
   start_date: string;   // ISO date
   end_date: string;
-  status: "draft" | "published" | "archived";
+  status: "pending" | "in_progress" | "published";
   sections: Record<string, SectionValue>;
   topics: Topic[];
   subjects: DocumentSubject[];
@@ -500,7 +500,7 @@ interface LessonPlan {
   class_number: number;
   title: string | null;
   objective?: string;
-  status: "pending" | "planned";
+  status: "pending" | "in_progress" | "published";
   is_shared: boolean;
   moments?: Moments;
   coord_class: {

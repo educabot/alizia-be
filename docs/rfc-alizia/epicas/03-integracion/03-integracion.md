@@ -14,9 +14,9 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 ## Objetivos
 
 - Modelar organizaciones como tenants con configuración propia (JSONB)
-- Crear y gestionar áreas, materias y su relación con coordinadores
+- Crear y gestionar áreas, disciplinas y su relación con coordinadores
 - Modelar la jerarquía curricular (topics) de forma dinámica y configurable por org
-- Gestionar cursos, alumnos y asignaciones docente-materia-curso
+- Gestionar cursos, alumnos y asignaciones docente-disciplina-curso
 - Definir grillas horarias semanales con soporte para clases compartidas
 - Cargar actividades didácticas por momento de clase
 
@@ -25,7 +25,7 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 **Incluye:**
 
 - CRUD de organizaciones con config JSONB
-- CRUD de áreas, materias, asignación de coordinadores
+- CRUD de áreas, disciplinas, asignación de coordinadores
 - Topics como tabla auto-referencial con niveles dinámicos
 - CRUD de cursos, students, course_subjects
 - Time slots + time_slot_subjects (clases compartidas)
@@ -35,7 +35,7 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 **No incluye:**
 
 - UI de administración → admin opera por API/scripts
-- Importación masiva desde archivos (CSV, Excel) → horizonte
+- Importación masiva desde archivos (CSV, Excel) → horizonte. **Nota:** "importación" en producto se refiere al setup manual por el equipo de implementación via API/seeds, no a upload de archivos por el usuario
 - Onboarding de usuarios → ver [Épica 2: Onboarding](../02-onboarding/02-onboarding.md)
 - Autenticación y roles → ver [Épica 1: Roles y accesos](../01-roles-accesos/01-roles-accesos.md)
 
@@ -53,7 +53,7 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 | # | Historia | Descripción | Fase | Tareas |
 |---|---------|-------------|------|--------|
 | HU-3.1 | [Organizaciones y configuración](./HU-3.1-organizaciones-configuracion/HU-3.1-organizaciones-configuracion.md) | Tabla organizations, config JSONB, CRUD, seed | Fase 2 | 5 |
-| HU-3.2 | [Áreas y materias](./HU-3.2-areas-materias/HU-3.2-areas-materias.md) | Tablas areas, subjects, area_coordinators, CRUD, endpoints | Fase 2 | 6 |
+| HU-3.2 | [Áreas y disciplinas](./HU-3.2-areas-materias/HU-3.2-areas-materias.md) | Tablas areas, subjects, area_coordinators, CRUD, endpoints | Fase 2 | 6 |
 | HU-3.3 | [Topics — jerarquía curricular](./HU-3.3-topics-jerarquia-curricular/HU-3.3-topics-jerarquia-curricular.md) | Tabla self-referential, niveles dinámicos, tree endpoint | Fase 2 | 6 |
 | HU-3.4 | [Cursos, alumnos y asignaciones](./HU-3.4-cursos-alumnos-asignaciones/HU-3.4-cursos-alumnos-asignaciones.md) | courses, students, course_subjects, CRUD | Fase 2 | 5 |
 | HU-3.5 | [Grilla horaria y clases compartidas](./HU-3.5-grilla-horaria-clases-compartidas/HU-3.5-grilla-horaria-clases-compartidas.md) | time_slots, time_slot_subjects, triggers, shared classes | Fase 2 | 6 |
@@ -67,7 +67,7 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 - Los topics se modelan en una **tabla única auto-referencial**. La profundidad se **pre-computa** en el campo `level`. Si se mueve un topic, se re-computa solo la rama afectada.
 - Cada org define la **profundidad máxima** de su jerarquía (`topic_max_levels`) y los **nombres por nivel** (`topic_level_names`).
 - Las clases compartidas se modelan con **2 `time_slot_subjects`** por slot. Trigger valida que ambos `course_subjects` pertenezcan al mismo `course_id`.
-- Un área puede contener una o más materias. Si la provincia no organiza por áreas, se crea un área genérica.
+- Un área puede contener una o más disciplinas. Si la provincia no organiza por áreas, se crea un área genérica.
 - El setup inicial de cada provincia lo hace el equipo de implementación — no hay backoffice self-service.
 - Las migraciones son **incrementales**: cada HU agrega sus tablas, no se crea todo upfront.
 
@@ -82,13 +82,13 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 ## Épicas relacionadas
 
 - **[Épica 1: Roles y accesos](../01-roles-accesos/01-roles-accesos.md)** — Provee autenticación, roles y multi-tenancy. Organizations + users ya existen de Épica 1.
-- **[Épica 4: Documento de coordinación](../04-documento-coordinacion/04-documento-coordinacion.md)** — Consume áreas, materias, topics, time_slots para crear documentos.
+- **[Épica 4: Documento de coordinación](../04-documento-coordinacion/04-documento-coordinacion.md)** — Consume áreas, disciplinas, topics, time_slots para crear documentos.
 - **[Épica 5: Planificación docente](../05-planificacion-docente/05-planificacion-docente.md)** — Usa course_subjects, activities, topics para lesson plans.
-- **[Épica 6: Asistente IA](../06-assistente-ia/06-asistente-ia.md)** — Usa topics y config de org como contexto para generación.
+- **[Épica 6: Asistente IA](../06-asistente-ia/06-asistente-ia.md)** — Usa topics y config de org como contexto para generación.
 
 ## Test cases asociados
 
-- Fase 2: CRUD de áreas, materias, topics, cursos
+- Fase 2: CRUD de áreas, disciplinas, topics, cursos
 - Topics: crear topic excediendo `topic_max_levels` → error
 - Topics: mover topic y verificar re-cómputo de levels
 - Time slots: crear clase compartida con `shared_classes_enabled = false` → error

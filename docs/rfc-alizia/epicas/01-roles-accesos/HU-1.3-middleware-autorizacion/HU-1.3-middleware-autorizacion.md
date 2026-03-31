@@ -39,3 +39,7 @@
 - Request con roles `[teacher, coordinator]` a endpoint que requiere `coordinator` → 200
 - Request sin claims en context → 403 `forbidden`
 - Request a endpoint sin RequireRole → pasa (solo auth + tenant)
+
+## Notas
+
+> **Nota:** En MVP los permisos son estaticos: coordinador edita documentos, docente solo lee. Si una organizacion necesita permisos distintos, se puede extender el middleware para leer una configuracion de permisos desde `organizations.config`. Esto no requiere HU dedicada — se implementa como extension del middleware existente cuando surja la necesidad.

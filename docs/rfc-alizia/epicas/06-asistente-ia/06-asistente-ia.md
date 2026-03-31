@@ -28,10 +28,8 @@ Múltiples épicas necesitan generar texto, estructurar respuestas en JSON, ejec
 - Motor de function calling: definición de tools, ejecución en loop, multi-turn
 - Context builders para documentos de coordinación y planificaciones
 
-**Post-MVP:**
-
-- Customización por organización (tono, límites, fuentes permitidas) → validación con cada provincia
-- Asistencia de navegación contextual dentro de la plataforma → horizonte
+- Customización por organización (tono, límites, fuentes permitidas)
+- Asistencia de navegación contextual dentro de la plataforma
 
 **No incluye:**
 
@@ -49,8 +47,8 @@ Múltiples épicas necesitan generar texto, estructurar respuestas en JSON, ejec
 | HU-6.2 | [Prompts configurables](./HU-6.2-prompts-configurables/HU-6.2-prompts-configurables.md) | Templates de prompts por org con placeholders y JSON Schema | Fase 4 | 3 |
 | HU-6.3 | [Motor de function calling](./HU-6.3-motor-function-calling/HU-6.3-motor-function-calling.md) | Framework para definir y ejecutar tools en conversations | Fase 4 | 4 |
 | HU-6.4 | [Contexto y enriquecimiento](./HU-6.4-contexto-enriquecimiento/HU-6.4-contexto-enriquecimiento.md) | Builders de contexto para diferentes entidades del dominio | Fase 4 | 3 |
-| HU-6.5 | [Customización por organización](./HU-6.5-customizacion-organizacion/HU-6.5-customizacion-organizacion.md) | Ajustar tono, límites y fuentes por provincia | Post-MVP | 5 |
-| HU-6.6 | [Asistencia de navegación](./HU-6.6-asistencia-navegacion/HU-6.6-asistencia-navegacion.md) | Ayuda contextual dentro de la plataforma | Post-MVP | 4 |
+| HU-6.5 | [Customización por organización](./HU-6.5-customizacion-organizacion/HU-6.5-customizacion-organizacion.md) | Ajustar tono, límites y fuentes por provincia | Fase 4 | 5 |
+| HU-6.6 | [Asistencia de navegación](./HU-6.6-asistencia-navegacion/HU-6.6-asistencia-navegacion.md) | Ayuda contextual dentro de la plataforma | Fase 4 | 4 |
 
 ---
 
@@ -66,8 +64,8 @@ Múltiples épicas necesitan generar texto, estructurar respuestas en JSON, ejec
 ## Decisiones de cada cliente
 
 - Los prompts por sección son configurables por organización
-- El tono del asistente (formal, informal, rioplatense) se define por provincia (post-MVP)
-- Las fuentes curriculares permitidas varían por jurisdicción (post-MVP)
+- El tono del asistente (formal, informal, rioplatense) se define por provincia
+- Las fuentes curriculares permitidas varían por jurisdicción
 
 ## Épicas relacionadas
 
@@ -77,4 +75,4 @@ Múltiples épicas necesitan generar texto, estructurar respuestas en JSON, ejec
 
 ## Test cases asociados
 
-- Fase 4: Tests 6.1–6.18 (AI provider, prompts, function calling, contexto)
+- Fase 4: Tests 6.1–6.18 (AI provider, prompts, function calling, contexto, customización por org, asistencia de navegación)
