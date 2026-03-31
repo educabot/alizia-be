@@ -59,5 +59,8 @@ func (a *App) Run() {
 
 func (a *App) Close() {
 	sqlDB, _ := a.db.DB()
-	sqlDB.Close()
+	err := sqlDB.Close()
+	if err != nil {
+		return
+	}
 }

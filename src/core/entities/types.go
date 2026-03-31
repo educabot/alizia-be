@@ -34,7 +34,7 @@ func (j JSON) MarshalJSON() ([]byte, error) {
 	if len(j) == 0 {
 		return []byte("null"), nil
 	}
-	return []byte(j), nil
+	return j, nil
 }
 
 func (j *JSON) UnmarshalJSON(data []byte) error {
