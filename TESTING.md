@@ -134,4 +134,4 @@ func TestCreateDocumentRequest_Validate(t *testing.T) {
 | handlers | Parsing HTTP, error mapping | Mock usecases | No |
 | repositories | Queries, mapeo | PostgreSQL real | Si |
 
-## Coverage target: 80%
+## Coverage target: 90%

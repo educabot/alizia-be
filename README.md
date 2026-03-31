@@ -59,7 +59,7 @@ make migrate      # Correr migraciones
 
 ## Testing
 
-Target: 80% coverage. Ver `TESTING.md` para convenciones y guia completa.
+Target: 90% coverage. Ver `TESTING.md` para convenciones y guia completa.
 
 ```bash
 go test ./...
@@ -73,8 +73,6 @@ go test ./...
 Todos los endpoints autenticados via Bearer token (JWT).
 
 ## Environment Variables
-
-Ver `.env.example` para la lista completa.
 
 **Requeridas:**
 - `DATABASE_URL` - PostgreSQL connection string
