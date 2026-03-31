@@ -1,0 +1,2 @@
+-- 000004_resources: Resource types, resources, fonts
+-- Implementation in Épica 8 (Contenido y recursos)

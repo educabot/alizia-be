@@ -1,0 +1,2 @@
+-- 000002_coordination: Coordination document tables (6 normalized tables)
+-- Implementation in Épica 4 (Documento de coordinación)

@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/alizia-api ./cmd"
+bin = "./tmp/alizia-api"
+include_ext = ["go", "tpl", "tmpl", "html", "txt"]
+exclude_dir = ["tmp", "vendor", "frontend", "docs", "db", ".git", ".github"]
+delay = 1000
+
+[log]
+time = false
+
+[misc]
+clean_on_exit = true

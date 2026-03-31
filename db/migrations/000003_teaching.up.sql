@@ -1,0 +1,2 @@
+-- 000003_teaching: Lesson plans, activities
+-- Implementation in Épica 5 (Planificación docente)

@@ -72,7 +72,17 @@
       "Bash(find C:UsersEducabotDesktopEducabotRepositoriosalizia-bedocsrfc-aliziaepicas03-integracionHU-3.1-organizaciones-configuraciontareas -type f -name *.md)",
       "Bash(mkdir -p HU-8.6-creacion-libre-vinculo-plan)",
       "Bash(mv \"HU-8.3-creacion-libre-vinculo-plan/HU-8.3-creacion-libre-vinculo-plan.md\" \"HU-8.6-creacion-libre-vinculo-plan/HU-8.6-creacion-libre-vinculo-plan.md\")",
-      "Bash(rmdir \"HU-8.3-creacion-libre-vinculo-plan\")"
+      "Bash(rmdir \"HU-8.3-creacion-libre-vinculo-plan\")",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__getAccessibleAtlassianResources",
+      "mcp__atlassian__createJiraIssue",
+      "Bash(go version:*)",
+      "Bash(go mod:*)",
+      "Bash(go get:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go env:*)",
+      "Bash(GOPRIVATE=github.com/educabot/*)"
     ]
   }
 }
