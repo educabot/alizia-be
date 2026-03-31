@@ -8,12 +8,5 @@ import (
 
 // ConfigureMappings registers all API routes on the Gin engine.
 func ConfigureMappings(engine *gin.Engine, _ *entrypoints.WebHandlerContainer, _ *config.Config) {
-	api := engine.Group("/api/v1")
-	_ = api
-
-	// Routes are wired incrementally as features are implemented.
-	// Admin routes (Épica 2-3)
-	// Coordination routes (Épica 4)
-	// Teaching routes (Épica 5)
-	// Resources routes (Épica 8)
+	_ = engine.Group("/api/v1")
 }

@@ -15,7 +15,6 @@ linters:
     - unconvert
     - bodyclose
     - nilerr
-    - exportloopref
 
 linters-settings:
   goimports:

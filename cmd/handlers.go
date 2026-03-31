@@ -15,6 +15,6 @@ func NewHandlers(_ *UseCases, cfg *config.Config) *entrypoints.WebHandlerContain
 		Teaching:         &entrypoints.TeachingContainer{},
 		Resources:        &entrypoints.ResourcesContainer{},
 		AuthMiddleware:   tokens.ValidateTokenMiddleware(toker, cfg.Env),
-		TenantMiddleware: nil, // TODO: implement tenant middleware
+		TenantMiddleware: nil, // Épica 1: HU-1.1 tenant middleware
 	}
 }
