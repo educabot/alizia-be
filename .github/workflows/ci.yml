@@ -24,21 +24,26 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/alizia_test?sslmode=disable
+      GOPRIVATE: github.com/educabot/*
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.1'
+      - run: git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
       - run: go test ./... -race -coverprofile=coverage.out
       - run: go tool cover -func=coverage.out
 
   lint:
     runs-on: ubuntu-latest
+    env:
+      GOPRIVATE: github.com/educabot/*
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.1'
-      - uses: golangci/golangci-lint-action@v4
+      - run: git config --global url."https://${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+      - uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v2.1.6

@@ -82,7 +82,9 @@
       "Bash(go build:*)",
       "Bash(go test:*)",
       "Bash(go env:*)",
-      "Bash(GOPRIVATE=github.com/educabot/*)"
+      "Bash(GOPRIVATE=github.com/educabot/*)",
+      "Bash(gh run:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }
