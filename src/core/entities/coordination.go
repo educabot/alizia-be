@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 )
 
 const (
@@ -13,16 +14,16 @@ const (
 )
 
 type CoordinationDocument struct {
-	ID             int64      `json:"id" gorm:"primaryKey"`
-	OrganizationID uuid.UUID  `json:"organization_id"`
-	AreaID         int64      `json:"area_id"`
-	Name           string     `json:"name"`
-	Status         string     `json:"status" gorm:"default:pending"`
-	PeriodName     string     `json:"period_name"`
-	StartDate      *time.Time `json:"start_date"`
-	EndDate        *time.Time `json:"end_date"`
-	Sections       JSON       `json:"sections" gorm:"type:jsonb"`
-	CreatedByID    int64      `json:"created_by_id"`
+	ID             int64          `json:"id" gorm:"primaryKey"`
+	OrganizationID uuid.UUID      `json:"organization_id"`
+	AreaID         int64          `json:"area_id"`
+	Name           string         `json:"name"`
+	Status         string         `json:"status" gorm:"default:pending"`
+	PeriodName     string         `json:"period_name"`
+	StartDate      *time.Time     `json:"start_date"`
+	EndDate        *time.Time     `json:"end_date"`
+	Sections       datatypes.JSON `json:"sections" gorm:"type:jsonb"`
+	CreatedByID    int64          `json:"created_by_id"`
 	TimeTrackedEntity
 }
 
