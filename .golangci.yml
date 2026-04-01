@@ -2,10 +2,6 @@ version: "2"
 
 run:
   timeout: 5m
-  exclude-dirs:
-    - docs
-    - db
-    - scripts
 
 linters:
   enable:
@@ -26,4 +22,11 @@ formatters:
     - goimports
   settings:
     goimports:
-      local-prefixes: github.com/educabot/alizia-be
+      local-prefixes:
+        - github.com/educabot/alizia-be
+
+exclusions:
+  paths:
+    - docs/.*
+    - db/.*
+    - scripts/.*
