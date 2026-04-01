@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 const (
 	DocStatusPending    = "pending"
@@ -10,7 +14,7 @@ const (
 
 type CoordinationDocument struct {
 	ID             int64      `json:"id" gorm:"primaryKey"`
-	OrganizationID int64      `json:"organization_id"`
+	OrganizationID uuid.UUID  `json:"organization_id"`
 	AreaID         int64      `json:"area_id"`
 	Name           string     `json:"name"`
 	Status         string     `json:"status" gorm:"default:pending"`
@@ -19,8 +23,7 @@ type CoordinationDocument struct {
 	EndDate        *time.Time `json:"end_date"`
 	Sections       JSON       `json:"sections" gorm:"type:jsonb"`
 	CreatedByID    int64      `json:"created_by_id"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	TimeTrackedEntity
 }
 
 type CoordDocTopic struct {

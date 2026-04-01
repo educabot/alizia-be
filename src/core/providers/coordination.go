@@ -4,14 +4,15 @@ import (
 	"context"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/google/uuid"
 )
 
 type CoordinationProvider interface {
 	CreateDocument(ctx context.Context, doc *entities.CoordinationDocument) (int64, error)
-	GetDocument(ctx context.Context, orgID, docID int64) (*entities.CoordinationDocument, error)
+	GetDocument(ctx context.Context, orgID uuid.UUID, docID int64) (*entities.CoordinationDocument, error)
 	UpdateDocument(ctx context.Context, doc *entities.CoordinationDocument) error
-	DeleteDocument(ctx context.Context, orgID, docID int64) error
-	ListDocuments(ctx context.Context, orgID int64) ([]entities.CoordinationDocument, error)
+	DeleteDocument(ctx context.Context, orgID uuid.UUID, docID int64) error
+	ListDocuments(ctx context.Context, orgID uuid.UUID) ([]entities.CoordinationDocument, error)
 
 	SetTopics(ctx context.Context, docID int64, topicIDs []int64) error
 	GetTopics(ctx context.Context, docID int64) ([]entities.CoordDocTopic, error)

@@ -40,7 +40,7 @@ organizations (multi-tenant root)
 ### Knowledge Taxonomy (topics)
 ```
 topics (hierarchical tree, org-scoped)
-  └── children topics (recursive, max ~5 levels)
+  └── children topics (recursive)
 ```
 
 ### Coordination Document (main output)

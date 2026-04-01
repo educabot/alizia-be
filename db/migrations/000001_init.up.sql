@@ -1,2 +1,0 @@
--- 000001_init: Base tables (organizations, users, areas, subjects, topics, courses, time_slots)
--- Implementation in Épica 2 (Multi-tenancy) and Épica 3 (Integración)

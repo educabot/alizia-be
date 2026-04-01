@@ -4,7 +4,13 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"time"
 )
+
+type TimeTrackedEntity struct {
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
 // JSON is a raw JSON type for GORM JSONB columns.
 type JSON json.RawMessage

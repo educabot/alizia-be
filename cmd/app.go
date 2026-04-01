@@ -28,7 +28,7 @@ func NewApp(cfg *config.Config) *App {
 		log.Fatal("failed to connect to database: ", err)
 	}
 
-	repos := NewRepositories(cfg, db)
+	repos := NewRepositories(db)
 	usecases := NewUseCases(repos)
 	container := NewHandlers(usecases, cfg)
 

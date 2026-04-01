@@ -1,19 +1,20 @@
 package entities
 
-import "time"
+import "github.com/google/uuid"
+
+type Role string
+
+const (
+	RoleAdmin       Role = "admin"
+	RoleCoordinator Role = "coordinator"
+	RoleTeacher     Role = "teacher"
+)
 
 type User struct {
 	ID             int64     `json:"id" gorm:"primaryKey"`
-	OrganizationID int64     `json:"organization_id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
 	Email          string    `json:"email"`
 	Name           string    `json:"name"`
-	Role           string    `json:"role"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	Role           Role      `json:"role"`
+	TimeTrackedEntity
 }
-
-const (
-	RoleAdmin       = "admin"
-	RoleCoordinator = "coordinator"
-	RoleTeacher     = "teacher"
-)

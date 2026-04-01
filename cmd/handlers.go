@@ -10,7 +10,6 @@ func NewHandlers(_ *UseCases, cfg *config.Config) *entrypoints.WebHandlerContain
 	toker := tokens.New(cfg.JWTSecret)
 
 	return &entrypoints.WebHandlerContainer{
-		Admin:            &entrypoints.AdminContainer{},
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},
 		Resources:        &entrypoints.ResourcesContainer{},

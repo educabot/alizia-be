@@ -6,10 +6,11 @@ import (
 
 	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
+	"github.com/google/uuid"
 )
 
 type CreateDocumentRequest struct {
-	OrgID    int64
+	OrgID    uuid.UUID
 	UserID   int64
 	Name     string
 	AreaID   int64
@@ -17,6 +18,9 @@ type CreateDocumentRequest struct {
 }
 
 func (r CreateDocumentRequest) Validate() error {
+	if r.OrgID == uuid.Nil {
+		return fmt.Errorf("%w: org_id is required", providers.ErrValidation)
+	}
 	if r.Name == "" {
 		return fmt.Errorf("%w: name is required", providers.ErrValidation)
 	}
