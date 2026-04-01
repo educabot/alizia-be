@@ -3,9 +3,10 @@ module github.com/educabot/alizia-be
 go 1.26.1
 
 require (
-	github.com/educabot/team-ai-toolkit v1.7.6
+	github.com/educabot/team-ai-toolkit v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
+	gorm.io/datatypes v1.2.7
 	gorm.io/gorm v1.31.1
 )
 
@@ -52,7 +53,6 @@ require (
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
-	gorm.io/datatypes v1.2.7 // indirect
 	gorm.io/driver/mysql v1.5.6 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
 )

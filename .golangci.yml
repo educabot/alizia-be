@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
 
@@ -15,10 +17,9 @@ linters:
     - unconvert
     - bodyclose
     - nilerr
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/educabot/alizia-be
+  settings:
+    goimports:
+      local-prefixes: github.com/educabot/alizia-be
 
 issues:
   exclude-dirs:
