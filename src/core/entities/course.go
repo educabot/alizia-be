@@ -7,6 +7,5 @@ type Course struct {
 	OrganizationID int64     `json:"organization_id"`
 	Name           string    `json:"name"`
 	Year           int       `json:"year"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	TimeTrackedEntity
 }
