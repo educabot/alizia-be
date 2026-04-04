@@ -1,9 +1,9 @@
 name: CI
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
 
 jobs:
   test:
@@ -49,3 +49,4 @@ jobs:
           version: v2.1.6
           install-mode: goinstall
           verify: false
+          args: --timeout=5m
