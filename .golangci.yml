@@ -16,6 +16,11 @@ linters:
     - unconvert
     - bodyclose
     - nilerr
+  exclusions:
+    paths:
+      - docs/.*
+      - db/.*
+      - scripts/.*
 
 formatters:
   enable:
@@ -24,9 +29,3 @@ formatters:
     goimports:
       local-prefixes:
         - github.com/educabot/alizia-be
-
-exclusions:
-  paths:
-    - docs/.*
-    - db/.*
-    - scripts/.*
