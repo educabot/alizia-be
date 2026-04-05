@@ -1,9 +1,10 @@
 package web
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"github.com/educabot/alizia-be/config"
 	"github.com/educabot/alizia-be/src/entrypoints"
-	"github.com/gin-gonic/gin"
 )
 
 // ConfigureMappings registers all API routes on the Gin engine.

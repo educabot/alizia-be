@@ -1,10 +1,11 @@
 package main
 
 import (
+	"gorm.io/gorm"
+
 	coordr "github.com/educabot/alizia-be/src/repositories/coordination"
 	resr "github.com/educabot/alizia-be/src/repositories/resources"
 	teachr "github.com/educabot/alizia-be/src/repositories/teaching"
-	"gorm.io/gorm"
 )
 
 type Repositories struct {

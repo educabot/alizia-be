@@ -3,9 +3,10 @@ package rest
 import (
 	"net/http"
 
-	"github.com/educabot/alizia-be/src/core/providers"
 	bcerrors "github.com/educabot/team-ai-toolkit/errors"
 	"github.com/educabot/team-ai-toolkit/web"
+
+	"github.com/educabot/alizia-be/src/core/providers"
 )
 
 // HandleError extends team-ai-toolkit error handler with Alizia-specific error mappings.

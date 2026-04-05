@@ -3,8 +3,9 @@ package providers
 import (
 	"context"
 
-	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/google/uuid"
+
+	"github.com/educabot/alizia-be/src/core/entities"
 )
 
 type ResourceProvider interface {

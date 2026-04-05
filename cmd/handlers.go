@@ -1,9 +1,10 @@
 package main
 
 import (
+	"github.com/educabot/team-ai-toolkit/tokens"
+
 	"github.com/educabot/alizia-be/config"
 	"github.com/educabot/alizia-be/src/entrypoints"
-	"github.com/educabot/team-ai-toolkit/tokens"
 )
 
 func NewHandlers(_ *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {

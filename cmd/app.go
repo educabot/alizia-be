@@ -6,12 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/educabot/alizia-be/config"
-	appweb "github.com/educabot/alizia-be/src/app/web"
 	"github.com/educabot/team-ai-toolkit/boot"
 	"github.com/educabot/team-ai-toolkit/dbconn"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+
+	"github.com/educabot/alizia-be/config"
+	appweb "github.com/educabot/alizia-be/src/app/web"
 )
 
 type App struct {
