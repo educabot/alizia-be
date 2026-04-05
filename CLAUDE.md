@@ -14,6 +14,7 @@ Go backend for **Alizia**, a multi-tenant educational planning platform. Coordin
 - Follow Clean Architecture by layers (entities, providers, usecases, entrypoints, repositories)
 - One file = one responsibility (especially in usecases)
 - Usecases NEVER import infrastructure — only providers (interfaces) and entities
+- Every usecase Request struct must have a `Validate() error` method returning `providers.ErrValidation` (wrapped with `fmt.Errorf("%w: ...", ...)`), called as the first statement of `Execute`. Always validate tenant scope (`OrgID`) plus all other required fields
 
 ## Architecture
 
