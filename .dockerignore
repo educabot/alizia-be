@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+tmp/
+coverage.out
+coverage.html
+.idea
+.vscode
+.DS_Store
+.claude
+.planning

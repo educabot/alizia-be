@@ -1,5 +1,9 @@
 # Build stage
 FROM golang:1.26.1-alpine AS builder
+RUN apk --no-cache add git
+ARG GITHUB_TOKEN
+RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+ENV GOPRIVATE=github.com/educabot/*
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
