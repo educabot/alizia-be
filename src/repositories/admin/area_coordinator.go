@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -25,7 +27,8 @@ func (r *areaCoordinatorRepo) Assign(ctx context.Context, areaID, userID int64) 
 		UserID: userID,
 	}
 	if err := r.db.WithContext(ctx).Create(ac).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
 			return nil, fmt.Errorf("%w: coordinator already assigned to area", providers.ErrConflict)
 		}
 		return nil, err
