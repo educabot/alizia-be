@@ -7,5 +7,6 @@ type Subject struct {
 	OrganizationID uuid.UUID `json:"organization_id"`
 	AreaID         int64     `json:"area_id"`
 	Name           string    `json:"name"`
+	Description    *string   `json:"description,omitempty"`
 	TimeTrackedEntity
 }

@@ -28,6 +28,14 @@ type AreaProvider interface {
 	ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error)
 }
 
+type AreaCoordinatorProvider interface {
+	Assign(ctx context.Context, areaID, userID int64) (*entities.AreaCoordinator, error)
+	Remove(ctx context.Context, areaID, userID int64) error
+	FindByAreaID(ctx context.Context, areaID int64) ([]entities.AreaCoordinator, error)
+	FindByUserID(ctx context.Context, userID int64) ([]entities.AreaCoordinator, error)
+	IsCoordinator(ctx context.Context, areaID, userID int64) (bool, error)
+}
+
 type SubjectProvider interface {
 	CreateSubject(ctx context.Context, subject *entities.Subject) (int64, error)
 	ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, areaID int64) ([]entities.Subject, error)

@@ -11,19 +11,23 @@ import (
 )
 
 type Repositories struct {
-	Organizations providers.OrganizationProvider
-	Users         providers.UserProvider
-	Coordination  *coordr.Repository
-	Teaching      *teachr.Repository
-	Resources     *resr.Repository
+	Organizations    providers.OrganizationProvider
+	Users            providers.UserProvider
+	Areas            providers.AreaProvider
+	AreaCoordinators providers.AreaCoordinatorProvider
+	Coordination     *coordr.Repository
+	Teaching         *teachr.Repository
+	Resources        *resr.Repository
 }
 
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		Organizations: adminr.NewOrganizationRepo(db),
-		Users:         adminr.NewUserRepo(db),
-		Coordination:  coordr.New(db),
-		Teaching:      teachr.New(db),
-		Resources:     resr.New(db),
+		Organizations:    adminr.NewOrganizationRepo(db),
+		Users:            adminr.NewUserRepo(db),
+		Areas:            adminr.NewAreaRepo(db),
+		AreaCoordinators: adminr.NewAreaCoordinatorRepo(db),
+		Coordination:     coordr.New(db),
+		Teaching:         teachr.New(db),
+		Resources:        resr.New(db),
 	}
 }

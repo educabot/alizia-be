@@ -23,6 +23,8 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	// Admin-only routes
 	adminOnly := api.Group("")
 	adminOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("admin")))
+	adminOnly.POST("/areas/:id/coordinators", webgin.Adapt(h.Admin.HandleAssignCoordinator))
+	adminOnly.DELETE("/areas/:id/coordinators/:user_id", webgin.Adapt(h.Admin.HandleRemoveCoordinator))
 
 	// Auth routes (outside tenant middleware — no org needed)
 	auth := engine.Group("/auth")

@@ -28,6 +28,29 @@ INSERT INTO user_roles (user_id, role) VALUES
     (4, 'coordinator')
 ON CONFLICT (user_id, role) DO NOTHING;
 
--- Reset sequence to avoid conflicts with future inserts
+-- Areas
+INSERT INTO areas (id, organization_id, name, description) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Ciencias', 'Área de ciencias exactas y naturales'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Humanidades', 'Área de ciencias sociales y humanidades')
+ON CONFLICT (id) DO NOTHING;
+
+-- Subjects
+INSERT INTO subjects (id, organization_id, area_id, name) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 'Matemática'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 'Física'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 2, 'Historia'),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 2, 'Lengua')
+ON CONFLICT (id) DO NOTHING;
+
+-- Area coordinators (Carlos coordina Ciencias, Pedro coordina Humanidades)
+INSERT INTO area_coordinators (area_id, user_id) VALUES
+    (1, 2),
+    (2, 4)
+ON CONFLICT (area_id, user_id) DO NOTHING;
+
+-- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) FROM user_roles));
+SELECT setval('areas_id_seq', (SELECT COALESCE(MAX(id), 0) FROM areas));
+SELECT setval('subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM subjects));
+SELECT setval('area_coordinators_id_seq', (SELECT COALESCE(MAX(id), 0) FROM area_coordinators));

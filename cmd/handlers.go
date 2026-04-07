@@ -8,10 +8,14 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
-func NewHandlers(_ *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {
+func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {
 	toker := tokens.New(cfg.JWTSecret)
 
 	return &entrypoints.WebHandlerContainer{
+		Admin: &entrypoints.AdminContainer{
+			AssignCoordinator: uc.AssignCoordinator,
+			RemoveCoordinator: uc.RemoveCoordinator,
+		},
 		Auth:             &entrypoints.AuthContainer{},
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},

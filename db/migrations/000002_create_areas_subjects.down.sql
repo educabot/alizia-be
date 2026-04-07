@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS area_coordinators;
+DROP TABLE IF EXISTS subjects;
+DROP TABLE IF EXISTS areas;
