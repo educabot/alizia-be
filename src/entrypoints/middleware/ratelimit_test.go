@@ -30,8 +30,8 @@ func TestRateLimiter_BlocksOverLimit(t *testing.T) {
 	req := web.NewMockRequest()
 	req.Values[middleware.UserIDKey] = "user-1"
 
-	rl(req) // 1
-	rl(req) // 2
+	rl(req)         // 1
+	rl(req)         // 2
 	resp := rl(req) // 3 → blocked
 
 	assert.Equal(t, http.StatusTooManyRequests, resp.Status)
@@ -43,7 +43,7 @@ func TestRateLimiter_ResetsAfterWindow(t *testing.T) {
 	req := web.NewMockRequest()
 	req.Values[middleware.UserIDKey] = "user-1"
 
-	rl(req) // 1
+	rl(req)         // 1
 	resp := rl(req) // 2 → blocked
 	assert.Equal(t, http.StatusTooManyRequests, resp.Status)
 
@@ -62,7 +62,7 @@ func TestRateLimiter_IsolatesUsers(t *testing.T) {
 	req2 := web.NewMockRequest()
 	req2.Values[middleware.UserIDKey] = "user-2"
 
-	rl(req1) // user-1: 1
+	rl(req1)         // user-1: 1
 	resp := rl(req1) // user-1: 2 → blocked
 	assert.Equal(t, http.StatusTooManyRequests, resp.Status)
 

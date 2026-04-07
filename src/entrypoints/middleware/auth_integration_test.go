@@ -48,15 +48,6 @@ func createTestToken(userID string, orgID uuid.UUID) string {
 	return token
 }
 
-func createTestTokenWithAudience(userID string, orgID uuid.UUID) string {
-	// We need to create a token with Audience manually since Toker.Create doesn't set it
-	t := tokens.New(testSecret)
-	// Use the standard Create then we'll need a custom approach
-	// For now, create with the standard method - the test validates the middleware chain
-	token, _ := t.Create(userID, "Test User", "test@example.com", []string{"coordinator"}, time.Hour)
-	return token
-}
-
 func TestIntegration_NoAuthHeader_Returns401(t *testing.T) {
 	r := setupRouter()
 	w := httptest.NewRecorder()
