@@ -6,8 +6,9 @@ import (
 )
 
 type Organization struct {
-	ID     uuid.UUID      `json:"id" gorm:"primaryKey"`
+	ID     uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
 	Name   string         `json:"name"`
-	Config datatypes.JSON `json:"config" gorm:"type:jsonb"`
+	Slug   string         `json:"slug" gorm:"uniqueIndex;size:100"`
+	Config datatypes.JSON `json:"config" gorm:"type:jsonb;default:'{}'"`
 	TimeTrackedEntity
 }
