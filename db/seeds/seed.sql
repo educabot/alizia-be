@@ -12,11 +12,11 @@ INSERT INTO organizations (id, name, slug, config) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Users
-INSERT INTO users (id, organization_id, email, name) VALUES
-    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar', 'Ana Admin'),
-    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar', 'Carlos Coordinador'),
-    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María Docente'),
-    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro Multirol')
+INSERT INTO users (id, organization_id, email, first_name, last_name) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar', 'Ana', 'Admin'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar', 'Carlos', 'Coordinador'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María', 'Docente'),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro', 'Multirol')
 ON CONFLICT (id) DO NOTHING;
 
 -- Roles

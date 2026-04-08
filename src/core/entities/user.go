@@ -14,7 +14,8 @@ type User struct {
 	ID             int64      `json:"id" gorm:"primaryKey"`
 	OrganizationID uuid.UUID  `json:"organization_id"`
 	Email          string     `json:"email"`
-	Name           string     `json:"name"`
+	FirstName      string     `json:"first_name"`
+	LastName       string     `json:"last_name"`
 	PasswordHash   *string    `json:"-" gorm:"column:password_hash"`
 	AvatarURL      *string    `json:"avatar_url,omitempty"`
 	Roles          []UserRole `json:"roles" gorm:"foreignKey:UserID"`

@@ -16,7 +16,7 @@ func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContai
 			AssignCoordinator: uc.AssignCoordinator,
 			RemoveCoordinator: uc.RemoveCoordinator,
 		},
-		Auth:             &entrypoints.AuthContainer{},
+
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},
 		Resources:        &entrypoints.ResourcesContainer{},
