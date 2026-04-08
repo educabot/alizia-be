@@ -51,3 +51,13 @@ func (m *MockUserProvider) RemoveRole(ctx context.Context, userID int64, role en
 	args := m.Called(ctx, userID, role)
 	return args.Error(0)
 }
+
+func (m *MockUserProvider) CompleteOnboarding(ctx context.Context, userID int64) error {
+	args := m.Called(ctx, userID)
+	return args.Error(0)
+}
+
+func (m *MockUserProvider) UpdateProfileData(ctx context.Context, userID int64, data map[string]any) error {
+	args := m.Called(ctx, userID, data)
+	return args.Error(0)
+}
