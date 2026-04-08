@@ -1,6 +1,6 @@
 # HU-3.4: Cursos, alumnos y asignaciones
 
-> Como admin, necesito crear cursos, cargar alumnos y asignar docentes a materias para estructurar la vida académica de la institución.
+> Como admin, necesito crear cursos, cargar alumnos y asignar docentes a disciplinas para estructurar la vida académica de la institución.
 
 **Fase:** 2 — Admin/Integration
 **Prioridad:** Alta
@@ -12,12 +12,12 @@
 
 - [ ] Tabla `courses` con: id, organization_id, name, created_at
 - [ ] Tabla `students` con: id, course_id, name, created_at
-- [ ] Tabla `course_subjects` con: id, course_id, subject_id, teacher_id, start_date, end_date, school_year, created_at
+- [ ] Tabla `course_subjects` con: id, course_id, subject_id, teacher_id, organization_id, start_date, end_date, school_year, created_at, UNIQUE(course_id, subject_id, school_year)
 - [ ] Endpoints para courses: POST, GET (listar), GET /:id (detalle con students)
 - [ ] Endpoints para students: POST (bulk o individual dentro de un curso)
-- [ ] Endpoint para course_subjects: POST (asignar docente a materia en curso)
+- [ ] Endpoint para course_subjects: POST (asignar docente a disciplina en curso)
 - [ ] GET /courses/:id incluye students y course_subjects con teacher y subject preloaded
-- [ ] `course_subjects` vincula curso + materia + docente + período lectivo
+- [ ] `course_subjects` vincula curso + disciplina + docente + período lectivo
 - [ ] Un docente puede estar asignado a múltiples course_subjects
 - [ ] Todos los queries filtran por organization_id del JWT
 
@@ -34,7 +34,7 @@
 ## Dependencias
 
 - [HU-3.1: Organizaciones](../HU-3.1-organizaciones-configuracion/HU-3.1-organizaciones-configuracion.md) — FK organization_id
-- [HU-3.2: Áreas y materias](../HU-3.2-areas-materias/HU-3.2-areas-materias.md) — subjects debe existir para course_subjects
+- [HU-3.2: Áreas y disciplinas](../HU-3.2-areas-materias/HU-3.2-areas-materias.md) — subjects debe existir para course_subjects
 - [HU-1.2: Modelo de usuarios](../../01-roles-accesos/HU-1.2-modelo-usuarios-roles/HU-1.2-modelo-usuarios-roles.md) — users debe existir para teacher_id
 
 ## Diseño técnico
@@ -44,22 +44,24 @@
 ```sql
 CREATE TABLE course_subjects (
     id SERIAL PRIMARY KEY,
-    course_id INTEGER NOT NULL REFERENCES courses(id),
+    course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     subject_id INTEGER NOT NULL REFERENCES subjects(id),
     teacher_id INTEGER NOT NULL REFERENCES users(id),
+    organization_id INTEGER NOT NULL REFERENCES organizations(id),
     start_date DATE,
     end_date DATE,
     school_year INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(course_id, subject_id, school_year)
 );
 ```
 
-Es la **instancia** que dice: "en el curso 3A, la materia Matemáticas la da el docente Juan durante 2026". Es la tabla central que conecta el mundo admin con el mundo docente.
+Es la **instancia** que dice: "en el curso 3A, la disciplina Matemáticas la da el docente Juan durante 2026". Es la tabla central que conecta el mundo admin con el mundo docente.
 
 ## Test cases
 
 - 3.15: POST course → 201
 - 3.16: POST student en curso → alumno asociado
-- 3.17: POST course_subject → asignación docente-materia-curso
+- 3.17: POST course_subject → asignación docente-disciplina-curso
 - 3.18: GET course/:id → incluye students, course_subjects con teacher y subject
 - 3.19: Asignar docente de otra org → error (FK + multi-tenancy)

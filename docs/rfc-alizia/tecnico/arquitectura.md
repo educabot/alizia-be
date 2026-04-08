@@ -40,7 +40,7 @@ GORM es el estándar de la empresa (tich-cronos lo usa). Beneficios para el equi
 - Connection pooling integrado
 - Migraciones automáticas desde structs (para desarrollo, SQL explícito para producción)
 
-Para queries complejas (JOINs de 8+ tablas, CTEs recursivos para topics), se usa `db.Raw()`. Ver sección "Alternativa futura: sqlx" al final del documento para los beneficios de migrar a sqlx si las queries complejas dominan.
+Para queries complejas (JOINs de 8+ tablas, CTEs recursivos para topics), se usa `db.Raw()`.
 
 ### Deploy e infraestructura: Railway
 
@@ -1070,56 +1070,3 @@ entrypoints/rest/coordination/
 27. **errors.go extiende** → errores compartidos + errores específicos del proyecto
 28. **Railway** → container Docker, auto-deploy, sin vendor lock-in, sin cold starts
 
----
-
-## Alternativa futura: sqlx
-
-Esta sección documenta los beneficios de migrar de GORM a sqlx si en el futuro las queries complejas dominan el proyecto. **No es una acción inmediata**, es un análisis para tener documentado si el equipo lo necesita.
-
-### ¿Qué es sqlx?
-
-sqlx es un wrapper sobre `database/sql` que agrega mapeo automático de rows a structs (sin `row.Scan` manual) pero sin generar SQL. Vos escribís el SQL, sqlx lo ejecuta y mapea.
-
-### ¿Cuándo tendría sentido migrar?
-
-- Si más del 50% de los repositories usan `db.Raw()` (señal de que GORM no alcanza)
-- Si se detectan queries N+1 causando problemas de performance en producción
-- Si el debugging de queries GORM se vuelve un cuello de botella del equipo
-
-### Beneficios de sqlx vs GORM
-
-| Aspecto | GORM (actual) | sqlx (alternativa) |
-|---|---|---|
-| **SQL explícito** | GORM genera SQL, no siempre ves qué ejecuta | Vos escribís el SQL, siempre sabés qué corre |
-| **Performance** | Reflexión en runtime (~15-20% overhead) | Zero reflexión, performance igual a database/sql |
-| **Debugging** | Difícil saber qué query generó GORM | Ves el SQL exacto en archivos .sql |
-| **JOINs complejos** | Caés a `db.Raw()` | Naturales (es SQL directo) |
-| **N+1** | Posible si olvidás Preload | Imposible (vos escribís la query) |
-| **Code review** | `.Where().Preload().Find()` es difícil de revisar | SQL en archivos .sql, reviewable línea por línea |
-| **Curva de aprendizaje** | Aprender API de GORM | Si sabés SQL, sabés sqlx |
-
-### Beneficios de GORM vs sqlx (por qué lo usamos hoy)
-
-| Aspecto | GORM (actual) | sqlx (alternativa) |
-|---|---|---|
-| **CRUD simple** | 1 línea: `db.Create(&user)` | Escribir INSERT completo |
-| **Equipo** | Ya lo conocen | Curva de aprendizaje |
-| **Soft deletes** | Automático con `gorm.DeletedAt` | Manual: `WHERE deleted_at IS NULL` |
-| **Hooks** | BeforeCreate, AfterUpdate, etc. | No existen, lógica en usecase |
-| **Relaciones** | Preload automático | JOINs manuales |
-| **Migraciones dev** | AutoMigrate desde structs | Solo SQL |
-
-### Cómo sería la migración
-
-La arquitectura Clean ya separa repositories del resto. Migrar de GORM a sqlx solo tocaría `src/repositories/`. Ningún usecase, handler, o entity cambia.
-
-```
-Hoy (GORM):
-  repository.go → db.Where().First(&doc)
-
-Mañana (sqlx):
-  repository.go → db.GetContext(ctx, &doc, getDocumentSQL, orgID, docID)
-  queries/get_document.sql → SELECT ... FROM ... WHERE ...
-```
-
-Los repositories implementan las mismas interfaces de `providers/`. El resto del sistema no se entera del cambio.

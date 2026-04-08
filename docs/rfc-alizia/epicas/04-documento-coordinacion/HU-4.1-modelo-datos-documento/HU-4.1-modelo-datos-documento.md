@@ -14,9 +14,9 @@
 - [ ] Tabla `coord_doc_topics` (junction doc ↔ topic)
 - [ ] Tabla `coordination_document_subjects` (doc ↔ subject + class_count)
 - [ ] Tabla `coord_doc_subject_topics` (subject en doc ↔ topic)
-- [ ] Tabla `coord_doc_classes` (class_number, title, objective por materia)
+- [ ] Tabla `coord_doc_classes` (class_number, title, objective por disciplina)
 - [ ] Tabla `coord_doc_class_topics` (clase ↔ topic)
-- [ ] Enum `coord_doc_status` creado: draft, published, archived
+- [ ] Enum `coord_doc_status` creado: pending, in_progress, published
 - [ ] Entities Go con GORM tags y relaciones (preloads)
 - [ ] Provider interfaces para CRUD + operaciones complejas
 - [ ] Repository GORM con queries de detalle (múltiples preloads)
@@ -34,7 +34,7 @@
 ## Dependencias
 
 - [HU-3.1: Organizaciones](../../03-integracion/HU-3.1-organizaciones-configuracion/HU-3.1-organizaciones-configuracion.md) — FK organization_id
-- [HU-3.2: Áreas y materias](../../03-integracion/HU-3.2-areas-materias/HU-3.2-areas-materias.md) — FK area_id, subject_id
+- [HU-3.2: Áreas y disciplinas](../../03-integracion/HU-3.2-areas-materias/HU-3.2-areas-materias.md) — FK area_id, subject_id
 - [HU-3.3: Topics](../../03-integracion/HU-3.3-topics-jerarquia-curricular/HU-3.3-topics-jerarquia-curricular.md) — FK topic_id en junction tables
 
 ## Diseño técnico

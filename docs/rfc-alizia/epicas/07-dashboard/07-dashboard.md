@@ -2,8 +2,8 @@
 
 > Vista consolidada del estado de documentos, planificaciones y notificaciones por rol.
 
-**Estado:** Post-MVP
-**Fase de implementación:** Post-MVP
+**Estado:** MVP
+**Fase de implementación:** Fase 7
 
 ---
 
@@ -14,7 +14,7 @@ Coordinadores y docentes no tienen un lugar único donde ver el estado de sus do
 ## Objetivos
 
 - Dar visibilidad rápida del estado de documentos de coordinación y planificaciones
-- Centralizar el acceso a cursos y materias asignadas
+- Centralizar el acceso a cursos y disciplinas asignadas
 - Notificar cambios relevantes (publicaciones, actualizaciones, plazos)
 - Diferenciar la vista según el rol del usuario (coordinador vs docente)
 
@@ -39,9 +39,9 @@ Coordinadores y docentes no tienen un lugar único donde ver el estado de sus do
 
 | # | Historia | Descripción | Fase | Tareas |
 |---|---------|-------------|------|--------|
-| HU-7.1 | [Dashboard coordinador](./HU-7.1-dashboard-coordinador/HU-7.1-dashboard-coordinador.md) | Vista consolidada del coordinador: documentos, progreso, cursos | Post-MVP | 3 |
-| HU-7.2 | [Dashboard docente](./HU-7.2-dashboard-docente/HU-7.2-dashboard-docente.md) | Vista del docente: clases próximas, planificaciones, documentos | Post-MVP | 4 |
-| HU-7.3 | [Sistema de notificaciones](./HU-7.3-sistema-notificaciones/HU-7.3-sistema-notificaciones.md) | Notificaciones in-app para eventos relevantes | Post-MVP | 6 |
+| HU-7.1 | [Dashboard coordinador](./HU-7.1-dashboard-coordinador/HU-7.1-dashboard-coordinador.md) | Vista consolidada del coordinador: documentos, progreso, cursos | Fase 7 | 3 |
+| HU-7.2 | [Dashboard docente](./HU-7.2-dashboard-docente/HU-7.2-dashboard-docente.md) | Vista del docente: clases próximas, planificaciones, documentos | Fase 7 | 4 |
+| HU-7.3 | [Sistema de notificaciones](./HU-7.3-sistema-notificaciones/HU-7.3-sistema-notificaciones.md) | Notificaciones in-app para eventos relevantes | Fase 7 | 6 |
 
 ---
 
@@ -56,7 +56,7 @@ Coordinadores y docentes no tienen un lugar único donde ver el estado de sus do
 
 - Qué información se muestra en el dashboard puede variar según el rol y la provincia
 - Frecuencia y tipos de notificaciones requieren validación con usuarios reales
-- El nivel de detalle del progreso de planificación (por docente, por materia, por clase) se define con cada equipo
+- El nivel de detalle del progreso de planificación (por docente, por disciplina, por clase) se define con cada equipo
 
 ## Épicas relacionadas
 

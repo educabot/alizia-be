@@ -50,6 +50,6 @@ Otra provincia podría no configurar ningún campo → el paso se salta.
 
 ## Notas
 
-- Los datos del perfil son informativos y pueden ser consultados por cualquier feature futura. Por ejemplo, la IA podría tener en cuenta la experiencia del docente al generar contenido.
+- Los datos del perfil son informativos y pueden ser consultados por cualquier feature futura. Por ejemplo, Alizia podría tener en cuenta la experiencia del docente al generar contenido.
 - El formulario también podría exponerse en un "settings" del usuario para editar después del onboarding.
-- Las opciones de selección son strings estáticos en la config. En una evolución futura podrían venir de datos reales de la DB (ej: materias de la org en vez de strings sueltos).
+- Las opciones de selección son strings estáticos en la config. En una evolución futura podrían venir de datos reales de la DB (ej: disciplinas de la org en vez de strings sueltos).

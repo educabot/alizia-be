@@ -26,6 +26,8 @@ Los docentes necesitan recursos didácticos (fichas de cátedra, guías de lectu
 - Edición directa y asistida por IA del recurso generado
 - Permitir la exportación para impresión
 - Disponibilizar para uso del recurso en clase (Planificación)
+- Creación libre: el docente define lineamientos propios para generar recursos no predefinidos
+- Vínculo recurso→planificación: asociar recursos a clases del lesson plan (antes, durante o después)
 
 **No incluye:**
 
@@ -44,6 +46,7 @@ Los docentes necesitan recursos didácticos (fichas de cátedra, guías de lectu
 | HU-8.1 | [Modelo de datos recursos](./HU-8.1-modelo-datos-recursos/HU-8.1-modelo-datos-recursos.md) | Tablas para fonts, tipos de recurso, recursos y config por org | Fase 6 | 4 |
 | HU-8.2 | [Tipos de recurso y configuración](./HU-8.2-tipos-recurso-configuracion/HU-8.2-tipos-recurso-configuracion.md) | Gestión de tipos por org, resolución de prompt/schema | Fase 6 | 3 |
 | HU-8.3 | [Generación con IA](./HU-8.3-generacion-ia-recursos/HU-8.3-generacion-ia-recursos.md) | Generar recursos a partir de tipo, fuente y contexto | Fase 6 | 4 |
+| HU-8.6 | [Creación libre y vínculo recurso–planificación](./HU-8.6-creacion-libre-vinculo-plan/HU-8.6-creacion-libre-vinculo-plan.md) | Creación libre con guidelines + vincular recursos a clases del lesson plan | Fase 6 | 5 |
 | HU-8.4 | [Biblioteca y exploración](./HU-8.4-biblioteca-exploracion/HU-8.4-biblioteca-exploracion.md) | Listado, filtros y búsqueda de recursos de la org | Fase 6 | 3 |
 | HU-8.5 | [Edición y exportación](./HU-8.5-edicion-exportacion/HU-8.5-edicion-exportacion.md) | Edición manual/asistida, publicación y exportación | Fase 6 | 4 |
 
@@ -65,7 +68,7 @@ Los docentes necesitan recursos didácticos (fichas de cátedra, guías de lectu
 
 - Cada organización **habilita qué tipos de recurso** tiene disponibles. No todos los clientes ven los mismos tipos — se activan según acuerdo con el equipo pedagógico provincial. Un tipo de recurso puede existir en el sistema y no estar habilitado para una organización.
 - El concepto de **biblioteca** es central: los recursos creados se almacenan a nivel organización. Todos los docentes de la misma organización pueden explorar y reutilizar recursos existentes antes de generar uno nuevo. Esto reduce costos de generación y promueve consistencia.
-- El filtro por materia opera como **restricción soft** (UX, no permisos). Un docente de matemáticas no ve recursos de ciencias naturales por default, pero a nivel permiso el acceso es por organización.
+- El filtro por disciplina opera como **restricción soft** (UX, no permisos). Un docente de matemáticas no ve recursos de ciencias naturales por default, pero a nivel permiso el acceso es por organización.
 - Cada tipo de recurso tiene un **prompt y un JSON Schema** que define la estructura del output. Esto permite que una misma funcionalidad (ej: guía de lectura) genere resultados con formatos distintos según la provincia, modificando solo la configuración.
 - Arrancar simple: en el MVP, si un segundo cliente necesita una variante de un tipo existente, se **duplica y adapta** en vez de sobre-ingenierizar un sistema de templates parametrizables. La genericidad se construye cuando aparezca el patrón real.
 

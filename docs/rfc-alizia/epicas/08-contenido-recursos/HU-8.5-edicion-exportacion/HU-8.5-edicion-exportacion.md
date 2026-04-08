@@ -29,7 +29,7 @@
 ## Dependencias
 
 - [HU-8.3: Generación con IA](../HU-8.3-generacion-ia-recursos/HU-8.3-generacion-ia-recursos.md) — Recurso generado
-- [HU-6.3: Motor de function calling](../../06-assistente-ia/HU-6.3-motor-function-calling/HU-6.3-motor-function-calling.md) — ChatWithTools para edición asistida
+- [HU-6.3: Motor de function calling](../../06-asistente-ia/HU-6.3-motor-function-calling/HU-6.3-motor-function-calling.md) — ChatWithTools para edición asistida
 - [HU-5.3: Planificación por momentos](../../05-planificacion-docente/HU-5.3-planificacion-por-momentos/HU-5.3-planificacion-por-momentos.md) — Vínculo de recurso a lesson plan
 
 ## Test cases

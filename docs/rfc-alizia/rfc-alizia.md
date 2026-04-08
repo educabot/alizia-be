@@ -28,8 +28,11 @@
 - [Épicas](./epicas/epicas.md) — 11 épicas (0–10) con definición de producto + tareas técnicas
 - **Técnico**
   - [Arquitectura Go](./tecnico/arquitectura.md)
-  - [Modelo de datos](./tecnico/modelo-de-datos.md)
-  - [Endpoints API](./tecnico/endpoints.md)
+  - [Modelo de datos](./tecnico/modelo-de-datos.md) — tablas, triggers, índices
+  - [Endpoints API](./tecnico/endpoints.md) — request/response schemas completos
+  - [Catálogo de errores](./tecnico/errores.md) — códigos de error por dominio
+  - [Prompts de IA](./tecnico/prompts.md) — prompts, tools, schemas de generación
+  - [Integración frontend](./tecnico/frontend-integration.md) — guía para consumir la API
   - [team-ai-toolkit](./tecnico/team-ai-toolkit.md)
   - [Auth service (futuro)](./tecnico/auth-service-futuro.md)
 - **Operaciones**
@@ -80,7 +83,6 @@ Los coordinadores y docentes de instituciones educativas planifican anualmente d
 
 - Frontend (este RFC es solo backend)
 - WhatsApp integration (Épica 9, pendiente de definición)
-- Cosmos (Épica 10, sin definición)
 - Social login (Google/Microsoft) — futuro
 - Admin panel UI — administración por API
 - Migración de datos del POC — se arranca de cero
@@ -106,20 +108,18 @@ Los coordinadores y docentes de instituciones educativas planifican anualmente d
 ### Incluye (MVP)
 
 - Épica 1: Roles y accesos (login, roles, multi-org)
+- Épica 2: Onboarding (detección primer ingreso, perfil, product tour, config por org)
 - Épica 3: Integración (diseño curricular, topics, horarios)
 - Épica 4: Documento de coordinación (wizard, secciones, IA, publicación)
-- Épica 5: Planificación docente (lesson plans, momentos, IA) — sin bitácora ni repropuesta
+- Épica 5: Planificación docente (lesson plans, momentos, IA, bitácora, repropuesta)
 - Épica 6: Asistente IA (generación, chat, function calling)
 - Épica 8: Contenido (recursos, tipos, generación IA, library)
+- Épica 7: Dashboard (estado de documentos, progreso de planificación, cursos, alertas, notificaciones)
+- Épica 10: Cosmos (transversal — config por org: identidad visual, feature flags, nomenclatura, IA)
 
 ### No incluye (futuro)
 
-- Épica 2: Onboarding — NTH post-MVP
-- Épica 7: Dashboard — NTH, depende de Épica 4 y 5
 - Épica 9: WhatsApp — pendiente definición
-- Épica 10: Cosmos — pendiente definición
-- Bitácora de cotejo (audio) — parte de Épica 5, post-MVP
-- Repropuesta automática — parte de Épica 5, post-MVP
 - Export PDF — NTH
 
 ### Fases de implementación
@@ -132,6 +132,7 @@ Los coordinadores y docentes de instituciones educativas planifican anualmente d
 | 4 — AI Generation (Épica 6) | Generación de secciones, plan de clases, chat | Fase 3 |
 | 5 — Teaching (Épica 5) | Lesson plans, momentos, actividades, generación | Fase 3 |
 | 6 — Resources (Épica 8) | Tipos de recurso, fonts, generación IA, library | Fase 2 |
+| 7 — Dashboard (Épica 7) | Dashboard coordinador, dashboard docente, notificaciones | Fase 5 |
 
 ---
 
@@ -142,12 +143,12 @@ Los coordinadores y docentes de instituciones educativas planifican anualmente d
 Sistema multi-tenant de planificación educativa anual. Cada organización (colegio, provincia) es un tenant con configuración propia via `organizations.config` (JSONB).
 
 **Roles:**
-- **Coordinador**: crea documentos de coordinación que definen qué se enseña por materia en un período (topics, plan de clases, secciones configurables por org)
+- **Coordinador**: crea documentos de coordinación que definen qué se enseña por disciplina en un período (topics, plan de clases, secciones configurables por org)
 - **Docente**: a partir del documento de coordinación, crea lesson plans clase a clase (momentos con actividades, fuentes) y recursos (guías, fichas, etc.)
-- **Admin**: gestión de la organización, usuarios, configuración
+- **Admin**: rol interno del equipo de implementación — gestión de la organización, usuarios, configuración. No visible al usuario final. Producto define solo coordinador y docente como roles de producto
 
 **Flujo principal:**
-1. Coordinador crea **coordination_document** para un área → selecciona topics, asigna a materias, genera plan de clases con IA
+1. Coordinador crea **coordination_document** para un área → selecciona topics, asigna a disciplinas, genera plan de clases con IA
 2. Docente ve el plan y crea **teacher_lesson_plans** por clase → selecciona actividades por momento (apertura/desarrollo/cierre), IA genera contenido por actividad
 3. Docente crea **resources** (guías de lectura, fichas de curso, etc.) usando tipos configurables con generación IA
 
@@ -162,6 +163,7 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 7. **Fuentes curadas** — Los recursos se generan desde fuentes oficiales, no desde internet abierto
 8. **IA que aprende del aula** — Las propuestas mejoran con el feedback real del docente
 9. **Voz del docente** — La bitácora acepta audio libre, sin formato rígido
+10. **Áreas opcionales** — Si la provincia no organiza por áreas, se desactiva via feature flag en `organizations.config`. Las áreas desaparecen de la UI, no se crea un "área genérica"
 
 ---
 
@@ -175,9 +177,9 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 1. Crear organización con config JSONB (niveles de topics, secciones, feature flags)
 2. Crear usuarios y asignar roles (teacher, coordinator, admin)
 3. Crear áreas y asignar coordinadores
-4. Crear materias en cada área
+4. Crear disciplinas en cada área
 5. Crear cursos y alumnos
-6. Crear course_subjects (curso + materia + docente + período)
+6. Crear course_subjects (curso + disciplina + docente + período)
 7. Definir time_slots (grilla horaria semanal)
 8. Si clases compartidas habilitadas → 2 time_slot_subjects por slot
 9. Cargar topics (jerarquía según topic_max_levels de la config)
@@ -188,25 +190,25 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 ### Flujo 2: Coordinador crea documento de coordinación
 
 **Actor:** Coordinador
-**Precondición:** Área con materias y topics cargados
+**Precondición:** Área con disciplinas y topics cargados
 
 1. Coordinador selecciona área
 2. **Wizard paso 1**: Selecciona topics al nivel configurado por `topic_selection_level`
-3. **Wizard paso 2**: Define período (fechas custom) + cantidad de clases por materia
-4. **Wizard paso 3**: Asigna topics a cada materia
+3. **Wizard paso 2**: Define período (fechas custom) + cantidad de clases por disciplina
+4. **Wizard paso 3**: Asigna topics a cada disciplina
 5. Sistema crea documento en estado `draft`
 6. Coordinador completa secciones dinámicas (según `config.coord_doc_sections`)
 7. Opcionalmente genera secciones con IA ("Generar con Alizia")
-8. IA genera: eje problemático, estrategia metodológica, plan de clases por materia
+8. IA genera: eje problemático, estrategia metodológica, plan de clases por disciplina
 9. Coordinador revisa, edita directo o via chat con Alizia (function calling: `update_section`, `update_class`, etc.)
 10. Coordinador publica → estado `published` → visible para docentes
 
-**Resultado:** Documento publicado con secciones completas y plan de clases por materia.
+**Resultado:** Documento publicado con secciones completas y plan de clases por disciplina.
 
 ### Flujo 3: Docente planifica clase a clase
 
 **Actor:** Docente
-**Precondición:** Documento de coordinación publicado para su materia
+**Precondición:** Documento de coordinación publicado para su disciplina
 
 1. Docente ve el plan de clases heredado del documento de coordinación
 2. Selecciona una clase (class_number)
@@ -218,7 +220,7 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 5. Selecciona fuentes educativas (global o por momento)
 6. Opcionalmente genera contenido por actividad con IA (`activityContent`)
 7. Edita directo o via chat con Alizia
-8. Estado cambia a `planned`
+8. Estado cambia a `published`
 
 **Resultado:** Lesson plan con momentos, actividades y contenido generado.
 
@@ -246,17 +248,17 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 |---|-------|---------|----------|
 | 1 | Cada org define niveles de topics via config | `topic_max_levels: 3`, nombres: "Núcleos", "Áreas", "Categorías" | Back |
 | 2 | Topics se seleccionan al nivel `topic_selection_level` | Si level=3, se eligen categorías, no núcleos | Back + Front |
-| 3 | Clases compartidas solo si `shared_classes_enabled` | 2 materias en mismo time_slot, ambas del mismo área | Back |
+| 3 | Clases compartidas solo si `shared_classes_enabled` | 2 disciplinas en mismo time_slot, ambas del mismo área | Back |
 | 4 | Secciones del doc son dinámicas según `coord_doc_sections` | Cada sección tiene key, label, type, ai_prompt, required | Back + Front |
-| 5 | Momentos didácticos son enum fijo: apertura, desarrollo, cierre | desarrollo permite 1 a `desarrollo_max_activities` actividades | Back |
+| 5 | Momentos didácticos son enum fijo: apertura, desarrollo, cierre | desarrollo permite 1 a `desarrollo_max_activities` actividades. **Enforcement**: aplicación (usecase layer), no DB. Ver [errores.md](./tecnico/errores.md#detalle-invalid_moment_activities) | Back |
 | 6 | Resource types pueden ser públicos (todas las orgs) o privados (1 org) | `organization_id IS NULL` = público | Back |
 | 7 | Un usuario puede tener múltiples roles | teacher + coordinator en la misma org | JWT + Back |
 | 8 | Mismo email puede existir en orgs distintas | `UNIQUE(email, organization_id)` | JWT + Back |
 | 9 | El período del documento es texto libre con fechas custom | No se fuerza semestre/cuatrimestre | Back |
-| 10 | Un docente por materia por curso (first-come-first-serve si hay conflicto) | El primero en planificar escribe | Back |
+| 10 | Un docente por disciplina por curso (first-come-first-serve si hay conflicto) | El primero en planificar escribe | Back |
 | 11 | Coordinador puede override manual de class_count (± feriados) | Ajuste manual sobre el cálculo automático | Back |
-| 12 | Todos los topics del documento deben estar distribuidos entre materias | Validación al publicar | Back |
-| 13 | Filter por materia en library es soft (UX), no permisos | Un docente de matemáticas puede ver recursos de ciencias | Front |
+| 12 | Todos los topics del documento deben estar distribuidos entre disciplinas | Validación al publicar | Back |
+| 13 | Filter por disciplina en library es soft (UX), no permisos | Un docente de matemáticas puede ver recursos de ciencias | Front |
 | 14 | Permisos sobre el doc de coordinación son configurables por org | Quién edita, quién solo visualiza | Back |
 
 ---
@@ -282,12 +284,12 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 
 ### Documento de coordinación
 ```
-[draft] ──(publicar / coordinador)──> [published] ──(archivar / coordinador)──> [archived]
+[pending] ──(comenzar edición / coordinador)──> [in_progress] ──(publicar / coordinador)──> [published]
 ```
 
 ### Lesson plan
 ```
-[pending] ──(planificar / docente)──> [planned]
+[pending] ──(comenzar edición / docente)──> [in_progress] ──(publicar / docente)──> [published]
 ```
 
 ### Recurso
@@ -351,7 +353,7 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 | Framework | Gin (abstraído via team-ai-toolkit/web) |
 | ORM | GORM (estándar empresa) |
 | DB | PostgreSQL |
-| Auth | JWT + Bearer tokens (team-ai-toolkit/tokens valida via JWKS) |
+| Auth | JWT + Bearer tokens (team-ai-toolkit/tokens valida via HS256 shared secret) |
 | AI | Azure OpenAI SDK (gpt-5-mini) |
 | Logging | slog (team-ai-toolkit/applog) |
 | Error tracking | Bugsnag (team-ai-toolkit/applog/bugsnag) |
@@ -360,6 +362,14 @@ Sistema multi-tenant de planificación educativa anual. Cada organización (cole
 | Deploy | Railway (Docker, auto-deploy desde GitHub) |
 
 Ver [arquitectura.md](./tecnico/arquitectura.md) para estructura de directorios completa, patrones de código, y decisiones técnicas detalladas.
+
+### Decisiones técnicas clave
+
+| Decisión | Elección | Alternativa evaluada | Justificación |
+|----------|----------|---------------------|---------------|
+| Deploy | **Railway** (Docker container) | Cloud Functions, Cloud Run | Monolito sin cold starts, zero vendor lock-in, equipo ya lo usa. Ver [comparativa](./decisiones/comparativa-deploy.md) |
+| ORM | **GORM** | sqlx, raw SQL | Estándar empresa (tich-cronos), CRUD rápido, equipo lo conoce. Raw SQL para queries complejas. Ver [comparativa](./decisiones/comparativa-db.md) |
+| Arquitectura | **Clean Architecture** (monolito modular) | Microservicios, Cloud Functions 1:1 | Balance entre simplicidad y separación de concerns. Ver [comparativa](./decisiones/comparativa-arquitectura.md) |
 
 ---
 
@@ -471,7 +481,7 @@ Ver [arquitectura.md](./tecnico/arquitectura.md) para estructura de directorios 
 | Queries complejas | Raw SQL | Sí |
 | Performance | Buena | Óptima |
 
-> **Elegido: GORM** — estándar empresa. sqlx documentado como alternativa futura en [arquitectura.md](./tecnico/arquitectura.md).
+> **Elegido: GORM** — decisión definitiva. Estándar de la empresa, equipo lo conoce. `db.Raw()` para queries complejas. Ver [comparativa](./decisiones/comparativa-db.md) para el análisis completo.
 
 ---
 
@@ -480,10 +490,10 @@ Ver [arquitectura.md](./tecnico/arquitectura.md) para estructura de directorios 
 | Término | Definición |
 |---------|-----------|
 | Coordination Document | Documento de planificación anual de un área, creado por el coordinador |
-| Lesson Plan | Plan de clase individual creado por el docente, hereda del coordination document |
+| Lesson Plan | Planificación docente individual, hereda del coordination document |
 | Topic | Tema/saber en la jerarquía curricular (self-referential, niveles configurables) |
 | Class Moment | Momento didáctico: apertura, desarrollo, cierre |
-| Shared Class / Clase compartida | Dos materias enseñadas simultáneamente por dos docentes en el mismo horario. Diferenciador clave del producto |
+| Shared Class / Clase compartida | Dos disciplinas enseñadas simultáneamente por dos docentes en el mismo horario. Diferenciador clave del producto |
 | Font | Fuente educativa (PDF, video, documento) — del español "fuente", NO tipografía |
 | Resource Type | Tipo de recurso generado por IA (guía de lectura, ficha de curso, etc.) |
 | Organization / org | Tenant: una provincia, escuela, o universidad con configuración propia |

@@ -1,6 +1,6 @@
 # HU-8.3: Generación de recursos con IA
 
-> Como docente, necesito generar un recurso didáctico seleccionando un tipo, una fuente (si aplica) y el contexto de mi materia, para obtener contenido listo para usar en el aula.
+> Como docente, necesito generar un recurso didáctico seleccionando un tipo, una fuente (si aplica) y el contexto de mi disciplina, para obtener contenido listo para usar en el aula.
 
 **Fase:** 6 — Contenido y recursos
 **Prioridad:** Alta
@@ -16,7 +16,7 @@
 - [ ] Se genera el recurso usando el AI Provider con el prompt y schema resueltos
 - [ ] El contenido generado se almacena en `resources.content` según el output_schema
 - [ ] El recurso se crea en estado `generated` tras la generación exitosa
-- [ ] El contexto de materia/curso se incluye en el prompt para personalización
+- [ ] El contexto de disciplina/curso se incluye en el prompt para personalización
 
 ## Tareas
 
@@ -31,7 +31,7 @@
 
 - [HU-8.1: Modelo de datos](../HU-8.1-modelo-datos-recursos/HU-8.1-modelo-datos-recursos.md) — Tablas base
 - [HU-8.2: Tipos de recurso](../HU-8.2-tipos-recurso-configuracion/HU-8.2-tipos-recurso-configuracion.md) — Resolución de prompt/schema
-- [HU-6.1: AI Provider](../../06-assistente-ia/HU-6.1-ai-provider/HU-6.1-ai-provider.md) — GenerateJSON
+- [HU-6.1: AI Provider](../../06-asistente-ia/HU-6.1-ai-provider/HU-6.1-ai-provider.md) — GenerateJSON
 
 ## Test cases
 

@@ -2,10 +2,8 @@
 
 > Carga de datos iniciales y product tour para nuevos usuarios.
 
-**Estado:** Post-MVP
-**Fase de implementación:** Por definir
-
-> **Nota MVP:** En el MVP no hay flujo de onboarding. Los usuarios y sus datos se cargan manualmente (seeds/scripts) para la demo. Esta épica define el flujo futuro para cuando la plataforma tenga usuarios reales registrándose.
+**Estado:** MVP
+**Fase de implementación:** Fase 2
 
 ---
 
@@ -37,7 +35,7 @@ Un usuario nuevo (coordinador o docente) ingresa a la plataforma por primera vez
 **No incluye:**
 
 - Alta de usuarios → ver [Épica 1: Roles y accesos](../01-roles-accesos/01-roles-accesos.md)
-- Carga de datos institucionales (áreas, materias, cursos) → ver [Épica 3: Integración](../03-integracion.md)
+- Carga de datos institucionales (áreas, disciplinas, cursos) → ver [Épica 3: Integración](../03-integracion.md)
 - Configuración de la organización → admin setup
 - Tutorial interactivo avanzado (video, gamificación) → horizonte
 - Onboarding de administradores → el admin no necesita tour, usa APIs/panel
@@ -80,7 +78,7 @@ Un usuario nuevo (coordinador o docente) ingresa a la plataforma por primera vez
 ## Épicas relacionadas
 
 - **[Épica 1: Roles y accesos](../01-roles-accesos/01-roles-accesos.md)** — Define el rol que determina el flujo de onboarding. El usuario ya está autenticado y con roles asignados cuando llega al onboarding.
-- **[Épica 3: Integración](../03-integracion.md)** — Los datos institucionales (áreas, materias, cursos, topics) ya están cargados cuando el usuario hace onboarding. El formulario puede referenciar estos datos (ej: "seleccioná tus disciplinas").
+- **[Épica 3: Integración](../03-integracion.md)** — Los datos institucionales (áreas, disciplinas, cursos, topics) ya están cargados cuando el usuario hace onboarding. El formulario puede referenciar estos datos (ej: "seleccioná tus disciplinas").
 - **[Épica 4: Documento de coordinación](../04-documento-coordinacion/04-documento-coordinacion.md)** — El tour del coordinador muestra cómo crear un documento.
 - **[Épica 5: Planificación docente](../05-planificacion-docente/05-planificacion-docente.md)** — El tour del docente muestra cómo acceder a sus clases y planificar.
 

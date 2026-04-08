@@ -1,5 +1,7 @@
 # Comparativa: GORM vs sqlx vs sqlw
 
+> **Decisión: GORM** — Es el estándar de la empresa y la elección definitiva para Alizia. Este documento se mantiene como registro de la comparación realizada.
+
 ## Resumen ejecutivo
 
 | Aspecto | GORM | sqlx | sqlw |

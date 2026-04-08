@@ -1,6 +1,6 @@
 # HU-5.2: Cronograma del docente
 
-> Como docente, necesito ver el cronograma de clases de mi materia heredado del documento de coordinacion, incluyendo cuales son compartidas.
+> Como docente, necesito ver el cronograma de clases de mi disciplina heredado del documento de coordinacion, incluyendo cuales son compartidas.
 
 **Fase:** 5 -- Planificacion docente
 **Prioridad:** Alta
@@ -11,7 +11,7 @@
 ## Criterios de aceptacion
 
 - [ ] Endpoint `GET /api/v1/course-subjects/:id/lesson-plans` retorna la lista de clases del docente
-- [ ] Cada clase muestra: class_number, title, objective, status de planificacion (pending/planned o sin plan)
+- [ ] Cada clase muestra: class_number, title, objective, status de planificacion (pending/in_progress/published o sin plan)
 - [ ] Las clases compartidas se marcan con is_shared y shared_with_subject
 - [ ] Solo el docente asignado al course_subject puede ver el cronograma (o coordinadores del area)
 - [ ] Si no hay documento de coordinacion publicado → 404 con mensaje claro
@@ -41,7 +41,7 @@
     "id": 1,
     "course": "3a",
     "subject": "Matematicas",
-    "teacher": "Prof. Garcia"
+    "teacher": "Doc. García"
   },
   "coordination_document": {
     "id": 5,
@@ -56,7 +56,7 @@
       "objective": "Que los estudiantes identifiquen patrones...",
       "is_shared": false,
       "shared_with_subject": null,
-      "plan_status": "planned",
+      "plan_status": "published",
       "lesson_plan_id": 15
     },
     {
@@ -91,7 +91,7 @@
 GET /api/v1/course-subjects/:id/lesson-plans
   → Buscar course_subject
   → Buscar coordination_document published del area del subject
-  → Obtener coord_doc_classes de la materia
+  → Obtener coord_doc_classes de la disciplina
   → Obtener teacher_lesson_plans existentes (LEFT JOIN)
   → Calcular shared class numbers (desde grilla horaria)
   → Armar respuesta combinada

@@ -15,10 +15,10 @@
 - [ ] Tabla `lesson_plan_topics` (junction: plan ↔ topic, traceability desde coordinación)
 - [ ] Tabla `lesson_plan_moment_fonts` (junction: plan ↔ momento ↔ font, NULL moment = global)
 - [ ] Enum `resources_mode`: global, per_moment
-- [ ] Enum `lesson_plan_status`: pending, planned
+- [ ] Enum `lesson_plan_status`: pending, in_progress, published
 - [ ] Enum `source_type`: resource, custom (nullable — null = sin fuente)
 - [ ] FK a course_subjects, coordination_documents, coord_doc_classes
-- [ ] Unique constraint: (course_subject_id, coord_doc_class_id) — una planificacion por clase por materia
+- [ ] Unique constraint: (course_subject_id, coord_doc_class_id) — una planificacion por clase por disciplina
 - [ ] Entities Go con GORM tags y relaciones
 - [ ] Provider interfaces para CRUD
 - [ ] Repository GORM con preloads de actividades y relaciones
@@ -53,7 +53,7 @@ teacher_lesson_plans
 
 ### Relaciones
 
-- `teacher_lesson_plans.course_subject_id` → `course_subjects.id` (que materia en que curso)
+- `teacher_lesson_plans.course_subject_id` → `course_subjects.id` (que disciplina en que curso)
 - `teacher_lesson_plans.coordination_document_id` → `coordination_documents.id` (de que doc hereda)
 - `teacher_lesson_plans.coord_doc_class_id` → `coord_doc_classes.id` (que clase del plan)
 - `lesson_plan_activities.activity_id` → `activities.id` (que actividad)

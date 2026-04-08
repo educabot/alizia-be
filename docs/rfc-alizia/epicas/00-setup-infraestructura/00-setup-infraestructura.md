@@ -2,7 +2,7 @@
 
 > Repositorio, arquitectura base, CI/CD, infraestructura de deploy y entorno de desarrollo local.
 
-**Estado:** MVP
+**Estado:** ✅ Completada
 **Fase de implementación:** Fase 1
 
 ---
@@ -156,7 +156,7 @@ cmd/
 - **Config como struct inmutable** (no singleton, testeable)
 - **Sentinel errors + fmt.Errorf %w** — Go estándar
 - **Railway** container Docker, auto-deploy, zero vendor lock-in
-- **Alternativa futura: sqlx** si queries complejas dominan (>50% de repos usan Raw). La arquitectura Clean permite migrar tocando solo `src/repositories/`
+- Para queries complejas: `db.Raw()`. La arquitectura Clean aísla repositories, facilitando cambios futuros si fueran necesarios
 
 ## Principios de diseño
 

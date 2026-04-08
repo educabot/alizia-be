@@ -10,7 +10,7 @@
 | **ORM/DB** | Raw SQL (`database/sql`) | GORM v1.25.11 | GORM v1.25.11                                 |
 | **Base de datos** | SQLite WAL / PostgreSQL | PostgreSQL | PostgreSQL                                         |
 | **DI** | Manual (1 archivo) | Google Wire (compile-time) | Manual (1 archivo por responsabilidad)             |
-| **Deploy** | Docker Compose → VPS | Cloud Functions + local | Cloud Functions agrupadas (5 por módulo)           |
+| **Deploy** | Docker Compose → VPS | Cloud Functions + local | Railway (Docker container)                          |
 | **Auth** | Webhook secret simple | JWT + Bearer | JWT + Bearer (via team-ai-toolkit/tokens) |
 | **Logging** | stdlib `log` | Interfaz custom + Bugsnag | slog (stdlib Go 1.21+) + Bugsnag                   |
 | **Testing** | 56 archivos, 190+ tests | 80+ archivos, target 80% | Target 80%, PostgreSQL real, sin E2E               |
@@ -78,13 +78,13 @@ alizia-api/
 │   ├── handlers.go        # Crea handlers + containers
 │   └── routes.go          # Rutas condicionales dev
 ├── src/
-│   ├── app/               # Rutas por modo de deploy (web/mapping.go, functions/)
+│   ├── app/               # Rutas (web/mapping.go)
 │   ├── core/              # Dominio puro
 │   │   ├── entities/      # Modelos puros (structs + enums)
 │   │   ├── providers/     # Interfaces + errors (extiende team-ai-toolkit/errors)
 │   │   └── usecases/      # 1 archivo = 1 operacion
 │   ├── entrypoints/       # Containers + REST handlers (usa team-ai-toolkit/web)
-│   ├── repositories/      # sqlx + queries/ embebidas
+│   ├── repositories/      # GORM + db.Raw() para queries complejas
 │   ├── mocks/             # Mocks de TODAS las capas (providers + usecases)
 │   └── utils/
 ├── config/                # Embebe team-ai-toolkit/config.BaseConfig + campos propios
@@ -101,8 +101,8 @@ team-ai-toolkit/
 ├── web/                   # Abstraccion HTTP (Request, Response, Handler)
 │   └── gin/               # Adaptador Gin (Adapt, AdaptMiddleware)
 ├── boot/                  # Server bootstrap (NewEngine, NewServer, Shutdown)
-├── tokens/                # JWT validation (JWKS) + middleware + claims
-├── dbconn/                # PostgreSQL connection con sqlx
+├── tokens/                # JWT validation (HS256) + middleware + claims
+├── dbconn/                # PostgreSQL connection con GORM
 ├── errors/                # Sentinel errors + HandleError()
 ├── pagination/            # ParseFromQuery + PaginatedResponse
 ├── transactions/          # RunInTx(), DBTX interface
@@ -141,7 +141,7 @@ team-ai-toolkit/
 - Wire genera containers para ambos modos
 
 ### Alizia
-- **Dual potencial**: web server (primario) + Cloud Functions (a futuro)
+- **Web server**: Docker container en Railway
 - `team-ai-toolkit/boot` crea engine + server con timeouts y graceful shutdown
 - `src/app/web/mapping.go` registra rutas separado de boot
 - `cmd/app.go` orquesta todo
@@ -149,14 +149,14 @@ team-ai-toolkit/
 | Criterio | ai-assistant | tich-cronos | Alizia |
 |----------|-------------|-------------|----------|
 | **Complejidad boot** | Baja | Media (dual path) | Baja-media (boot/ separado) |
-| **Flexibilidad deploy** | Solo Docker | Cloud Functions + local | Cloud Functions agrupadas (5 funciones) |
-| **Cold start** | N/A | Relevante (55+ funciones) | Relevante pero solo 5 funciones |
+| **Flexibilidad deploy** | Solo Docker | Cloud Functions + local | Railway (Docker container) |
+| **Cold start** | N/A | Relevante (55+ funciones) | N/A (siempre corriendo) |
 | **Graceful shutdown** | Signal handler | Gin default | Explicito en boot/server.go |
 
 **Alizia toma:**
 - De ai-assistant: `boot/` como paquete separado → ahora en team-ai-toolkit
-- De tich-cronos: dual deploy (web + functions), estructura `src/app/`
-- Nuevo: Cloud Functions agrupadas por módulo (5 funciones, no 55+), boot/ compartido via librería
+- De tich-cronos: estructura `src/app/`
+- Nuevo: Railway como deploy target (Docker container, zero cold start), boot/ compartido via librería
 
 ---
 
@@ -225,17 +225,16 @@ container := NewHandlers(usecases, cfg)
 | Criterio | ai-assistant | tich-cronos | Alizia |
 |----------|-------------|-------------|--------|
 | **Control SQL** | Total | Parcial | Total |
-| **Boilerplate** | Alto (row.Scan) | Bajo (GORM) | Bajo (sqlx mapea auto) |
-| **Performance** | Optima | Buena (reflection) | Optima (zero reflection) |
-| **Debugging** | Ves SQL exacto | Dificil | Ves SQL exacto |
-| **Queries complejas** | Naturales | Caes a Raw SQL | Naturales |
+| **Boilerplate** | Alto (row.Scan) | Bajo (GORM) | Bajo (GORM) |
+| **Performance** | Optima | Buena (reflection) | Buena (reflection) |
+| **Debugging** | Ves SQL exacto | Dificil | GORM logger + db.Raw() para complejas |
+| **Queries complejas** | Naturales | Caes a Raw SQL | db.Raw() para complejas |
 | **Migraciones** | Solo up | up + down | up + down |
 | **Transacciones** | Manual | Transactor pattern | RunInTx() simplificado |
 
 **Alizia toma:**
-- De ai-assistant: SQL embebido con `go:embed`, control total
-- De tich-cronos: migraciones up/down, connection pooling, transactor
-- Nuevo: sqlx elimina `row.Scan` sin agregar reflection de GORM
+- De tich-cronos: GORM (estándar empresa), migraciones up/down, connection pooling, transactor
+- `db.Raw()` para queries complejas donde GORM no alcanza
 
 ---
 
@@ -313,7 +312,7 @@ container := NewHandlers(usecases, cfg)
 **Alizia toma:**
 - De ai-assistant: struct inmutable, sin singleton, sin godotenv
 - De tich-cronos: carpeta `config/` separada, soporte multi-ambiente
-- Nuevo: `BaseConfig` en team-ai-toolkit con campos comunes (Port, Env, DatabaseURL, JWKSDomain, JWKSAudience, BugsnagAPIKey), cada proyecto embebe y agrega los suyos
+- Nuevo: `BaseConfig` en team-ai-toolkit con campos comunes (Port, Env, DatabaseURL, JWTSecret, BugsnagAPIKey), cada proyecto embebe y agrega los suyos
 
 ---
 
@@ -343,9 +342,9 @@ container := NewHandlers(usecases, cfg)
 |----------|-------------|-------------|----------|
 | **Dev server** | `make run` | `make run` (Air) | `make run` (Air) |
 | **CI pipelines** | 1 workflow | 5 workflows | 3 workflows (test, lint, deploy) |
-| **Deploy target** | Docker → VPS | Cloud Functions (55+ por endpoint) | Cloud Functions agrupadas (5 por módulo) |
-| **Scaling** | Manual | Auto (per-function) | Auto (per-container) |
-| **Cold starts** | N/A | Si | Minimo (min instances) |
+| **Deploy target** | Docker → VPS | Cloud Functions (55+ por endpoint) | Railway (Docker container) |
+| **Scaling** | Manual | Auto (per-function) | Vertical/horizontal (Railway) |
+| **Cold starts** | N/A | Si | N/A (siempre corriendo) |
 | **Hot reload** | No | Si (Air) | Si (Air) |
 | **API docs validation** | No | Si (Swagger CI) | Si (Swagger CI) |
 | **Pre-commit** | No | Si | Si |
@@ -354,7 +353,7 @@ container := NewHandlers(usecases, cfg)
 **Alizia toma:**
 - De ai-assistant: deploy portable (Docker container)
 - De tich-cronos: Air, pre-commit hooks, Swagger validation
-- Nuevo: Cloud Functions agrupadas por módulo (5 funciones, mejora sobre las 55+ de tich-cronos)
+- Nuevo: Railway como deploy target (Docker container, zero cold start, DB integrada)
 
 ---
 
@@ -380,7 +379,7 @@ container := NewHandlers(usecases, cfg)
 | Criterio | ai-assistant | tich-cronos | Alizia |
 |----------|-------------|-------------|----------|
 | **Goroutines custom** | Si (cron, hooks, reminders) | No | Minimo (graceful shutdown) |
-| **Connection pooling** | No (SQLite) | GORM (25/15) | sqlx (25/10) |
+| **Connection pooling** | No (SQLite) | GORM (25/15) | GORM (25/10) |
 | **Transacciones** | Manual | Transactor pattern | RunInTx() |
 | **Shutdown** | Signal handler + defer | Gin default | boot/server.go Shutdown() explicito |
 
@@ -393,14 +392,14 @@ container := NewHandlers(usecases, cfg)
 | **Ubicacion modelos** | `pkg/domain/` (1 paquete, 35 archivos) | `core/entities/` (separado) | `core/entities/` (separado) |
 | **Ubicacion interfaces** | `pkg/domain/` (mezclado) | `core/providers/` (separado) | `core/providers/` (separado) |
 | **Ubicacion errores** | `pkg/domain/errors.go` (mezclado) | `core/providers/errors.go` | `core/providers/errors.go` |
-| **Entities importan infra** | Tags GORM mezclados | Tags GORM | Solo tags `db:` (sqlx) |
+| **Entities importan infra** | Tags GORM mezclados | Tags GORM | Tags GORM |
 | **Enums** | Constantes string | Custom types | Custom types |
 | **Validacion** | En domain (`Validate()`) | En usecases | En usecases (request DTOs) |
 
 **Alizia toma:**
 - De ai-assistant: nada (dominio flat no escala)
 - De tich-cronos: entities/ + providers/ separados, entities sin logica
-- Nuevo: tags `db:` de sqlx son mas livianos que tags GORM
+- Tags GORM consistentes con tich-cronos (estándar empresa)
 
 ---
 
@@ -423,7 +422,7 @@ container := NewHandlers(usecases, cfg)
 ### Alizia - Top 5 Fortalezas
 1. Lo mejor de ambos (clean arch + simplicidad)
 2. team-ai-toolkit: infra compartida entre proyectos (web, boot, tokens, errors, etc.)
-3. sqlx: control de SQL sin boilerplate de `row.Scan`
+3. GORM: estándar empresa, CRUD rápido, `db.Raw()` para queries complejas
 4. DI manual legible (sin Wire deprecated)
 5. Framework intercambiable via team-ai-toolkit (`web/` + `boot/`)
 
@@ -432,7 +431,7 @@ container := NewHandlers(usecases, cfg)
 2. Abstraccion `web/` es overhead si nunca cambian de Gin
 3. DI manual puede crecer mucho si suman 10+ modulos
 4. Sin E2E tests (posible gap de confianza)
-5. sqlx requiere escribir SQL a mano (mas lento que GORM para CRUDs simples)
+5. GORM reflection overhead (~15-20%) en queries muy frecuentes (mitigable con `db.Raw()`)
 
 ---
 
@@ -459,21 +458,21 @@ container := NewHandlers(usecases, cfg)
 16. **Error codes** — frontend puede actuar
 17. **Swagger/OpenAPI** — validado en CI
 18. **Multi-tenancy** — org_id desde JWT middleware
-19. **Dual deploy** — web server + functions ready
-20. **`src/app/`** — rutas separadas por modo de deploy
+19. **Railway deploy** — Docker container, auto-deploy, zero vendor lock-in
+20. **`src/app/`** — rutas centralizadas en mapping.go
 
 ### Nuevo (5 decisiones):
 21. **team-ai-toolkit** — librería compartida con toda la infra reutilizable (web, boot, tokens, errors, dbconn, pagination, transactions, applog, config)
-22. **sqlx** — punto medio entre raw SQL y GORM
+22. **GORM** — estándar de la empresa, equipo ya lo conoce. `db.Raw()` para queries complejas
 23. **`cmd/` separado** — 1 archivo por responsabilidad del wiring
 24. **`src/mocks/`** — fuera de cualquier capa, mockea todo
-25. **Cloud Functions agrupadas** — 5 funciones por módulo (admin, coordination, teaching, resources, ai)
+25. **Railway** — Docker container, zero cold start, PostgreSQL integrado, auto-deploy desde main
 
 ### Descartado de ambos:
-- ~~GORM~~ → sqlx
+- **GORM** → decisión final (estándar de la empresa, equipo lo conoce)
 - ~~Wire~~ → DI manual
 - ~~Singleton config~~ → struct inmutable
-- Cloud Functions agrupadas por módulo (5 funciones, no 55+ ni Cloud Run)
+- ~~Cloud Functions~~ → Railway (Docker container, zero vendor lock-in)
 - JWT auth via team-ai-toolkit/tokens se mantiene. Auth service propio es plan futuro
 - ~~stdlib log~~ → slog
 - Bugsnag se mantiene (stack de la empresa)
@@ -488,7 +487,7 @@ container := NewHandlers(usecases, cfg)
 
 **tich-cronos** = **enterprise estricto**. Optimizado para equipos. Robusto pero con boilerplate y herramientas deprecated (Wire, GORM overhead).
 
-**Alizia** = **clean pragmatico**. Toma la estructura y disciplina de tich-cronos, la simplicidad y portabilidad de ai-assistant, y agrega decisiones nuevas (team-ai-toolkit como librería compartida, sqlx, mocks centralizados, cmd separado) para un equipo de 4+ devs que necesita escalar sin ahogarse en boilerplate. La infra común (web, boot, tokens, errors, DB, logging) vive en team-ai-toolkit y se comparte entre Alizia, tich-cronos y futuros proyectos.
+**Alizia** = **clean pragmatico**. Toma la estructura y disciplina de tich-cronos, la simplicidad y portabilidad de ai-assistant, y agrega decisiones nuevas (team-ai-toolkit como librería compartida, GORM con Raw para queries complejas, mocks centralizados, cmd separado) para un equipo de 4+ devs que necesita escalar sin ahogarse en boilerplate. La infra común (web, boot, tokens, errors, DB, logging) vive en team-ai-toolkit y se comparte entre Alizia, tich-cronos y futuros proyectos.
 
 | Filosofia | ai-assistant | tich-cronos | Alizia |
 |-----------|-------------|-------------|----------|

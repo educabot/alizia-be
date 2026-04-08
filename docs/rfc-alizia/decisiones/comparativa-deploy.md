@@ -1,5 +1,7 @@
 # Comparativa de deploy — Cloud Functions vs Cloud Run vs Railway
 
+> **Decisión: Railway.** Este documento compara las opciones evaluadas. La decisión final fue Railway por simplicidad operativa, zero cold start, DB integrada y velocidad de entrega para la POC.
+
 ## ¿Qué es cada uno?
 
 | | Cloud Functions | Cloud Functions agrupadas | Cloud Run | Railway |

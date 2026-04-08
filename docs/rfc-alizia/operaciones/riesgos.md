@@ -4,9 +4,9 @@
 
 | # | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|--------|-------------|---------|------------|
-| 1 | GORM genera queries N+1 en documents con 8+ JOINs | Media | Medio | Preload explícito en GORM + `db.Raw()` para queries complejas. Documentado en arquitectura como patrón. Si >50% de repos usan Raw, evaluar migración a sqlx |
+| 1 | GORM genera queries N+1 en documents con 8+ JOINs | Media | Medio | Preload explícito en GORM + `db.Raw()` para queries complejas. Documentado en arquitectura como patrón |
 | 2 | Config JSONB por org se vuelve inmanejable con muchos campos | Baja | Alto | Validación estricta en backend, schema documentado, defaults sensatos. No permitir campos arbitrarios |
-| 3 | IA genera contenido de baja calidad o desalineado | Media | Medio | Prompts iterativos (empezar simple, mejorar con uso real). Review humano obligatorio antes de publicar (status draft). Prompts configurables por provincia |
+| 3 | IA genera contenido de baja calidad o desalineado (plan de clases con topics desordenados, sin considerar complejidad ni secuencia pedagógica) | Media | Alto | Prompts iterativos (empezar simple, mejorar con uso real). Review humano obligatorio antes de publicar. Prompts configurables por provincia. **Acción pre-MVP:** testear generación con datos reales de un colegio y validar con docente real antes de confiar en la calidad (reunión 30/3). El LLM no sabe orden de temas ni peso relativo — el docente ajusta manualmente |
 | 4 | Multi-tenancy data leak (org A ve datos de org B) | Baja | Crítico | Middleware de tenant en TODAS las rutas. Tests específicos de isolation (ver testing.md T1-T4). org_id viene del JWT, no del request |
 | 5 | Railway downtime afecta servicio | Baja | Medio | Dockerfile portable. Si Railway cae, migrar a Render/Fly.io/VPS en horas. Zero vendor lock-in |
 | 6 | CTE recursivo de topics lento con muchos niveles | Baja | Medio | Level precalculado en tabla. Solo recalcular rama afectada al mover topic. Max 5 niveles en la práctica |
@@ -24,7 +24,7 @@
 |-------------|------|------------|--------|-------|
 | team-ai-toolkit | Librería Go | Sí (Fase 1) | Creado | Repo con tests, compila limpio |
 | auth-service | Microservicio | No (futuro) | Futuro (no bloqueante) | Planificado para centralizar emisión de tokens. No bloqueante para Alizia |
-| JWT auth config | Infra | Sí (Fase 1) | Configurar | JWKS domain + audience (team-ai-toolkit/tokens) |
+| JWT auth config | Infra | Sí (Fase 1) | Configurar | JWT_SECRET (team-ai-toolkit/tokens) |
 | Railway account | Infra | Sí (Fase 1) | Configurar | Cuenta + proyecto + PostgreSQL |
 | PostgreSQL en Railway | Infra | Sí (Fase 1) | Provisionar | O DB externa |
 | Azure OpenAI access | Servicio | Sí (Fase 4) | Ya disponible | Mismo acceso que el POC |
@@ -44,13 +44,13 @@
 
 | # | Pregunta | Área | Estado |
 |---|----------|------|--------|
-| 1 | ¿Cómo se cargan los datos iniciales de una provincia? (manual, CSV, API) | Producto/Ops | Pendiente |
-| 2 | ¿Quién crea las organizaciones? (super admin de Educabot o self-service) | Producto | Pendiente |
-| 3 | ¿Los docentes pueden ver docs de otras áreas? (permiso configurable por org) | Producto | Pendiente |
-| 4 | ¿Se mantiene historial de versiones de coordination documents? | Producto | Pendiente |
+| 1 | ¿Cómo se cargan los datos iniciales de una provincia? (manual, CSV, API) | Producto/Ops | Resuelta — Setup manual por equipo de implementación via API + seeds. Sin self-service |
+| 2 | ¿Quién crea las organizaciones? (super admin de Educabot o self-service) | Producto | Resuelta — Admin interno de Educabot. No hay self-service en MVP |
+| 3 | ¿Los docentes pueden ver docs de otras áreas? (permiso configurable por org) | Producto | Resuelta — MVP: permisos estáticos, docente ve solo su disciplina. Configurable por org es horizonte |
+| 4 | ¿Se mantiene historial de versiones de coordination documents? | Producto | Resuelta — MVP: no hay versionado. Documento publicado **sí se puede editar**, pero con advertencia: "Los cambios no se propagan automáticamente a planificaciones ya creadas". Propagación automática de cambios es post-MVP |
 | 5 | ¿Cuántos concurrent users se esperan por org? (para dimensionar Railway) | Infra | Pendiente |
 | 6 | ¿Qué pasa si el docente no tiene internet al grabar bitácora? (escuelas rurales) | Producto | Pendiente |
-| 7 | ¿Se permite subida de fuentes propias del docente? (decisión por provincia) | Producto | Pendiente |
-| 8 | ¿Cómo se exporta el lesson plan a PDF? (template configurable, formato) | Producto/Front | Pendiente |
-| 9 | ¿El dashboard necesita notificaciones push o solo polling? | Frontend | Pendiente |
+| 7 | ¿Se permite subida de fuentes propias del docente? (decisión por provincia) | Producto | Resuelta — Decisión por provincia, documentado en Épica 8. MVP no incluye subida de fuentes propias |
+| 8 | ¿Cómo se exporta el lesson plan a PDF? (template configurable, formato) | Producto/Front | Resuelta — HU-5.9 creada. Template configurable por org |
+| 9 | ¿El dashboard necesita notificaciones push o solo polling? | Frontend | Resuelta — Solo polling en MVP. Push notifications son horizonte |
 | 10 | ¿Rate limiting en endpoints de generación IA? (costo por request) | Backend | Pendiente |

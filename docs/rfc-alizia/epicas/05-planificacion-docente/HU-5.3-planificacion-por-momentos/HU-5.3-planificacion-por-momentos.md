@@ -87,3 +87,7 @@ El PATCH de activities **reemplaza** todas las activities del plan (delete + ins
 - 5.13: PATCH title y activities → actualizados
 - 5.14: PATCH source_type=resource sin reference → 422
 - 5.15: Otro docente intenta crear → 403
+
+## Notas
+
+> **Nota:** El "anclaje a recurso" (cancion, lectura, URL) que producto menciona se resuelve con los campos `source_type` y `source_reference` ya existentes en el modelo de clase. El docente puede poner URLs o referencias en estos campos. Para un vinculo formal recurso→planificacion, ver HU-8.3.

@@ -8,7 +8,7 @@
 | 1.2 | Configurar go.mod con team-ai-toolkit | ⬜ |
 | 1.3 | Configurar CI (GitHub Actions: test + lint) | ⬜ |
 | 1.4 | Provisionar Railway + PostgreSQL | ⬜ |
-| 1.5 | Configurar JWT auth (JWKS domain, audience) para staging + prod | ⬜ |
+| 1.5 | Configurar JWT auth (JWT_SECRET) para staging + prod | ⬜ |
 | 1.6 | Deploy inicial (/health responde) | ⬜ |
 | 1.7 | Integrar auth middleware | ⬜ |
 
@@ -31,9 +31,9 @@
 |---|-------|--------|
 | 3.1 | Migración coordination (6 tablas) | ⬜ |
 | 3.2 | Crear documento (wizard 3 pasos) | ⬜ |
-| 3.3 | Asignar materias + topics a materias | ⬜ |
+| 3.3 | Asignar disciplinas + topics a disciplinas | ⬜ |
 | 3.4 | CRUD secciones dinámicas (sections JSONB) | ⬜ |
-| 3.5 | Status workflow (draft → published → archived) | ⬜ |
+| 3.5 | Status workflow (pending → in_progress → published) | ⬜ |
 | 3.6 | GET documento completo (con JOINs/Preloads) | ⬜ |
 | 3.7 | Tests | ⬜ |
 

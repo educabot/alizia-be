@@ -12,7 +12,7 @@
 Después de completar el formulario de perfil (o directamente si no hay formulario), el usuario ve un product tour que le muestra las funcionalidades clave de la plataforma. El tour es diferente según el rol:
 
 - **Coordinador:** Aprende a crear documentos de coordinación, asignar topics, generar contenido con IA
-- **Docente:** Aprende a ver el plan de su materia, crear lesson plans, usar recursos
+- **Docente:** Aprende a ver el plan de su disciplina, crear lesson plans, usar recursos
 - **Usuario con múltiples roles:** Ve los pasos de ambos roles
 
 ## Criterios de aceptación
@@ -30,14 +30,14 @@ Después de completar el formulario de perfil (o directamente si no hay formular
 ### Para coordinador
 
 1. **Bienvenido a Alizia** — Alizia te ayuda a planificar el año escolar de manera colaborativa.
-2. **Tus áreas** — Acá vas a ver las áreas que coordinás con sus materias.
-3. **Crear documento de coordinación** — El wizard te guía en 3 pasos: elegir temas, definir período y asignar temas a cada materia.
+2. **Tus áreas** — Acá vas a ver las áreas que coordinás con sus disciplinas.
+3. **Crear documento de coordinación** — El wizard te guía en 3 pasos: elegir temas, definir período y asignar temas a cada disciplina.
 4. **Generá con Alizia** — Una vez creado el documento, podés generar contenido automáticamente con IA.
 
 ### Para docente
 
 1. **Bienvenido a Alizia** — Alizia te ayuda a planificar el año escolar de manera colaborativa.
-2. **Tus cursos y materias** — Acá vas a ver los cursos donde enseñás.
+2. **Tus cursos y disciplinas** — Acá vas a ver los cursos donde enseñás.
 3. **Planificá tus clases** — Para cada clase podés crear un plan con actividades. La IA te ayuda a generar contenido.
 4. **Clases compartidas** — Algunas clases las compartís con otro docente. *(solo si `shared_classes_enabled`)*
 5. **Recursos educativos** — Podés crear guías, fichas y otros recursos con ayuda de IA.

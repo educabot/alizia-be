@@ -22,8 +22,9 @@ La plataforma opera con múltiples roles (coordinador, docente, y potencialmente
 **Incluye:**
 
 - Autenticación de usuarios (email + password via JWT authentication)
-- Roles de coordinator, teacher y admin con permisos diferenciados
-- Asignación de usuarios a organizaciones y cursos
+- Roles de coordinator y teacher como roles de producto, con permisos diferenciados
+- Rol admin como rol interno del equipo de implementación (no visible al usuario final)
+- Asignación de usuarios a organizaciones y áreas
 
 **No incluye:**
 
@@ -41,10 +42,10 @@ La plataforma opera con múltiples roles (coordinador, docente, y potencialmente
 
 | # | Historia | Descripción | Fase | Tareas |
 |---|---------|-------------|------|--------|
-| HU-1.1 | [Autenticación JWT](./HU-1.1-autenticacion-jwt/HU-1.1-autenticacion-jwt.md) | JWT middleware, JWKS validation, tenant middleware, refresh, CORS | Fase 1 | 6 |
+| HU-1.1 | [Autenticación JWT](./HU-1.1-autenticacion-jwt/HU-1.1-autenticacion-jwt.md) | JWT middleware, HS256 validation, tenant middleware, refresh, CORS | Fase 1 | 6 |
 | HU-1.2 | [Modelo de usuarios y roles](./HU-1.2-modelo-usuarios-roles/HU-1.2-modelo-usuarios-roles.md) | Migración, entities, repository GORM, seed | Fase 2 | 6 |
 | HU-1.3 | [Middleware de autorización](./HU-1.3-middleware-autorizacion/HU-1.3-middleware-autorizacion.md) | RequireRole, interceptor chain, error handling | Fase 2 | 4 |
-| HU-1.4 | [Asignación organizacional](./HU-1.4-asignacion-organizacional/HU-1.4-asignacion-organizacional.md) | Area coordinators, admin endpoints, multi-tenancy | Fase 2 | 5 |
+| HU-1.4 | [Asignación organizacional](./HU-1.4-asignacion-organizacional/HU-1.4-asignacion-organizacional.md) | Area coordinators (asignación de coordinadores a áreas), admin endpoints, multi-tenancy | Fase 2 | 5 |
 
 > **Nota:** El setup del proyecto (repo, CI/CD, Railway, Docker) se movió a [Épica 0](../00-setup-infraestructura/00-setup-infraestructura.md).
 
@@ -52,7 +53,7 @@ La plataforma opera con múltiples roles (coordinador, docente, y potencialmente
 
 ## Decisiones técnicas
 
-- Un usuario puede tener **múltiples roles dentro de una misma organización**. Un docente puede ser profesor de dos materias y coordinador de un área — no hay restricción. Idealmente la experiencia no necesita "Escoger un rol" para el usuario.
+- Un usuario puede tener **múltiples roles dentro de una misma organización**. Un docente puede dar dos disciplinas y coordinador de un área — no hay restricción. Idealmente la experiencia no necesita "Escoger un rol" para el usuario.
 - En el MVP, si un usuario trabaja en **dos instituciones distintas**, tiene dos cuentas separadas (un usuario por organización).
 - El mecanismo de autenticación puede variar por provincia: mail + contraseña, cuentas institucionales (ej: Google Workspace del ministerio), u otros proveedores. Para el MVP, limitamos a mail + password via JWT authentication (team-ai-toolkit/tokens).
 - Los permisos sobre el documento de coordinación (quién edita, quién solo visualiza) son **configurables por organización**. No se hardcodea que "el coordinador edita y el docente solo ve" porque hay provincias donde el docente también interviene.

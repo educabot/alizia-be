@@ -1,6 +1,6 @@
 # HU-4.2: Wizard de creación
 
-> Como coordinador, necesito un wizard de 3 pasos para crear un documento de coordinación seleccionando topics, definiendo el período y asignando topics a cada materia.
+> Como coordinador, necesito un wizard de 3 pasos para crear un documento de coordinación seleccionando topics, definiendo el período y asignando topics a cada disciplina.
 
 **Fase:** 3 — Coordination Documents
 **Prioridad:** Alta
@@ -12,11 +12,11 @@
 
 - [ ] Endpoint `POST /api/v1/coordination-documents` acepta los datos del wizard completo
 - [ ] Paso 1: seleccionar topics al nivel definido por `config.topic_selection_level`
-- [ ] Paso 2: definir nombre, período (start_date, end_date) y class_count por materia
-- [ ] Paso 3: asignar topics seleccionados a cada materia del área
+- [ ] Paso 2: definir nombre, período (start_date, end_date) y class_count por disciplina
+- [ ] Paso 3: asignar topics seleccionados a cada disciplina del área
 - [ ] El class_count se calcula automáticamente desde la grilla horaria (time_slots)
-- [ ] El coordinador puede override el class_count manualmente (± feriados)
-- [ ] El documento se crea en estado `draft`
+- [ ] El coordinador puede override el class_count manualmente (± feriados) con campo opcional `observations` (texto libre, ej: "Se descuentan 2 clases por jornadas institucionales")
+- [ ] El documento se crea en estado `pending`
 - [ ] Se crean todas las junction tables: coord_doc_topics, coordination_document_subjects, coord_doc_subject_topics
 - [ ] Solo coordinadores del área pueden crear documentos para esa área
 
@@ -51,12 +51,14 @@
     {
       "subject_id": 1,
       "class_count": 20,
-      "topic_ids": [5, 8]
+      "topic_ids": [5, 8],
+      "observations": ""
     },
     {
       "subject_id": 2,
       "class_count": 18,
-      "topic_ids": [12, 15]
+      "topic_ids": [12, 15],
+      "observations": "Se descuentan 2 clases por jornadas institucionales"
     }
   ]
 }
@@ -65,7 +67,7 @@
 ### Cálculo automático de class_count
 
 ```
-class_count = (slots por semana de la materia) × (semanas en el período)
+class_count = (slots por semana de la disciplina) × (semanas en el período)
 semanas = (end_date - start_date) / 7
 ```
 
@@ -76,19 +78,19 @@ El frontend muestra el valor calculado; el coordinador puede modificarlo.
 ```
 Paso 1: GET /api/v1/topics?level=3  →  Seleccionar topics
                                           │
-Paso 2: GET /api/v1/areas/:id       →  Ver materias del área
+Paso 2: GET /api/v1/areas/:id       →  Ver disciplinas del área
          + calcular class_count         Definir período + override class_count
                                           │
-Paso 3: Asignar topics a materias   →  Drag & drop topics → subjects
+Paso 3: Asignar topics a disciplinas   →  Drag & drop topics → subjects
                                           │
-POST /api/v1/coordination-documents  →  Crear documento (draft)
+POST /api/v1/coordination-documents  →  Crear documento (pending)
 ```
 
 ## Test cases
 
 - 4.4: POST wizard completo → documento creado con topics y subjects
 - 4.5: POST con topic que no existe → 422
-- 4.6: POST con materia que no es del área → 422
+- 4.6: POST con disciplina que no es del área → 422
 - 4.7: POST sin ser coordinador del área → 403
 - 4.8: GET listar por área → solo docs de la org y área
 - 4.9: GET detalle → documento con todos los preloads

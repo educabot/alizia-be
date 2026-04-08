@@ -1,6 +1,6 @@
-# HU-4.4: Plan de clases por materia
+# HU-4.4: Plan de clases por disciplina
 
-> Como coordinador, necesito un plan de clases generado por IA para cada materia del documento, con título, objetivo y topics por clase.
+> Como coordinador, necesito un plan de clases generado por IA para cada disciplina del documento, con título, objetivo y topics por clase.
 
 **Fase:** 3 — Coordination Documents
 **Prioridad:** Alta
@@ -13,8 +13,8 @@
 - [ ] `coord_doc_classes` se generan por IA al llamar `POST /generate` (junto con secciones)
 - [ ] Cada clase tiene: class_number, title, objective
 - [ ] Cada clase tiene topics asignados (coord_doc_class_topics)
-- [ ] Se generan tantas clases como `class_count` de la materia
-- [ ] Los topics asignados a la materia (coord_doc_subject_topics) se distribuyen entre las clases
+- [ ] Se generan tantas clases como `class_count` de la disciplina
+- [ ] Los topics asignados a la disciplina (coord_doc_subject_topics) se distribuyen entre las clases
 - [ ] El coordinador puede editar título, objetivo y topics de cada clase individualmente
 - [ ] Las clases compartidas (de HU-3.5) se marcan en la respuesta del detalle
 - [ ] Endpoint para editar una clase individual: `PATCH /api/v1/coord-doc-classes/:id`
@@ -33,17 +33,17 @@
 
 - [HU-4.2: Wizard](../HU-4.2-wizard-creacion/HU-4.2-wizard-creacion.md) — Documento con subjects y topics creados
 - [HU-3.5: Grilla horaria](../../03-integracion/HU-3.5-grilla-horaria-clases-compartidas/HU-3.5-grilla-horaria-clases-compartidas.md) — Para marcar clases compartidas
-- [Épica 6: Asistente IA](../../06-assistente-ia/06-asistente-ia.md) — Azure OpenAI para generar el plan
+- [Épica 6: Asistente IA](../../06-asistente-ia/06-asistente-ia.md) — Azure OpenAI para generar el plan
 
 ## Diseño técnico
 
 ### Generación IA del plan de clases
 
-Para cada materia del documento, se envía al LLM:
+Para cada disciplina del documento, se envía al LLM:
 
 **Input:**
-- Materia (nombre)
-- Topics asignados a la materia
+- Disciplina (nombre)
+- Topics asignados a la disciplina
 - class_count
 - Secciones del documento ya generadas (eje problemático, estrategia)
 
@@ -82,8 +82,8 @@ El GET detalle del documento incluye para cada clase:
 
 ## Test cases
 
-- 4.14: POST generate → plan de clases creado para cada materia
+- 4.14: POST generate → plan de clases creado para cada disciplina
 - 4.15: Cantidad de clases generadas == class_count
-- 4.16: Todos los topics de la materia distribuidos en al menos una clase
+- 4.16: Todos los topics de la disciplina distribuidos en al menos una clase
 - 4.17: PATCH clase → título y topics actualizados
 - 4.18: Clases compartidas marcadas correctamente

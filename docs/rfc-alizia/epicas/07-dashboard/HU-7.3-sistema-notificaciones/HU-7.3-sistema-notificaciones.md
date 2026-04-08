@@ -2,7 +2,7 @@
 
 > Como usuario, necesito recibir notificaciones cuando ocurran eventos relevantes (publicación de documentos, plazos, cambios) para no perderme información importante.
 
-**Fase:** Post-MVP
+**Fase:** Fase 7
 **Prioridad:** Media
 **Estimación:** —
 
@@ -40,11 +40,10 @@
 | Evento | Destinatario | Mensaje ejemplo |
 |--------|-------------|-----------------|
 | Documento publicado | Docentes del área | "Se publicó el documento de coordinación Mar-Jul para Ciencias" |
-| Documento vuelto a draft | Docentes del área | "El documento Mar-Jul fue revertido a borrador por el coordinador" |
-| Clase compartida modificada | Docente de la otra materia | "Se modificó la planificación de Clase 3 (Física) que compartís con Matemáticas" |
+| Documento vuelto a pendiente | Docentes del área | "El documento Mar-Jul fue revertido a pendiente por el coordinador" |
+| Clase compartida modificada | Docente de la otra disciplina | "Se modificó la planificación de Clase 3 (Física) que compartís con Matemáticas" |
 | Plazo próximo | Docentes sin planificar | "Tenés 5 clases sin planificar y la primera es en 3 días" |
-| Planificación completa | Coordinador del área | "Prof. García completó la planificación de Matemáticas (3a)" |
-| Documento archivado | Docentes del área | "El documento Mar-Jul fue archivado" |
+| Planificación completa | Coordinador del área | "Doc. García completó la planificación de Matemáticas (3a)" |
 
 ### Modelo conceptual
 
@@ -53,7 +52,7 @@ notifications
 ├── id
 ├── user_id (destinatario)
 ├── organization_id
-├── type (enum: doc_published, doc_drafted, shared_class_modified, deadline_approaching, planning_complete, doc_archived)
+├── type (enum: doc_published, doc_reverted, shared_class_modified, deadline_approaching, planning_complete)
 ├── title
 ├── message
 ├── entity_type (coordination_document, lesson_plan, course_subject)
@@ -81,6 +80,6 @@ Dos estrategias complementarias:
 ### Preguntas abiertas
 
 - ¿El coordinador quiere ver un resumen diario o notificación por cada docente que completa?
-- ¿Las notificaciones de plazo son por materia, por curso, o globales?
+- ¿Las notificaciones de plazo son por disciplina, por curso, o globales?
 - ¿Se necesita un canal de notificación adicional (WhatsApp, email) desde el inicio?
 - ¿El usuario puede configurar qué notificaciones quiere recibir?

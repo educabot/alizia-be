@@ -13,7 +13,7 @@
 - [ ] Endpoint `POST /api/v1/lesson-plans/:id/generate` genera la propuesta de clase
 - [ ] La propuesta es un texto narrativo que describe el desarrollo de la clase paso a paso
 - [ ] El prompt incluye: título, objetivo, actividades seleccionadas por momento, fuente anclada, topics de la clase, estrategia metodológica del documento
-- [ ] Si la clase es compartida, incluye contexto de la otra materia
+- [ ] Si la clase es compartida, incluye contexto de la otra disciplina
 - [ ] La propuesta se guarda en el campo `proposal` del lesson plan
 - [ ] Se puede regenerar (sobreescribe la propuesta anterior)
 - [ ] Solo el docente asignado puede generar
@@ -32,7 +32,7 @@
 
 - [HU-5.3: Planificación por momentos](../HU-5.3-planificacion-por-momentos/HU-5.3-planificacion-por-momentos.md) — Plan con actividades configuradas
 - [HU-4.3: Secciones dinámicas](../../04-documento-coordinacion/HU-4.3-secciones-dinamicas/HU-4.3-secciones-dinamicas.md) — Estrategia metodológica como contexto
-- [Épica 6: Asistente IA](../../06-assistente-ia/06-asistente-ia.md) — Azure OpenAI
+- [Épica 6: Asistente IA](../../06-asistente-ia/06-asistente-ia.md) — Azure OpenAI
 
 ## Diseño técnico
 
@@ -45,7 +45,7 @@ El system prompt incluye:
 3. **Fuente anclada:** si existe, URL o texto
 4. **Topics:** categorías/temas asignados a esta clase desde el coord doc
 5. **Documento de coordinación:** estrategia metodológica, eje problemático
-6. **Clase compartida:** si is_shared, incluir materia y topics de la otra materia
+6. **Clase compartida:** si is_shared, incluir disciplina y topics de la otra disciplina
 
 ### Output esperado
 
@@ -80,5 +80,5 @@ POST /api/v1/lesson-plans/:id/generate
 
 - 5.17: POST generate con plan completo → proposal generada
 - 5.18: POST generate sin actividades → 422
-- 5.19: POST generate en clase compartida → contexto incluye otra materia
+- 5.19: POST generate en clase compartida → contexto incluye otra disciplina
 - 5.20: Regenerar → proposal sobreescrita
