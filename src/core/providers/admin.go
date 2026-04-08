@@ -9,13 +9,31 @@ import (
 )
 
 type OrganizationProvider interface {
-	GetOrganization(ctx context.Context, id uuid.UUID) (*entities.Organization, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*entities.Organization, error)
+	FindBySlug(ctx context.Context, slug string) (*entities.Organization, error)
+}
+
+type UserProvider interface {
+	FindByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.User, error)
+	FindByEmail(ctx context.Context, orgID uuid.UUID, email string) (*entities.User, error)
+	FindByOrgID(ctx context.Context, orgID uuid.UUID) ([]entities.User, error)
+	Create(ctx context.Context, user *entities.User) (int64, error)
+	AssignRole(ctx context.Context, userID int64, role entities.Role) error
+	RemoveRole(ctx context.Context, userID int64, role entities.Role) error
 }
 
 type AreaProvider interface {
 	CreateArea(ctx context.Context, area *entities.Area) (int64, error)
 	GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Area, error)
 	ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error)
+}
+
+type AreaCoordinatorProvider interface {
+	Assign(ctx context.Context, areaID, userID int64) (*entities.AreaCoordinator, error)
+	Remove(ctx context.Context, areaID, userID int64) error
+	FindByAreaID(ctx context.Context, areaID int64) ([]entities.AreaCoordinator, error)
+	FindByUserID(ctx context.Context, userID int64) ([]entities.AreaCoordinator, error)
+	IsCoordinator(ctx context.Context, areaID, userID int64) (bool, error)
 }
 
 type SubjectProvider interface {

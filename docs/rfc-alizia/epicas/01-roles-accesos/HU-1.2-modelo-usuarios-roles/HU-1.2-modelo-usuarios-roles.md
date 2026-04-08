@@ -1,4 +1,4 @@
-o # HU-1.2: Modelo de usuarios y roles
+# HU-1.2: Modelo de usuarios y roles
 
 > Como admin, necesito poder crear usuarios con roles asignados para que cada persona tenga los permisos correctos en la plataforma.
 
@@ -10,23 +10,23 @@ o # HU-1.2: Modelo de usuarios y roles
 
 ## Criterios de aceptación
 
-- [ ] Migración crea tablas: `organizations`, `users`, `user_roles` + enum `member_role`
-- [ ] Entity Go para Organization, User, UserRole
-- [ ] Repository GORM con CRUD básico
-- [ ] Un usuario puede tener múltiples roles (teacher + coordinator)
-- [ ] `UNIQUE(user_id, role)` impide duplicados
-- [ ] Seed de datos iniciales para testing
+- [x] Migración crea tablas: `organizations`, `users`, `user_roles` + enum `member_role`
+- [x] Entity Go para Organization, User, UserRole
+- [x] Repository GORM con CRUD básico
+- [x] Un usuario puede tener múltiples roles (teacher + coordinator)
+- [x] `UNIQUE(user_id, role)` impide duplicados
+- [x] Seed de datos iniciales para testing
 
 ## Tareas
 
 | # | Tarea | Archivo | Estado |
 |---|-------|---------|--------|
-| 1.2.1 | [Migración: organizations + users + user_roles](./tareas/T-1.2.1-migracion.md) | db/migrations/000001_init.up.sql | ⬜ |
-| 1.2.2 | [Entities Go](./tareas/T-1.2.2-entities.md) | internal/admin/entities/ | ⬜ |
-| 1.2.3 | [Provider interfaces](./tareas/T-1.2.3-providers.md) | internal/admin/providers/ | ⬜ |
-| 1.2.4 | [Repository GORM](./tareas/T-1.2.4-repository.md) | internal/admin/repositories/ | ⬜ |
-| 1.2.5 | [Seed de datos iniciales](./tareas/T-1.2.5-seed.md) | db/seeds/ | ⬜ |
-| 1.2.6 | [Tests del repository](./tareas/T-1.2.6-tests.md) | internal/admin/repositories/*_test.go | ⬜ |
+| 1.2.1 | [Migración: organizations + users + user_roles](./tareas/T-1.2.1-migracion.md) | db/migrations/000001_create_base_tables.up.sql | ✅ |
+| 1.2.2 | [Entities Go](./tareas/T-1.2.2-entities.md) | src/core/entities/user.go, organization.go | ✅ |
+| 1.2.3 | [Provider interfaces](./tareas/T-1.2.3-providers.md) | src/core/providers/admin.go | ✅ |
+| 1.2.4 | [Repository GORM](./tareas/T-1.2.4-repository.md) | src/repositories/admin/ | ✅ |
+| 1.2.5 | [Seed de datos iniciales](./tareas/T-1.2.5-seed.md) | db/seeds/seed.sql | ✅ |
+| 1.2.6 | [Tests del repository](./tareas/T-1.2.6-tests.md) | src/repositories/admin/*_test.go | ✅ |
 
 ## Modelo de datos
 

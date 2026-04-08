@@ -12,21 +12,21 @@
 
 ## Criterios de aceptación
 
-- [ ] Tabla `area_coordinators` permite asignar coordinadores a áreas (M2M)
-- [ ] Endpoint admin para asignar coordinador a un área
-- [ ] Un coordinador solo ve documentos de sus áreas asignadas
-- [ ] Multi-tenancy: todas las queries filtran por `organization_id`
-- [ ] Seed incluye asignaciones de ejemplo
+- [x] Tabla `area_coordinators` permite asignar coordinadores a áreas (M2M)
+- [x] Endpoint admin para asignar coordinador a un área
+- [ ] Un coordinador solo ve documentos de sus áreas asignadas (pendiente: requiere handlers de listado, Épica 3-4)
+- [x] Multi-tenancy: todas las queries filtran por `organization_id`
+- [x] Seed incluye asignaciones de ejemplo
 
 ## Tareas
 
 | # | Tarea | Archivo | Estado |
 |---|-------|---------|--------|
-| 1.4.1 | [Migración: area_coordinators](./tareas/T-1.4.1-migracion.md) | db/migrations/ | ⬜ |
-| 1.4.2 | [Entities y providers para area_coordinators](./tareas/T-1.4.2-entities-providers.md) | internal/admin/ | ⬜ |
-| 1.4.3 | [Endpoints admin de asignación de coordinadores](./tareas/T-1.4.3-endpoints-admin.md) | internal/admin/entrypoints/ | ⬜ |
-| 1.4.4 | [Filtrado por asignación en queries](./tareas/T-1.4.4-filtrado-asignacion.md) | internal/*/repositories/ | ⬜ |
-| 1.4.5 | [Tests de asignación y filtrado](./tareas/T-1.4.5-tests-asignacion.md) | *_test.go | ⬜ |
+| 1.4.1 | [Migración: areas, subjects, area_coordinators](./tareas/T-1.4.1-migracion.md) | db/migrations/000002 | ✅ |
+| 1.4.2 | [Entities y providers para area_coordinators](./tareas/T-1.4.2-entities-providers.md) | src/core/ | ✅ |
+| 1.4.3 | [Endpoints admin de asignación de coordinadores](./tareas/T-1.4.3-endpoints-admin.md) | src/entrypoints/admin.go | ✅ |
+| 1.4.4 | [Filtrado por asignación en queries](./tareas/T-1.4.4-filtrado-asignacion.md) | src/repositories/ | ⏳ Parcial (requiere handlers de listado) |
+| 1.4.5 | [Tests de asignación y filtrado](./tareas/T-1.4.5-tests-asignacion.md) | src/core/usecases/admin/*_test.go | ✅ |
 
 ## Modelo de datos
 

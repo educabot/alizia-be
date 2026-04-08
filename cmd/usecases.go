@@ -1,14 +1,19 @@
 package main
 
+import (
+	adminuc "github.com/educabot/alizia-be/src/core/usecases/admin"
+)
+
 // UseCases holds all application use cases.
 // Wired incrementally as features are implemented.
 type UseCases struct {
-	// admin usecases (Épica 2-3)
-	// coordination usecases (Épica 4)
-	// teaching usecases (Épica 5)
-	// resources usecases (Épica 8)
+	AssignCoordinator adminuc.AssignCoordinator
+	RemoveCoordinator adminuc.RemoveCoordinator
 }
 
-func NewUseCases(_ *Repositories) *UseCases {
-	return &UseCases{}
+func NewUseCases(repos *Repositories) *UseCases {
+	return &UseCases{
+		AssignCoordinator: adminuc.NewAssignCoordinator(repos.Areas, repos.Users, repos.AreaCoordinators),
+		RemoveCoordinator: adminuc.NewRemoveCoordinator(repos.Areas, repos.AreaCoordinators),
+	}
 }
