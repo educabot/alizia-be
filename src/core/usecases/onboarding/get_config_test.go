@@ -26,10 +26,10 @@ func TestGetConfig_WithFullConfig(t *testing.T) {
 		"onboarding": map[string]any{
 			"skip_allowed": false,
 			"profile_fields": []map[string]any{
-				{"key": "disciplines", "label": "Disciplinas", "type": "multiselect", "options": []string{"Matemáticas"}, "required": true},
+				{"key": "disciplines", "label": "Disciplines", "type": "multiselect", "options": []string{"Math"}, "required": true},
 			},
 			"tour_steps": []map[string]any{
-				{"key": "welcome", "title": "Bienvenido", "description": "Intro", "order": 1, "roles": []string{"coordinator", "teacher"}},
+				{"key": "welcome", "title": "Welcome", "description": "Intro", "order": 1, "roles": []string{"coordinator", "teacher"}},
 			},
 		},
 	})

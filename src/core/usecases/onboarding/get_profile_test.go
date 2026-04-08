@@ -42,7 +42,7 @@ func TestGetProfile_WithData(t *testing.T) {
 	ctx := context.Background()
 
 	profileJSON, _ := json.Marshal(map[string]any{
-		"disciplines":         []string{"Matemáticas", "Física"},
+		"disciplines":         []string{"Math", "Physics"},
 		"years_of_experience": 12,
 	})
 

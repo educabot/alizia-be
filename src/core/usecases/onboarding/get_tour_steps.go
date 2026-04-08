@@ -19,8 +19,8 @@ type TourStep struct {
 }
 
 var defaultTourSteps = []TourStep{
-	{Key: "welcome", Title: "Bienvenido a Alizia", Description: "Alizia te ayuda a planificar el año escolar de manera colaborativa.", Order: 1},
-	{Key: "explore", Title: "Explorá la plataforma", Description: "Navegá por las secciones para descubrir las herramientas disponibles.", Order: 2},
+	{Key: "welcome", Title: "Welcome to Alizia", Description: "Alizia helps you plan the school year collaboratively.", Order: 1},
+	{Key: "explore", Title: "Explore the platform", Description: "Browse the sections to discover available tools.", Order: 2},
 }
 
 type tourStepConfig struct {

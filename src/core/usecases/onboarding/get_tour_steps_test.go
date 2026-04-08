@@ -64,9 +64,9 @@ func TestGetTourSteps_FilterByRole(t *testing.T) {
 	ctx := context.Background()
 
 	org := orgWithTourConfig([]map[string]any{
-		{"key": "welcome", "title": "Bienvenido", "description": "Intro", "order": 1},
-		{"key": "areas", "title": "Tus áreas", "description": "Para coordinadores", "order": 2, "roles": []string{"coordinator"}},
-		{"key": "courses", "title": "Tus cursos", "description": "Para docentes", "order": 3, "roles": []string{"teacher"}},
+		{"key": "welcome", "title": "Welcome", "description": "Intro", "order": 1},
+		{"key": "areas", "title": "Your areas", "description": "For coordinators", "order": 2, "roles": []string{"coordinator"}},
+		{"key": "courses", "title": "Your courses", "description": "For teachers", "order": 3, "roles": []string{"teacher"}},
 	}, nil)
 	org.ID = orgID
 
@@ -92,10 +92,10 @@ func TestGetTourSteps_MultipleRolesDedup(t *testing.T) {
 	ctx := context.Background()
 
 	org := orgWithTourConfig([]map[string]any{
-		{"key": "welcome", "title": "Bienvenido", "description": "Intro", "order": 1},
-		{"key": "welcome", "title": "Bienvenido dup", "description": "Dup", "order": 1, "roles": []string{"teacher"}},
-		{"key": "areas", "title": "Áreas", "description": "Coord", "order": 2, "roles": []string{"coordinator"}},
-		{"key": "courses", "title": "Cursos", "description": "Teacher", "order": 3, "roles": []string{"teacher"}},
+		{"key": "welcome", "title": "Welcome", "description": "Intro", "order": 1},
+		{"key": "welcome", "title": "Welcome dup", "description": "Dup", "order": 1, "roles": []string{"teacher"}},
+		{"key": "areas", "title": "Areas", "description": "Coord", "order": 2, "roles": []string{"coordinator"}},
+		{"key": "courses", "title": "Courses", "description": "Teacher", "order": 3, "roles": []string{"teacher"}},
 	}, nil)
 	org.ID = orgID
 
@@ -127,8 +127,8 @@ func TestGetTourSteps_FilterByFeatureFlag(t *testing.T) {
 	ctx := context.Background()
 
 	org := orgWithTourConfig([]map[string]any{
-		{"key": "welcome", "title": "Bienvenido", "description": "Intro", "order": 1},
-		{"key": "shared", "title": "Clases compartidas", "description": "Shared", "order": 2, "requires_feature": "shared_classes_enabled"},
+		{"key": "welcome", "title": "Welcome", "description": "Intro", "order": 1},
+		{"key": "shared", "title": "Shared classes", "description": "Shared", "order": 2, "requires_feature": "shared_classes_enabled"},
 	}, map[string]bool{"shared_classes_enabled": false})
 	org.ID = orgID
 
@@ -153,8 +153,8 @@ func TestGetTourSteps_FeatureEnabled(t *testing.T) {
 	ctx := context.Background()
 
 	org := orgWithTourConfig([]map[string]any{
-		{"key": "welcome", "title": "Bienvenido", "description": "Intro", "order": 1},
-		{"key": "shared", "title": "Clases compartidas", "description": "Shared", "order": 2, "requires_feature": "shared_classes_enabled"},
+		{"key": "welcome", "title": "Welcome", "description": "Intro", "order": 1},
+		{"key": "shared", "title": "Shared classes", "description": "Shared", "order": 2, "requires_feature": "shared_classes_enabled"},
 	}, map[string]bool{"shared_classes_enabled": true})
 	org.ID = orgID
 

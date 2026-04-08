@@ -36,12 +36,12 @@ func TestSaveProfile_Success(t *testing.T) {
 	orgID := uuid.New()
 	ctx := context.Background()
 	data := map[string]any{
-		"disciplines":         []any{"Matemáticas"},
+		"disciplines":         []any{"Math"},
 		"years_of_experience": float64(5),
 	}
 
 	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Matemáticas", "Física"}},
+		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Math", "Physics"}},
 		{Key: "years_of_experience", Type: "number", Required: false},
 	})
 	org.ID = orgID
@@ -69,7 +69,7 @@ func TestSaveProfile_MissingRequiredField(t *testing.T) {
 	}
 
 	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Matemáticas"}},
+		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Math"}},
 	})
 	org.ID = orgID
 
@@ -90,11 +90,11 @@ func TestSaveProfile_InvalidSelectOption(t *testing.T) {
 	orgID := uuid.New()
 	ctx := context.Background()
 	data := map[string]any{
-		"level": "Posgrado",
+		"level": "Postgraduate",
 	}
 
 	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "level", Type: "select", Required: true, Options: []string{"Primario", "Secundario"}},
+		{Key: "level", Type: "select", Required: true, Options: []string{"Primary", "Secondary"}},
 	})
 	org.ID = orgID
 
