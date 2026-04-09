@@ -3,6 +3,7 @@ package onboarding_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -50,17 +51,25 @@ func TestComplete_Idempotent(t *testing.T) {
 
 	orgID := uuid.New()
 	ctx := context.Background()
+	completedAt := time.Now()
 
-	users.On("FindByID", ctx, orgID, int64(1)).Return(&entities.User{ID: 1}, nil)
-	users.On("CompleteOnboarding", ctx, int64(1)).Return(nil)
+	// First call: user not yet completed → CompleteOnboarding must be invoked
+	users.On("FindByID", ctx, orgID, int64(1)).
+		Return(&entities.User{ID: 1, OnboardingCompletedAt: nil}, nil).Once()
+	users.On("CompleteOnboarding", ctx, int64(1)).Return(nil).Once()
 
-	// First call
 	err := uc.Execute(ctx, onboarding.CompleteRequest{OrgID: orgID, UserID: 1})
 	assert.NoError(t, err)
 
-	// Second call — should still succeed (idempotent)
+	// Second call: user already completed → must short-circuit without calling CompleteOnboarding again
+	users.On("FindByID", ctx, orgID, int64(1)).
+		Return(&entities.User{ID: 1, OnboardingCompletedAt: &completedAt}, nil).Once()
+
 	err = uc.Execute(ctx, onboarding.CompleteRequest{OrgID: orgID, UserID: 1})
 	assert.NoError(t, err)
+
+	users.AssertExpectations(t)
+	users.AssertNumberOfCalls(t, "CompleteOnboarding", 1)
 }
 
 func TestComplete_ValidationErrors(t *testing.T) {

@@ -42,8 +42,14 @@ func (uc *completeImpl) Execute(ctx context.Context, req CompleteRequest) error 
 	}
 
 	// Verify user exists in the org
-	if _, err := uc.users.FindByID(ctx, req.OrgID, req.UserID); err != nil {
+	user, err := uc.users.FindByID(ctx, req.OrgID, req.UserID)
+	if err != nil {
 		return err
+	}
+
+	// Idempotent: if already completed, do not overwrite the timestamp
+	if user.OnboardingCompletedAt != nil {
+		return nil
 	}
 
 	return uc.users.CompleteOnboarding(ctx, req.UserID)

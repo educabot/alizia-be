@@ -3,6 +3,7 @@ package onboarding
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -55,7 +56,7 @@ func (uc *getStatusImpl) Execute(ctx context.Context, req GetStatusRequest) (*Ge
 		Completed: user.OnboardingCompletedAt != nil,
 	}
 	if user.OnboardingCompletedAt != nil {
-		t := user.OnboardingCompletedAt.Format("2006-01-02T15:04:05Z07:00")
+		t := user.OnboardingCompletedAt.Format(time.RFC3339)
 		resp.CompletedAt = &t
 	}
 
