@@ -23,8 +23,8 @@ func (r SaveProfileRequest) Validate() error {
 	if r.UserID == 0 {
 		return fmt.Errorf("%w: user_id is required", providers.ErrValidation)
 	}
-	if r.Data == nil {
-		return fmt.Errorf("%w: profile data is required", providers.ErrValidation)
+	if len(r.Data) == 0 {
+		return fmt.Errorf("%w: profile data cannot be empty", providers.ErrValidation)
 	}
 	return nil
 }

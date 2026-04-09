@@ -164,9 +164,10 @@ func TestSaveProfile_ValidationErrors(t *testing.T) {
 		name string
 		req  onboarding.SaveProfileRequest
 	}{
-		{"missing org_id", onboarding.SaveProfileRequest{UserID: 1, Data: map[string]any{}}},
-		{"missing user_id", onboarding.SaveProfileRequest{OrgID: uuid.New(), Data: map[string]any{}}},
-		{"missing data", onboarding.SaveProfileRequest{OrgID: uuid.New(), UserID: 1}},
+		{"missing org_id", onboarding.SaveProfileRequest{UserID: 1, Data: map[string]any{"k": "v"}}},
+		{"missing user_id", onboarding.SaveProfileRequest{OrgID: uuid.New(), Data: map[string]any{"k": "v"}}},
+		{"nil data", onboarding.SaveProfileRequest{OrgID: uuid.New(), UserID: 1}},
+		{"empty data map", onboarding.SaveProfileRequest{OrgID: uuid.New(), UserID: 1, Data: map[string]any{}}},
 	}
 
 	for _, tt := range tests {
