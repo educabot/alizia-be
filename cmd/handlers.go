@@ -1,6 +1,9 @@
 package main
 
 import (
+	"time"
+
+	ttauth "github.com/educabot/team-ai-toolkit/auth"
 	"github.com/educabot/team-ai-toolkit/tokens"
 
 	"github.com/educabot/alizia-be/config"
@@ -8,7 +11,9 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
-func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {
+const loginTokenDuration = 24 * time.Hour
+
+func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypoints.WebHandlerContainer {
 	toker := tokens.New(cfg.JWTSecret)
 
 	return &entrypoints.WebHandlerContainer{
@@ -25,9 +30,15 @@ func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContai
 			GetConfig:    uc.GetOnboardConfig,
 		},
 
-		Coordination:     &entrypoints.CoordinationContainer{},
-		Teaching:         &entrypoints.TeachingContainer{},
-		Resources:        &entrypoints.ResourcesContainer{},
+		Coordination: &entrypoints.CoordinationContainer{},
+		Teaching:     &entrypoints.TeachingContainer{},
+		Resources:    &entrypoints.ResourcesContainer{},
+		Login: ttauth.NewLoginHandler(ttauth.LoginConfig{
+			Toker:    toker,
+			Provider: repos.AuthCredentials,
+			Duration: loginTokenDuration,
+		}),
+		Logout:           ttauth.NewLogoutHandler(),
 		AuthMiddleware:   tokens.ValidateTokenMiddleware(toker, cfg.Env),
 		TenantMiddleware: middleware.TenantMiddleware(),
 	}

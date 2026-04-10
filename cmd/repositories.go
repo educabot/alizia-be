@@ -1,10 +1,12 @@
 package main
 
 import (
+	ttauth "github.com/educabot/team-ai-toolkit/auth"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/providers"
 	adminr "github.com/educabot/alizia-be/src/repositories/admin"
+	authr "github.com/educabot/alizia-be/src/repositories/auth"
 	coordr "github.com/educabot/alizia-be/src/repositories/coordination"
 	resr "github.com/educabot/alizia-be/src/repositories/resources"
 	teachr "github.com/educabot/alizia-be/src/repositories/teaching"
@@ -15,6 +17,7 @@ type Repositories struct {
 	Users            providers.UserProvider
 	Areas            providers.AreaProvider
 	AreaCoordinators providers.AreaCoordinatorProvider
+	AuthCredentials  ttauth.CredentialsProvider
 	Coordination     *coordr.Repository
 	Teaching         *teachr.Repository
 	Resources        *resr.Repository
@@ -26,6 +29,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Users:            adminr.NewUserRepo(db),
 		Areas:            adminr.NewAreaRepo(db),
 		AreaCoordinators: adminr.NewAreaCoordinatorRepo(db),
+		AuthCredentials:  authr.NewCredentialsProvider(db),
 		Coordination:     coordr.New(db),
 		Teaching:         teachr.New(db),
 		Resources:        resr.New(db),
