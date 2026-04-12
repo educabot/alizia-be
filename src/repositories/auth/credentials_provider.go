@@ -1,7 +1,7 @@
 // Package auth provides repository-layer implementations for the auth
 // primitives expected by team-ai-toolkit/auth. Concretely, this package exposes
 // a CredentialsProvider backed by GORM + PostgreSQL that looks up a user by
-// email, verifies the bcrypt password hash and returns the AuthenticatedUser
+// email, verifies the argon2id password hash and returns the AuthenticatedUser
 // shape that the toolkit login handler turns into a signed JWT.
 //
 // In alizia-be, users.email is globally unique across organizations, so
@@ -75,7 +75,13 @@ func (p *credentialsProvider) Authenticate(ctx context.Context, creds ttauth.Cre
 		return nil, ttauth.ErrInvalidCredentials
 	}
 
-	if !ttauth.ComparePassword(*user.PasswordHash, creds.Password) {
+	// ComparePassword returns (false, nil) on mismatch and (false, err) only on
+	// malformed hashes — treat both as invalid credentials so a DB corruption
+	// doesn't leak a distinct error to the client, and log nothing here: the
+	// caller (login handler) will still see ErrInvalidCredentials and map to
+	// 401.
+	match, err := ttauth.ComparePassword(*user.PasswordHash, creds.Password)
+	if err != nil || !match {
 		return nil, ttauth.ErrInvalidCredentials
 	}
 

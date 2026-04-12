@@ -18,7 +18,10 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
-const chainTestSecret = "chain-test-secret"
+const (
+	chainTestSecret = "chain-test-secret"
+	chainTestIssuer = "alizia-be-test"
+)
 
 // createTokenWithAudience creates a signed JWT with roles and audience (org_id).
 func createTokenWithAudience(roles []string, orgID uuid.UUID) string {
@@ -41,7 +44,7 @@ func setupChainRouter(requiredRoles ...string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	toker := tokens.New(chainTestSecret)
+	toker := tokens.New(chainTestSecret, chainTestIssuer)
 	authMw := tokens.ValidateTokenMiddleware(toker, config.Local)
 	tenantMw := middleware.TenantMiddleware()
 	roleMw := middleware.RequireRole(requiredRoles...)

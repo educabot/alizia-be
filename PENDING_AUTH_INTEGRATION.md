@@ -1,71 +1,55 @@
-# Pending: Auth Login/Logout Integration
+# Auth Login/Logout Integration — DONE
 
 **Branch:** `feature/sl/auth-login-logout`
-**Estado:** Esperando release `v1.8.0` de `team-ai-toolkit` en GitHub.
+**Estado:** Integrado contra `team-ai-toolkit@v1.8.0` (tag publicado).
 
-## Contexto
+Este archivo se mantiene como registro del cierre de la integración. Ya no
+hay nada bloqueante. Se puede borrar en cualquier commit futuro.
 
-Se agregaron los endpoints `POST /api/v1/auth/login` y `POST /api/v1/auth/logout` al backend, consumiendo el nuevo paquete `auth` que se agregó al `team-ai-toolkit`.
+## Resumen final
 
-- **team-ai-toolkit**: branch `feature/auth-package`, commit `d5c4386`, pusheado a origin. Listo para taggear `v1.8.0`.
-- **alizia-be**: cambios en esta branch, **sin commitear**, usando `replace` local al toolkit para desarrollo.
+- `team-ai-toolkit` v1.8.0 publicado con el paquete `auth/` (primitives-only).
+- `alizia-be` consume v1.8.0 sin `replace` local.
+- Password hashing: **argon2id** (OWASP 2024 params: 19 MiB, t=2, p=1). Se
+  descartó bcrypt durante la review del PR del toolkit.
+- JWT issuer: `alizia-be` (constante en `cmd/handlers.go`).
+- Login/logout se wirean en alizia-be como handlers propios
+  (`src/entrypoints/auth.go`) porque el toolkit intencionalmente **no** expone
+  un `NewLoginHandler` genérico (ver `auth/TODO_V1.9.md` en el toolkit).
 
-## Validación end-to-end ya realizada (con replace local)
+## Cambios vs el plan original
 
-- `POST /auth/login` con `admin@neuquen.edu.ar` / `admin123` → 200 + JWT (24h)
-- `POST /auth/login` password incorrecta → 401 `{"code":"unauthorized","description":"invalid credentials"}`
-- `POST /auth/login` body `{}` → 400 `{"code":"bad_request","description":"email and password are required"}`
-- `GET /api/v1/users/me/onboarding-status` con JWT fresco → 200 (tenant middleware extrae `org_id` del claim `aud`)
-- `POST /auth/logout` → 200 `{"status":"logged_out"}`
+| Área | Plan original (v1.7.x) | Realidad (v1.8.0) |
+|---|---|---|
+| Hashing | bcrypt cost 12 | argon2id OWASP |
+| Login handler | `ttauth.NewLoginHandler` del toolkit | handler propio en `src/entrypoints/auth.go` |
+| Logout handler | `ttauth.NewLogoutHandler` del toolkit | handler propio en `src/entrypoints/auth.go` |
+| `tokens.New` | `New(secret)` | `New(secret, issuer)` |
+| `ComparePassword` | devuelve `bool` | devuelve `(bool, error)` |
+| JWT con Audience | implícito | `Toker.CreateWithClaims` con `Audience=[orgID]` |
 
-## Archivos modificados / nuevos en esta branch
+## Archivos finales
 
 **Modificados:**
-- `cmd/app.go` — `NewHandlers` ahora recibe `*Repositories`
-- `cmd/handlers.go` — wire `ttauth.NewLoginHandler` (duración 24h) y `ttauth.NewLogoutHandler`
-- `cmd/repositories.go` — agrega `AuthCredentials ttauth.CredentialsProvider`
-- `db/seeds/seed.sql` — seeds con `password_hash` bcrypt de "admin123"
-- `go.mod`, `go.sum` — `replace github.com/educabot/team-ai-toolkit => ../team-ai-toolkit` (temporal)
-- `src/app/web/mapping.go` — grupo público `/api/v1/auth/{login,logout}` sin middleware de auth/tenant
-- `src/entrypoints/containers.go` — agrega `Login` y `Logout` como `web.Handler`
+- `cmd/handlers.go` — wire handlers propios, issuer en `tokens.New`
+- `cmd/repositories.go` — `AuthCredentials ttauth.CredentialsProvider`
+- `db/seeds/seed.sql` — hashes argon2id de "admin123"
+- `go.mod`, `go.sum` — `team-ai-toolkit v1.8.0`, sin `replace`
+- `src/app/web/mapping.go` — `/api/v1/auth/{login,logout}` públicos
+- `src/entrypoints/containers.go` — `Login` y `Logout` como `web.Handler`
+- `src/repositories/auth/credentials_provider.go` — ajuste a firma
+  `ComparePassword (bool, error)`
+- `src/entrypoints/middleware/auth_integration_test.go`,
+  `chain_integration_test.go` — issuer en `tokens.New`
+- `scripts/hash_password/main.go` — usa `ttauth.HashPassword` (argon2id)
 
 **Nuevos:**
-- `scripts/hash_password/main.go` — CLI helper para generar hashes bcrypt (cost 12)
-- `src/repositories/auth/credentials_provider.go` — implementación GORM de `CredentialsProvider`
-- `src/repositories/auth/credentials_provider_test.go` — 7 tests con testify/mock
+- `src/entrypoints/auth.go` — `NewLoginHandler` + `NewLogoutHandler` propios
+- `src/repositories/auth/credentials_provider_test.go` — 7 tests con
+  testify/mock
 
-## Pasos pendientes (ejecutar cuando la release v1.8.0 esté publicada)
+## Credenciales de dev
 
-```bash
-cd C:/Users/Educabot/Desktop/Educabot/Repositorios/alizia-be
-git checkout feature/sl/auth-login-logout
-
-# 1. Bump a la versión publicada
-go get github.com/educabot/team-ai-toolkit@v1.8.0
-
-# 2. Quitar el replace local
-go mod edit -dropreplace github.com/educabot/team-ai-toolkit
-go mod tidy
-
-# 3. Validar build y tests
-go build ./...
-go vet ./...
-go test ./...
-
-# 4. Rebuild y relanzar backend
-# (matar proceso actual si sigue corriendo con binary antiguo)
-
-# 5. Re-correr los 5 curl de validación end-to-end
-#    (login OK, login wrong pass, login empty body, GET protegido con JWT, logout)
-
-# 6. Commit y push
-git add -A
-git commit -m "feat(auth): add login/logout endpoints using team-ai-toolkit v1.8.0"
-git push -u origin feature/sl/auth-login-logout
-```
-
-## Notas
-
-- El backend quedó corriendo en background (task `beqnckszl`) con el binary que usa el `replace` local. Sigue válido para testing manual mientras tanto.
-- Los seeds de usuarios todos tienen password `admin123` (bcrypt cost 12).
-- Para regenerar el hash: `go run ./scripts/hash_password admin123`
+Todos los users del seed comparten el hash de `admin123`.
+Regenerar: `go run ./scripts/hash_password admin123` (cada corrida devuelve
+un hash distinto por el salt random — pegar el resultante en los 4 rows).

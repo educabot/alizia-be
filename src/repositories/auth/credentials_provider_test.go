@@ -34,8 +34,9 @@ func (m *mockUserLookup) GetRoles(ctx context.Context, userID int64) ([]string, 
 	return args.Get(0).([]string), args.Error(1)
 }
 
-// makeHashFixture returns a bcrypt hash for the given plain password using the
-// toolkit's HashPassword helper so the test stays decoupled from cost tuning.
+// makeHashFixture returns an argon2id hash for the given plain password using
+// the toolkit's HashPassword helper so the test stays decoupled from parameter
+// tuning.
 func makeHashFixture(t *testing.T, plain string) string {
 	t.Helper()
 	h, err := ttauth.HashPassword(plain)

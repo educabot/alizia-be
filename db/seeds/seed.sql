@@ -12,13 +12,16 @@ INSERT INTO organizations (id, name, slug, config) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Users
--- password_hash for all seeded users = bcrypt('admin123', cost=12)
+-- password_hash for all seeded users = argon2id('admin123', OWASP 2024 params)
 -- Regenerate with: go run ./scripts/hash_password admin123
+-- NB: argon2id is salted — each run returns a different hash. All 4 users
+-- share the same hash string here only because the seed is deterministic for
+-- local dev; in real usage each user must have its own salt/hash pair.
 INSERT INTO users (id, organization_id, email, first_name, last_name, password_hash) VALUES
-    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar',    'Ana',    'Admin',        '$2a$12$tD6rs1aoIUEZ8EMTGIoVNek7mI9r0FMkKQRKuaQSB1PvvMxQ8k4xK'),
-    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar',    'Carlos', 'Coordinador',  '$2a$12$tD6rs1aoIUEZ8EMTGIoVNek7mI9r0FMkKQRKuaQSB1PvvMxQ8k4xK'),
-    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María',  'Docente',      '$2a$12$tD6rs1aoIUEZ8EMTGIoVNek7mI9r0FMkKQRKuaQSB1PvvMxQ8k4xK'),
-    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro',  'Multirol',     '$2a$12$tD6rs1aoIUEZ8EMTGIoVNek7mI9r0FMkKQRKuaQSB1PvvMxQ8k4xK')
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar',    'Ana',    'Admin',        '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar',    'Carlos', 'Coordinador',  '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María',  'Docente',      '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro',  'Multirol',     '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c')
 ON CONFLICT (id) DO NOTHING;
 
 -- Roles
