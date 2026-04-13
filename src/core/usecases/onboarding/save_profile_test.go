@@ -15,7 +15,7 @@ import (
 	mockproviders "github.com/educabot/alizia-be/src/mocks/providers"
 )
 
-func orgWithProfileFields(fields []onboarding.ProfileFieldConfig) *entities.Organization {
+func orgWithProfileFields(fields []entities.ProfileField) *entities.Organization {
 	config := map[string]any{
 		"onboarding": map[string]any{
 			"profile_fields": fields,
@@ -40,9 +40,9 @@ func TestSaveProfile_Success(t *testing.T) {
 		"years_of_experience": float64(5),
 	}
 
-	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Math", "Physics"}},
-		{Key: "years_of_experience", Type: "number", Required: false},
+	org := orgWithProfileFields([]entities.ProfileField{
+		{Key: "disciplines", Type: entities.ProfileFieldMultiselect, Required: true, Options: []string{"Math", "Physics"}},
+		{Key: "years_of_experience", Type: entities.ProfileFieldNumber, Required: false},
 	})
 	org.ID = orgID
 
@@ -68,8 +68,8 @@ func TestSaveProfile_MissingRequiredField(t *testing.T) {
 		"years_of_experience": float64(5),
 	}
 
-	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "disciplines", Type: "multiselect", Required: true, Options: []string{"Math"}},
+	org := orgWithProfileFields([]entities.ProfileField{
+		{Key: "disciplines", Type: entities.ProfileFieldMultiselect, Required: true, Options: []string{"Math"}},
 	})
 	org.ID = orgID
 
@@ -93,8 +93,8 @@ func TestSaveProfile_InvalidSelectOption(t *testing.T) {
 		"level": "Postgraduate",
 	}
 
-	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "level", Type: "select", Required: true, Options: []string{"Primary", "Secondary"}},
+	org := orgWithProfileFields([]entities.ProfileField{
+		{Key: "level", Type: entities.ProfileFieldSelect, Required: true, Options: []string{"Primary", "Secondary"}},
 	})
 	org.ID = orgID
 
@@ -118,8 +118,8 @@ func TestSaveProfile_InvalidFieldType(t *testing.T) {
 		"years": "not a number",
 	}
 
-	org := orgWithProfileFields([]onboarding.ProfileFieldConfig{
-		{Key: "years", Type: "number", Required: true},
+	org := orgWithProfileFields([]entities.ProfileField{
+		{Key: "years", Type: entities.ProfileFieldNumber, Required: true},
 	})
 	org.ID = orgID
 

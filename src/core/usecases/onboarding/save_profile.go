@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 )
 
@@ -27,14 +28,6 @@ func (r SaveProfileRequest) Validate() error {
 		return fmt.Errorf("%w: profile data cannot be empty", providers.ErrValidation)
 	}
 	return nil
-}
-
-// ProfileFieldConfig represents a field configured for the org's onboarding profile form.
-type ProfileFieldConfig struct {
-	Key      string   `json:"key"`
-	Type     string   `json:"type"`
-	Required bool     `json:"required"`
-	Options  []string `json:"options,omitempty"`
 }
 
 type SaveProfile interface {
@@ -74,10 +67,10 @@ func (uc *saveProfileImpl) Execute(ctx context.Context, req SaveProfileRequest) 
 	return uc.users.UpdateProfileData(ctx, req.UserID, req.Data)
 }
 
-func extractProfileFields(configJSON []byte) []ProfileFieldConfig {
+func extractProfileFields(configJSON []byte) []entities.ProfileField {
 	var config struct {
 		Onboarding struct {
-			ProfileFields []ProfileFieldConfig `json:"profile_fields"`
+			ProfileFields []entities.ProfileField `json:"profile_fields"`
 		} `json:"onboarding"`
 	}
 	if err := json.Unmarshal(configJSON, &config); err != nil {
@@ -86,7 +79,7 @@ func extractProfileFields(configJSON []byte) []ProfileFieldConfig {
 	return config.Onboarding.ProfileFields
 }
 
-func validateProfileData(fields []ProfileFieldConfig, data map[string]any) error {
+func validateProfileData(fields []entities.ProfileField, data map[string]any) error {
 	for _, f := range fields {
 		val, exists := data[f.Key]
 		if f.Required && !exists {
@@ -102,17 +95,17 @@ func validateProfileData(fields []ProfileFieldConfig, data map[string]any) error
 	return nil
 }
 
-func validateFieldValue(f ProfileFieldConfig, val any) error {
+func validateFieldValue(f entities.ProfileField, val any) error {
 	switch f.Type {
-	case "text":
+	case entities.ProfileFieldText:
 		if _, ok := val.(string); !ok {
 			return fmt.Errorf("%w: field %q must be a string", providers.ErrValidation, f.Key)
 		}
-	case "number":
+	case entities.ProfileFieldNumber:
 		if _, ok := val.(float64); !ok {
 			return fmt.Errorf("%w: field %q must be a number", providers.ErrValidation, f.Key)
 		}
-	case "select":
+	case entities.ProfileFieldSelect:
 		s, ok := val.(string)
 		if !ok {
 			return fmt.Errorf("%w: field %q must be a string", providers.ErrValidation, f.Key)
@@ -120,7 +113,7 @@ func validateFieldValue(f ProfileFieldConfig, val any) error {
 		if !containsOption(f.Options, s) {
 			return fmt.Errorf("%w: field %q has invalid option %q", providers.ErrValidation, f.Key, s)
 		}
-	case "multiselect":
+	case entities.ProfileFieldMultiselect:
 		arr, ok := val.([]any)
 		if !ok {
 			return fmt.Errorf("%w: field %q must be an array", providers.ErrValidation, f.Key)
@@ -134,6 +127,8 @@ func validateFieldValue(f ProfileFieldConfig, val any) error {
 				return fmt.Errorf("%w: field %q has invalid option %q", providers.ErrValidation, f.Key, s)
 			}
 		}
+	default:
+		return fmt.Errorf("%w: field %q has unsupported type %q", providers.ErrValidation, f.Key, f.Type)
 	}
 	return nil
 }
