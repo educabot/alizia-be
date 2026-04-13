@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/educabot/team-ai-toolkit/tokens"
 
 	"github.com/educabot/alizia-be/config"
@@ -8,8 +10,13 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
-func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContainer {
-	toker := tokens.New(cfg.JWTSecret)
+const (
+	loginTokenDuration = 24 * time.Hour
+	jwtIssuer          = "alizia-be"
+)
+
+func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypoints.WebHandlerContainer {
+	toker := tokens.New(cfg.JWTSecret, jwtIssuer)
 
 	return &entrypoints.WebHandlerContainer{
 		Admin: &entrypoints.AdminContainer{
@@ -28,6 +35,8 @@ func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContai
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},
 		Resources:        &entrypoints.ResourcesContainer{},
+		Login:            entrypoints.NewLoginHandler(repos.AuthCredentials, toker, loginTokenDuration),
+		Logout:           entrypoints.NewLogoutHandler(),
 		AuthMiddleware:   tokens.ValidateTokenMiddleware(toker, cfg.Env),
 		TenantMiddleware: middleware.TenantMiddleware(),
 	}

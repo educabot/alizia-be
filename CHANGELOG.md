@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3] - 2026-04-13
+
+### Added
+
+- Login endpoint (`POST /api/v1/auth/login`) with argon2id password verification
+- Logout endpoint (`POST /api/v1/auth/logout`) with token invalidation
+- Upgraded to team-ai-toolkit v1.8.0 for primitives-only auth (HashPassword, ComparePassword, CredentialsProvider, Toker)
+- Argon2id password hashing with OWASP 2024 recommended parameters (m=19456, t=2, p=1)
+- Complete seed data with onboarding config (profile fields, tour steps with role/feature filtering, feature flags)
+
 ## [0.0.2] - 2026-04-08
 
 ### Added

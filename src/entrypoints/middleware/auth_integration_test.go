@@ -17,13 +17,16 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
-const testSecret = "test-secret-key-for-jwt-signing"
+const (
+	testSecret = "test-secret-key-for-jwt-signing"
+	testIssuer = "alizia-be-test"
+)
 
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	toker := tokens.New(testSecret)
+	toker := tokens.New(testSecret, testIssuer)
 	authMw := tokens.ValidateTokenMiddleware(toker, config.Local)
 	tenantMw := middleware.TenantMiddleware()
 
@@ -43,7 +46,7 @@ func setupRouter() *gin.Engine {
 }
 
 func createTestToken(userID string, orgID uuid.UUID) string {
-	toker := tokens.New(testSecret)
+	toker := tokens.New(testSecret, testIssuer)
 	token, _ := toker.Create(userID, "Test User", "test@example.com", []string{"coordinator"}, time.Hour)
 	return token
 }
@@ -81,7 +84,7 @@ func TestIntegration_MissingBearerPrefix_Returns401(t *testing.T) {
 }
 
 func TestIntegration_ExpiredToken_Returns401(t *testing.T) {
-	toker := tokens.New(testSecret)
+	toker := tokens.New(testSecret, testIssuer)
 	token, _ := toker.Create("user-1", "Test", "test@example.com", []string{"coordinator"}, -time.Hour)
 
 	r := setupRouter()

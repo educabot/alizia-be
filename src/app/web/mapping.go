@@ -12,6 +12,13 @@ import (
 
 // ConfigureMappings registers all API routes on the Gin engine.
 func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _ *config.Config) {
+	// Public auth routes: NO AuthMiddleware, NO TenantMiddleware.
+	// Login issues the JWT and logout is intentionally stateless.
+	public := engine.Group("/api/v1")
+	public.POST("/auth/login", webgin.Adapt(h.Login))
+	public.POST("/auth/logout", webgin.Adapt(h.Logout))
+
+	// Protected routes: every endpoint below requires a valid JWT and a tenant.
 	api := engine.Group("/api/v1")
 	api.Use(webgin.AdaptMiddleware(h.AuthMiddleware))
 	api.Use(webgin.AdaptMiddleware(h.TenantMiddleware))

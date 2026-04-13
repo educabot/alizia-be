@@ -31,7 +31,7 @@ func NewApp(cfg *config.Config) *App {
 
 	repos := NewRepositories(db)
 	usecases := NewUseCases(repos)
-	container := NewHandlers(usecases, cfg)
+	container := NewHandlers(usecases, repos, cfg)
 
 	engine := boot.NewRouter(cfg.Env, cfg.AllowedOrigins)
 

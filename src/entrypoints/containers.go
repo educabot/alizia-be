@@ -8,6 +8,8 @@ type WebHandlerContainer struct {
 	Coordination     *CoordinationContainer
 	Teaching         *TeachingContainer
 	Resources        *ResourcesContainer
+	Login            web.Handler
+	Logout           web.Handler
 	AuthMiddleware   web.Interceptor
 	TenantMiddleware web.Interceptor
 }
