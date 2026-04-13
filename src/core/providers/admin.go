@@ -20,6 +20,8 @@ type UserProvider interface {
 	Create(ctx context.Context, user *entities.User) (int64, error)
 	AssignRole(ctx context.Context, userID int64, role entities.Role) error
 	RemoveRole(ctx context.Context, userID int64, role entities.Role) error
+	CompleteOnboarding(ctx context.Context, userID int64) error
+	UpdateProfileData(ctx context.Context, userID int64, data map[string]any) error
 }
 
 type AreaProvider interface {

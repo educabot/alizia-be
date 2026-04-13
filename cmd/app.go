@@ -59,9 +59,12 @@ func (a *App) Run() {
 }
 
 func (a *App) Close() {
-	sqlDB, _ := a.db.DB()
-	err := sqlDB.Close()
+	sqlDB, err := a.db.DB()
 	if err != nil {
+		log.Printf("error getting sql.DB: %v", err)
 		return
+	}
+	if err := sqlDB.Close(); err != nil {
+		log.Printf("error closing database: %v", err)
 	}
 }

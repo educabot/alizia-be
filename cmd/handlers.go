@@ -16,6 +16,14 @@ func NewHandlers(uc *UseCases, cfg *config.Config) *entrypoints.WebHandlerContai
 			AssignCoordinator: uc.AssignCoordinator,
 			RemoveCoordinator: uc.RemoveCoordinator,
 		},
+		Onboarding: &entrypoints.OnboardingContainer{
+			GetStatus:    uc.GetOnboardStatus,
+			Complete:     uc.CompleteOnboarding,
+			GetProfile:   uc.GetProfile,
+			SaveProfile:  uc.SaveProfile,
+			GetTourSteps: uc.GetTourSteps,
+			GetConfig:    uc.GetOnboardConfig,
+		},
 
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},

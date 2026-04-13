@@ -2,7 +2,9 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -86,4 +88,22 @@ func (r *userRepo) RemoveRole(ctx context.Context, userID int64, role entities.R
 		return providers.ErrNotFound
 	}
 	return nil
+}
+
+func (r *userRepo) CompleteOnboarding(ctx context.Context, userID int64) error {
+	return r.db.WithContext(ctx).
+		Model(&entities.User{}).
+		Where("id = ?", userID).
+		Update("onboarding_completed_at", time.Now()).Error
+}
+
+func (r *userRepo) UpdateProfileData(ctx context.Context, userID int64, data map[string]any) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return r.db.WithContext(ctx).
+		Model(&entities.User{}).
+		Where("id = ?", userID).
+		Update("profile_data", gorm.Expr("?::jsonb", string(jsonData))).Error
 }

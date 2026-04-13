@@ -20,6 +20,14 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	coordOnly := api.Group("")
 	coordOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("coordinator", "admin")))
 
+	// Onboarding routes (any authenticated user)
+	api.GET("/users/me/onboarding-status", webgin.Adapt(h.Onboarding.HandleGetStatus))
+	api.POST("/users/me/onboarding/complete", webgin.Adapt(h.Onboarding.HandleComplete))
+	api.GET("/users/me/profile", webgin.Adapt(h.Onboarding.HandleGetProfile))
+	api.PUT("/users/me/profile", webgin.Adapt(h.Onboarding.HandleSaveProfile))
+	api.GET("/users/me/onboarding/tour-steps", webgin.Adapt(h.Onboarding.HandleGetTourSteps))
+	api.GET("/onboarding-config", webgin.Adapt(h.Onboarding.HandleGetConfig))
+
 	// Admin-only routes
 	adminOnly := api.Group("")
 	adminOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("admin")))
