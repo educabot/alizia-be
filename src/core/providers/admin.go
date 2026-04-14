@@ -67,6 +67,11 @@ type CourseSubjectProvider interface {
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error)
 }
 
+type ActivityTemplateProvider interface {
+	CreateActivity(ctx context.Context, activity *entities.ActivityTemplate) (int64, error)
+	ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment) ([]entities.ActivityTemplate, error)
+}
+
 type TimeSlotProvider interface {
 	CreateTimeSlot(ctx context.Context, slot *entities.TimeSlot) (int64, error)
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.TimeSlot, error)

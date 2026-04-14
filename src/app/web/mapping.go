@@ -37,6 +37,9 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	// Topics (any authenticated user can list)
 	api.GET("/topics", webgin.Adapt(h.Admin.HandleGetTopics))
 
+	// Activities (any authenticated user can list)
+	api.GET("/activities", webgin.Adapt(h.Admin.HandleListActivities))
+
 	// Onboarding routes (any authenticated user)
 	api.GET("/users/me/onboarding-status", webgin.Adapt(h.Onboarding.HandleGetStatus))
 	api.POST("/users/me/onboarding/complete", webgin.Adapt(h.Onboarding.HandleComplete))
@@ -69,5 +72,6 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	adminOnly.POST("/courses/:id/students", webgin.Adapt(h.Courses.HandleAddStudent))
 	adminOnly.POST("/course-subjects", webgin.Adapt(h.Courses.HandleAssignCourseSubject))
 	adminOnly.POST("/courses/:id/time-slots", webgin.Adapt(h.Courses.HandleCreateTimeSlot))
+	adminOnly.POST("/activities", webgin.Adapt(h.Admin.HandleCreateActivity))
 
 }

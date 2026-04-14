@@ -11,6 +11,53 @@ import (
 )
 
 // ---------------------------------------------------------------------------
+// Activities
+// ---------------------------------------------------------------------------
+
+type createActivityBody struct {
+	Moment          string  `json:"moment"`
+	Name            string  `json:"name"`
+	Description     *string `json:"description"`
+	DurationMinutes *int    `json:"duration_minutes"`
+}
+
+func (a *AdminContainer) HandleCreateActivity(req web.Request) web.Response {
+	var body createActivityBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := a.CreateActivity.Execute(req.Context(), admin.CreateActivityRequest{
+		OrgID:           middleware.OrgID(req),
+		Moment:          body.Moment,
+		Name:            body.Name,
+		Description:     body.Description,
+		DurationMinutes: body.DurationMinutes,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.Created(result)
+}
+
+func (a *AdminContainer) HandleListActivities(req web.Request) web.Response {
+	r := admin.ListActivitiesRequest{
+		OrgID: middleware.OrgID(req),
+	}
+	if m := req.Query("moment"); m != "" {
+		r.Moment = &m
+	}
+
+	result, err := a.ListActivities.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
+}
+
+// ---------------------------------------------------------------------------
 // Topics
 // ---------------------------------------------------------------------------
 
@@ -151,6 +198,8 @@ type AdminContainer struct {
 	ListSubjects      admin.ListSubjects
 	CreateTopic       admin.CreateTopic
 	GetTopics         admin.GetTopics
+	CreateActivity    admin.CreateActivity
+	ListActivities    admin.ListActivities
 }
 
 type assignCoordinatorBody struct {

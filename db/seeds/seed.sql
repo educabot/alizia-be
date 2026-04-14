@@ -152,6 +152,20 @@ INSERT INTO course_subjects (id, organization_id, course_id, subject_id, teacher
     (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 3, 2, 4, 2026, '2026-03-02', '2026-12-15')
 ON CONFLICT (id) DO NOTHING;
 
+-- Activity templates (didactic activities by class moment)
+INSERT INTO activities (id, organization_id, moment, name, description, duration_minutes) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'apertura',   'Lluvia de ideas',          'Técnica grupal de generación de ideas', 15),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'apertura',   'Pregunta disparadora',     'Pregunta para activar conocimientos previos', 10),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'apertura',   'Repaso clase anterior',    'Revisión breve de contenidos previos', 10),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'desarrollo', 'Trabajo en grupo',         'Actividad colaborativa en equipos', 30),
+    (5, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'desarrollo', 'Exposición dialogada',     'Presentación con intercambio participativo', 25),
+    (6, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'desarrollo', 'Resolución de problemas',  'Aplicación de conceptos a situaciones concretas', 30),
+    (7, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'desarrollo', 'Análisis de caso',         'Estudio y discusión de un caso real o simulado', 25),
+    (8, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'cierre',     'Puesta en común',          'Socialización de resultados y conclusiones', 15),
+    (9, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'cierre',     'Síntesis individual',      'Cada alumno resume lo aprendido', 10),
+    (10, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'cierre',    'Autoevaluación',           'Reflexión personal sobre el aprendizaje', 10)
+ON CONFLICT (id) DO NOTHING;
+
 -- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) FROM user_roles));
@@ -162,3 +176,4 @@ SELECT setval('topics_id_seq', (SELECT COALESCE(MAX(id), 0) FROM topics));
 SELECT setval('courses_id_seq', (SELECT COALESCE(MAX(id), 0) FROM courses));
 SELECT setval('students_id_seq', (SELECT COALESCE(MAX(id), 0) FROM students));
 SELECT setval('course_subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM course_subjects));
+SELECT setval('activities_id_seq', (SELECT COALESCE(MAX(id), 0) FROM activities));

@@ -30,6 +30,8 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			ListSubjects:      uc.ListSubjects,
 			CreateTopic:       uc.CreateTopic,
 			GetTopics:         uc.GetTopics,
+			CreateActivity:    uc.CreateActivity,
+			ListActivities:    uc.ListActivities,
 		},
 		Onboarding: &entrypoints.OnboardingContainer{
 			GetStatus:    uc.GetOnboardStatus,
