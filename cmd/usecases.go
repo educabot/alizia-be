@@ -8,6 +8,8 @@ import (
 // UseCases holds all application use cases.
 // Wired incrementally as features are implemented.
 type UseCases struct {
+	GetOrganization    adminuc.GetOrganization
+	UpdateOrgConfig    adminuc.UpdateOrgConfig
 	AssignCoordinator  adminuc.AssignCoordinator
 	RemoveCoordinator  adminuc.RemoveCoordinator
 	GetOnboardStatus   onboardinguc.GetStatus
@@ -20,6 +22,8 @@ type UseCases struct {
 
 func NewUseCases(repos *Repositories) *UseCases {
 	return &UseCases{
+		GetOrganization:    adminuc.NewGetOrganization(repos.Organizations),
+		UpdateOrgConfig:    adminuc.NewUpdateOrgConfig(repos.Organizations),
 		AssignCoordinator:  adminuc.NewAssignCoordinator(repos.Areas, repos.Users, repos.AreaCoordinators),
 		RemoveCoordinator:  adminuc.NewRemoveCoordinator(repos.Areas, repos.AreaCoordinators),
 		GetOnboardStatus:   onboardinguc.NewGetStatus(repos.Users),

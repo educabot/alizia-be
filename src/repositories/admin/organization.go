@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/google/uuid"
@@ -35,4 +36,26 @@ func (r *organizationRepo) FindBySlug(ctx context.Context, slug string) (*entiti
 		return nil, providers.ErrNotFound
 	}
 	return &org, err
+}
+
+func (r *organizationRepo) UpdateConfig(ctx context.Context, id uuid.UUID, configPatch map[string]any) (*entities.Organization, error) {
+	patchJSON, err := json.Marshal(configPatch)
+	if err != nil {
+		return nil, err
+	}
+
+	// PostgreSQL || operator: shallow-merges the patch into existing config.
+	// Existing keys not in the patch are preserved; keys in the patch overwrite.
+	result := r.db.WithContext(ctx).
+		Model(&entities.Organization{}).
+		Where("id = ?", id).
+		Update("config", gorm.Expr("config || ?::jsonb", string(patchJSON)))
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, providers.ErrNotFound
+	}
+
+	return r.FindByID(ctx, id)
 }

@@ -4,10 +4,35 @@
 -- Organization: Provincia de Neuquén
 INSERT INTO organizations (id, name, slug, config) VALUES
     ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Provincia de Neuquén', 'neuquen', '{
-        "topic_levels": 3,
-        "shared_classes": true,
-        "max_activities_per_class": 5,
-        "document_sections": ["objectives", "content", "methodology", "evaluation", "resources"],
+        "topic_max_levels": 3,
+        "topic_level_names": ["Núcleos problemáticos", "Áreas de conocimiento", "Categorías"],
+        "topic_selection_level": 3,
+        "shared_classes_enabled": true,
+        "desarrollo_max_activities": 3,
+        "coord_doc_sections": [
+            {
+                "key": "problem_edge",
+                "label": "Eje problemático",
+                "type": "text",
+                "ai_prompt": "Generá un eje problemático que articule las categorías seleccionadas para las disciplinas del área, considerando el contexto educativo de nivel secundario.",
+                "required": true
+            },
+            {
+                "key": "methodological_strategy",
+                "label": "Estrategia metodológica",
+                "type": "select_text",
+                "options": ["proyecto", "taller_laboratorio", "ateneo_debate"],
+                "ai_prompt": "Generá una estrategia metodológica detallada para abordar el eje problemático, explicando cómo se articulan las disciplinas del área y qué actividades concretas se proponen.",
+                "required": true
+            },
+            {
+                "key": "eval_criteria",
+                "label": "Criterios de evaluación",
+                "type": "text",
+                "ai_prompt": "Generá criterios de evaluación que permitan valorar el aprendizaje de las categorías seleccionadas, considerando evaluación formativa y sumativa.",
+                "required": false
+            }
+        ],
         "features": {
             "ai_chat": true,
             "shared_classes": true,

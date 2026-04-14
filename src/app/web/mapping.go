@@ -27,6 +27,9 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	coordOnly := api.Group("")
 	coordOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("coordinator", "admin")))
 
+	// Organization (any authenticated user can read their own org)
+	api.GET("/organizations/me", webgin.Adapt(h.Admin.HandleGetOrganization))
+
 	// Onboarding routes (any authenticated user)
 	api.GET("/users/me/onboarding-status", webgin.Adapt(h.Onboarding.HandleGetStatus))
 	api.POST("/users/me/onboarding/complete", webgin.Adapt(h.Onboarding.HandleComplete))
@@ -38,6 +41,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	// Admin-only routes
 	adminOnly := api.Group("")
 	adminOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("admin")))
+	adminOnly.PATCH("/organizations/me/config", webgin.Adapt(h.Admin.HandleUpdateOrgConfig))
 	adminOnly.POST("/areas/:id/coordinators", webgin.Adapt(h.Admin.HandleAssignCoordinator))
 	adminOnly.DELETE("/areas/:id/coordinators/:user_id", webgin.Adapt(h.Admin.HandleRemoveCoordinator))
 

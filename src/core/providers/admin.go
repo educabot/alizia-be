@@ -11,6 +11,7 @@ import (
 type OrganizationProvider interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*entities.Organization, error)
 	FindBySlug(ctx context.Context, slug string) (*entities.Organization, error)
+	UpdateConfig(ctx context.Context, id uuid.UUID, configPatch map[string]any) (*entities.Organization, error)
 }
 
 type UserProvider interface {

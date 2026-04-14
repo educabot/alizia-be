@@ -11,6 +11,8 @@ import (
 )
 
 type AdminContainer struct {
+	GetOrganization   admin.GetOrganization
+	UpdateOrgConfig   admin.UpdateOrgConfig
 	AssignCoordinator admin.AssignCoordinator
 	RemoveCoordinator admin.RemoveCoordinator
 }
@@ -62,4 +64,39 @@ func (a *AdminContainer) HandleRemoveCoordinator(req web.Request) web.Response {
 	}
 
 	return web.NoContent()
+}
+
+// HandleGetOrganization returns the caller's organization with its full config.
+// The org_id comes from the JWT (tenant middleware), not from a URL param.
+func (a *AdminContainer) HandleGetOrganization(req web.Request) web.Response {
+	org, err := a.GetOrganization.Execute(req.Context(), admin.GetOrganizationRequest{
+		OrgID: middleware.OrgID(req),
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(org)
+}
+
+type updateOrgConfigBody struct {
+	Config map[string]any `json:"config"`
+}
+
+// HandleUpdateOrgConfig patches the org config with a shallow JSONB merge.
+func (a *AdminContainer) HandleUpdateOrgConfig(req web.Request) web.Response {
+	var body updateOrgConfigBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	org, err := a.UpdateOrgConfig.Execute(req.Context(), admin.UpdateOrgConfigRequest{
+		OrgID:       middleware.OrgID(req),
+		ConfigPatch: body.Config,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(org)
 }

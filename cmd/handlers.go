@@ -20,6 +20,8 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 
 	return &entrypoints.WebHandlerContainer{
 		Admin: &entrypoints.AdminContainer{
+			GetOrganization:   uc.GetOrganization,
+			UpdateOrgConfig:   uc.UpdateOrgConfig,
 			AssignCoordinator: uc.AssignCoordinator,
 			RemoveCoordinator: uc.RemoveCoordinator,
 		},
