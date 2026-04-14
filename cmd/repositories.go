@@ -21,6 +21,7 @@ type Repositories struct {
 	Courses          providers.CourseProvider
 	Students         providers.StudentProvider
 	CourseSubjects   providers.CourseSubjectProvider
+	TimeSlots        providers.TimeSlotProvider
 	AreaCoordinators providers.AreaCoordinatorProvider
 	AuthCredentials  ttauth.CredentialsProvider
 	Coordination     *coordr.Repository
@@ -38,6 +39,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Courses:          adminr.NewCourseRepo(db),
 		Students:         adminr.NewStudentRepo(db),
 		CourseSubjects:   adminr.NewCourseSubjectRepo(db),
+		TimeSlots:        adminr.NewTimeSlotRepo(db),
 		AreaCoordinators: adminr.NewAreaCoordinatorRepo(db),
 		AuthCredentials:  authr.NewCredentialsProvider(db),
 		Coordination:     coordr.New(db),

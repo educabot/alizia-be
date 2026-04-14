@@ -68,6 +68,6 @@ type CourseSubjectProvider interface {
 }
 
 type TimeSlotProvider interface {
-	SetTimeSlots(ctx context.Context, courseID int64, slots []entities.TimeSlot) error
-	GetTimeSlots(ctx context.Context, courseID int64) ([]entities.TimeSlot, error)
+	CreateTimeSlot(ctx context.Context, slot *entities.TimeSlot) (int64, error)
+	ListByCourse(ctx context.Context, courseID int64) ([]entities.TimeSlot, error)
 }

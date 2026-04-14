@@ -46,6 +46,8 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			GetCourse:           uc.GetCourse,
 			AddStudent:          uc.AddStudent,
 			AssignCourseSubject: uc.AssignCourseSubj,
+			CreateTimeSlot:      uc.CreateTimeSlot,
+			GetSchedule:         uc.GetSchedule,
 		},
 
 		Coordination:     &entrypoints.CoordinationContainer{},

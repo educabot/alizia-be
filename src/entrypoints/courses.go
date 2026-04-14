@@ -17,6 +17,8 @@ type CoursesContainer struct {
 	GetCourse           admin.GetCourse
 	AddStudent          admin.AddStudent
 	AssignCourseSubject admin.AssignCourseSubject
+	CreateTimeSlot      admin.CreateTimeSlot
+	GetSchedule         admin.GetSchedule
 }
 
 type createCourseBody struct {
@@ -95,6 +97,56 @@ func (c *CoursesContainer) HandleAddStudent(req web.Request) web.Response {
 	}
 
 	return web.Created(result)
+}
+
+type createTimeSlotBody struct {
+	DayOfWeek        int     `json:"day_of_week"`
+	StartTime        string  `json:"start_time"`
+	EndTime          string  `json:"end_time"`
+	CourseSubjectIDs []int64 `json:"course_subject_ids"`
+}
+
+func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
+	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	var body createTimeSlotBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := c.CreateTimeSlot.Execute(req.Context(), admin.CreateTimeSlotRequest{
+		OrgID:            middleware.OrgID(req),
+		CourseID:         courseID,
+		DayOfWeek:        body.DayOfWeek,
+		StartTime:        body.StartTime,
+		EndTime:          body.EndTime,
+		CourseSubjectIDs: body.CourseSubjectIDs,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.Created(result)
+}
+
+func (c *CoursesContainer) HandleGetSchedule(req web.Request) web.Response {
+	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := c.GetSchedule.Execute(req.Context(), admin.GetScheduleRequest{
+		OrgID:    middleware.OrgID(req),
+		CourseID: courseID,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
 }
 
 type assignCourseSubjectBody struct {

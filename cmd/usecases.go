@@ -23,6 +23,8 @@ type UseCases struct {
 	GetCourse          adminuc.GetCourse
 	AddStudent         adminuc.AddStudent
 	AssignCourseSubj   adminuc.AssignCourseSubject
+	CreateTimeSlot     adminuc.CreateTimeSlot
+	GetSchedule        adminuc.GetSchedule
 	GetOnboardStatus   onboardinguc.GetStatus
 	CompleteOnboarding onboardinguc.Complete
 	GetProfile         onboardinguc.GetProfile
@@ -48,6 +50,8 @@ func NewUseCases(repos *Repositories) *UseCases {
 		GetCourse:          adminuc.NewGetCourse(repos.Courses),
 		AddStudent:         adminuc.NewAddStudent(repos.Courses, repos.Students),
 		AssignCourseSubj:   adminuc.NewAssignCourseSubject(repos.Courses, repos.Users, repos.CourseSubjects),
+		CreateTimeSlot:     adminuc.NewCreateTimeSlot(repos.Organizations, repos.Courses, repos.TimeSlots),
+		GetSchedule:        adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
 		GetOnboardStatus:   onboardinguc.NewGetStatus(repos.Users),
 		CompleteOnboarding: onboardinguc.NewComplete(repos.Users),
 		GetProfile:         onboardinguc.NewGetProfile(repos.Users),
