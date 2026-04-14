@@ -24,6 +24,10 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			UpdateOrgConfig:   uc.UpdateOrgConfig,
 			AssignCoordinator: uc.AssignCoordinator,
 			RemoveCoordinator: uc.RemoveCoordinator,
+			CreateArea:        uc.CreateArea,
+			ListAreas:         uc.ListAreas,
+			CreateSubject:     uc.CreateSubject,
+			ListSubjects:      uc.ListSubjects,
 		},
 		Onboarding: &entrypoints.OnboardingContainer{
 			GetStatus:    uc.GetOnboardStatus,

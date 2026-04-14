@@ -10,11 +10,95 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/rest"
 )
 
+// ---------------------------------------------------------------------------
+// Areas & Subjects
+// ---------------------------------------------------------------------------
+
+type createAreaBody struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (a *AdminContainer) HandleCreateArea(req web.Request) web.Response {
+	var body createAreaBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := a.CreateArea.Execute(req.Context(), admin.CreateAreaRequest{
+		OrgID:       middleware.OrgID(req),
+		Name:        body.Name,
+		Description: body.Description,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.Created(result)
+}
+
+func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
+	result, err := a.ListAreas.Execute(req.Context(), admin.ListAreasRequest{
+		OrgID: middleware.OrgID(req),
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
+}
+
+type createSubjectBody struct {
+	AreaID      int64   `json:"area_id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (a *AdminContainer) HandleCreateSubject(req web.Request) web.Response {
+	var body createSubjectBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := a.CreateSubject.Execute(req.Context(), admin.CreateSubjectRequest{
+		OrgID:       middleware.OrgID(req),
+		AreaID:      body.AreaID,
+		Name:        body.Name,
+		Description: body.Description,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.Created(result)
+}
+
+func (a *AdminContainer) HandleListSubjects(req web.Request) web.Response {
+	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := a.ListSubjects.Execute(req.Context(), admin.ListSubjectsRequest{
+		OrgID:  middleware.OrgID(req),
+		AreaID: areaID,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
+}
+
 type AdminContainer struct {
 	GetOrganization   admin.GetOrganization
 	UpdateOrgConfig   admin.UpdateOrgConfig
 	AssignCoordinator admin.AssignCoordinator
 	RemoveCoordinator admin.RemoveCoordinator
+	CreateArea        admin.CreateArea
+	ListAreas         admin.ListAreas
+	CreateSubject     admin.CreateSubject
+	ListSubjects      admin.ListSubjects
 }
 
 type assignCoordinatorBody struct {

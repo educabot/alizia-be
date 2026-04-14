@@ -12,6 +12,10 @@ type UseCases struct {
 	UpdateOrgConfig    adminuc.UpdateOrgConfig
 	AssignCoordinator  adminuc.AssignCoordinator
 	RemoveCoordinator  adminuc.RemoveCoordinator
+	CreateArea         adminuc.CreateArea
+	ListAreas          adminuc.ListAreas
+	CreateSubject      adminuc.CreateSubject
+	ListSubjects       adminuc.ListSubjects
 	GetOnboardStatus   onboardinguc.GetStatus
 	CompleteOnboarding onboardinguc.Complete
 	GetProfile         onboardinguc.GetProfile
@@ -26,6 +30,10 @@ func NewUseCases(repos *Repositories) *UseCases {
 		UpdateOrgConfig:    adminuc.NewUpdateOrgConfig(repos.Organizations),
 		AssignCoordinator:  adminuc.NewAssignCoordinator(repos.Areas, repos.Users, repos.AreaCoordinators),
 		RemoveCoordinator:  adminuc.NewRemoveCoordinator(repos.Areas, repos.AreaCoordinators),
+		CreateArea:         adminuc.NewCreateArea(repos.Areas),
+		ListAreas:          adminuc.NewListAreas(repos.Areas),
+		CreateSubject:      adminuc.NewCreateSubject(repos.Areas, repos.Subjects),
+		ListSubjects:       adminuc.NewListSubjects(repos.Areas, repos.Subjects),
 		GetOnboardStatus:   onboardinguc.NewGetStatus(repos.Users),
 		CompleteOnboarding: onboardinguc.NewComplete(repos.Users),
 		GetProfile:         onboardinguc.NewGetProfile(repos.Users),

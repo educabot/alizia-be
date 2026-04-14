@@ -30,6 +30,10 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	// Organization (any authenticated user can read their own org)
 	api.GET("/organizations/me", webgin.Adapt(h.Admin.HandleGetOrganization))
 
+	// Areas & Subjects (any authenticated user can list)
+	api.GET("/areas", webgin.Adapt(h.Admin.HandleListAreas))
+	api.GET("/areas/:id/subjects", webgin.Adapt(h.Admin.HandleListSubjects))
+
 	// Onboarding routes (any authenticated user)
 	api.GET("/users/me/onboarding-status", webgin.Adapt(h.Onboarding.HandleGetStatus))
 	api.POST("/users/me/onboarding/complete", webgin.Adapt(h.Onboarding.HandleComplete))
@@ -44,5 +48,9 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	adminOnly.PATCH("/organizations/me/config", webgin.Adapt(h.Admin.HandleUpdateOrgConfig))
 	adminOnly.POST("/areas/:id/coordinators", webgin.Adapt(h.Admin.HandleAssignCoordinator))
 	adminOnly.DELETE("/areas/:id/coordinators/:user_id", webgin.Adapt(h.Admin.HandleRemoveCoordinator))
+
+	// Areas & Subjects (coordinator or admin can create)
+	coordOnly.POST("/areas", webgin.Adapt(h.Admin.HandleCreateArea))
+	coordOnly.POST("/subjects", webgin.Adapt(h.Admin.HandleCreateSubject))
 
 }
