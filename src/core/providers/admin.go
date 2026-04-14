@@ -53,7 +53,18 @@ type TopicProvider interface {
 
 type CourseProvider interface {
 	CreateCourse(ctx context.Context, course *entities.Course) (int64, error)
+	GetCourse(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Course, error)
 	ListCourses(ctx context.Context, orgID uuid.UUID) ([]entities.Course, error)
+}
+
+type StudentProvider interface {
+	CreateStudent(ctx context.Context, student *entities.Student) (int64, error)
+	ListByCourse(ctx context.Context, courseID int64) ([]entities.Student, error)
+}
+
+type CourseSubjectProvider interface {
+	CreateCourseSubject(ctx context.Context, cs *entities.CourseSubject) (int64, error)
+	ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error)
 }
 
 type TimeSlotProvider interface {

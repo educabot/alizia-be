@@ -126,6 +126,32 @@ INSERT INTO topics (id, organization_id, parent_id, name, description, level) VA
     (14, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 6, 'Texto informativo', 'Escritura de informes, noticias y descripciones', 3)
 ON CONFLICT (id) DO NOTHING;
 
+-- Courses
+INSERT INTO courses (id, organization_id, name, year) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 1era', 2026),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 2da', 2026),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '3ro 1era', 2026)
+ON CONFLICT (id) DO NOTHING;
+
+-- Students
+INSERT INTO students (id, course_id, name) VALUES
+    (1, 1, 'Lucía Martinez'),
+    (2, 1, 'Tomás Rodriguez'),
+    (3, 1, 'Valentina Lopez'),
+    (4, 2, 'Santiago Diaz'),
+    (5, 2, 'Martina Ruiz'),
+    (6, 3, 'Emilia Castro'),
+    (7, 3, 'Joaquin Vargas')
+ON CONFLICT (id) DO NOTHING;
+
+-- Course-Subject assignments (teacher_id references users: 3=María Docente, 4=Pedro Multirol)
+INSERT INTO course_subjects (id, organization_id, course_id, subject_id, teacher_id, school_year, start_date, end_date) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 1, 3, 2026, '2026-03-02', '2026-12-15'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 3, 4, 2026, '2026-03-02', '2026-12-15'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 2, 1, 3, 2026, '2026-03-02', '2026-12-15'),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 3, 2, 4, 2026, '2026-03-02', '2026-12-15')
+ON CONFLICT (id) DO NOTHING;
+
 -- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) FROM user_roles));
@@ -133,3 +159,6 @@ SELECT setval('areas_id_seq', (SELECT COALESCE(MAX(id), 0) FROM areas));
 SELECT setval('subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM subjects));
 SELECT setval('area_coordinators_id_seq', (SELECT COALESCE(MAX(id), 0) FROM area_coordinators));
 SELECT setval('topics_id_seq', (SELECT COALESCE(MAX(id), 0) FROM topics));
+SELECT setval('courses_id_seq', (SELECT COALESCE(MAX(id), 0) FROM courses));
+SELECT setval('students_id_seq', (SELECT COALESCE(MAX(id), 0) FROM students));
+SELECT setval('course_subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM course_subjects));

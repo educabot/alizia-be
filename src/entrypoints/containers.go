@@ -4,6 +4,7 @@ import "github.com/educabot/team-ai-toolkit/web"
 
 type WebHandlerContainer struct {
 	Admin            *AdminContainer
+	Courses          *CoursesContainer
 	Onboarding       *OnboardingContainer
 	Coordination     *CoordinationContainer
 	Teaching         *TeachingContainer

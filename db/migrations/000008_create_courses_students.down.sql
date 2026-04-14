@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS course_subjects;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS courses;

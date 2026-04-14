@@ -18,6 +18,11 @@ type UseCases struct {
 	ListSubjects       adminuc.ListSubjects
 	CreateTopic        adminuc.CreateTopic
 	GetTopics          adminuc.GetTopics
+	CreateCourse       adminuc.CreateCourse
+	ListCourses        adminuc.ListCourses
+	GetCourse          adminuc.GetCourse
+	AddStudent         adminuc.AddStudent
+	AssignCourseSubj   adminuc.AssignCourseSubject
 	GetOnboardStatus   onboardinguc.GetStatus
 	CompleteOnboarding onboardinguc.Complete
 	GetProfile         onboardinguc.GetProfile
@@ -38,6 +43,11 @@ func NewUseCases(repos *Repositories) *UseCases {
 		ListSubjects:       adminuc.NewListSubjects(repos.Areas, repos.Subjects),
 		CreateTopic:        adminuc.NewCreateTopic(repos.Organizations, repos.Topics),
 		GetTopics:          adminuc.NewGetTopics(repos.Topics),
+		CreateCourse:       adminuc.NewCreateCourse(repos.Courses),
+		ListCourses:        adminuc.NewListCourses(repos.Courses),
+		GetCourse:          adminuc.NewGetCourse(repos.Courses),
+		AddStudent:         adminuc.NewAddStudent(repos.Courses, repos.Students),
+		AssignCourseSubj:   adminuc.NewAssignCourseSubject(repos.Courses, repos.Users, repos.CourseSubjects),
 		GetOnboardStatus:   onboardinguc.NewGetStatus(repos.Users),
 		CompleteOnboarding: onboardinguc.NewComplete(repos.Users),
 		GetProfile:         onboardinguc.NewGetProfile(repos.Users),

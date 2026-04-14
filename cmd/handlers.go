@@ -40,6 +40,14 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			GetConfig:    uc.GetOnboardConfig,
 		},
 
+		Courses: &entrypoints.CoursesContainer{
+			CreateCourse:        uc.CreateCourse,
+			ListCourses:         uc.ListCourses,
+			GetCourse:           uc.GetCourse,
+			AddStudent:          uc.AddStudent,
+			AssignCourseSubject: uc.AssignCourseSubj,
+		},
+
 		Coordination:     &entrypoints.CoordinationContainer{},
 		Teaching:         &entrypoints.TeachingContainer{},
 		Resources:        &entrypoints.ResourcesContainer{},
