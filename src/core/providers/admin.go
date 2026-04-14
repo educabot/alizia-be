@@ -46,6 +46,7 @@ type SubjectProvider interface {
 
 type TopicProvider interface {
 	CreateTopic(ctx context.Context, topic *entities.Topic) (int64, error)
+	GetTopicByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Topic, error)
 	GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error)
 }

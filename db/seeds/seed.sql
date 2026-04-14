@@ -99,9 +99,37 @@ INSERT INTO area_coordinators (area_id, user_id) VALUES
     (2, 4)
 ON CONFLICT (area_id, user_id) DO NOTHING;
 
+-- Topics: 3-level hierarchy (Núcleos → Áreas de conocimiento → Categorías)
+-- Level 1: Núcleos problemáticos
+INSERT INTO topics (id, organization_id, parent_id, name, description, level) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', NULL, 'Pensamiento Lógico-Matemático', 'Núcleo orientado al desarrollo del razonamiento lógico', 1),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', NULL, 'Comunicación y Lenguaje', 'Núcleo orientado a competencias comunicativas', 1)
+ON CONFLICT (id) DO NOTHING;
+
+-- Level 2: Áreas de conocimiento
+INSERT INTO topics (id, organization_id, parent_id, name, description, level) VALUES
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 'Aritmética Básica', 'Operaciones fundamentales y propiedades de números', 2),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 1, 'Geometría y Medición', 'Figuras, cuerpos geométricos y unidades de medida', 2),
+    (5, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 2, 'Comprensión Lectora', 'Estrategias de lectura y análisis de textos', 2),
+    (6, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 2, 'Producción Escrita', 'Redacción, coherencia y cohesión textual', 2)
+ON CONFLICT (id) DO NOTHING;
+
+-- Level 3: Categorías
+INSERT INTO topics (id, organization_id, parent_id, name, description, level) VALUES
+    (7,  'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 3, 'Suma y resta', 'Operaciones de adición y sustracción', 3),
+    (8,  'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 3, 'Multiplicación y división', 'Operaciones de multiplicación, división y tablas', 3),
+    (9,  'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 4, 'Figuras planas', 'Triángulos, cuadriláteros, círculos y propiedades', 3),
+    (10, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 4, 'Cuerpos geométricos', 'Prismas, pirámides, cilindros y elementos', 3),
+    (11, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 5, 'Lectura literal', 'Identificación de información explícita', 3),
+    (12, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 5, 'Lectura inferencial', 'Deducción de información implícita', 3),
+    (13, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 6, 'Texto narrativo', 'Escritura de cuentos, relatos y narraciones', 3),
+    (14, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 6, 'Texto informativo', 'Escritura de informes, noticias y descripciones', 3)
+ON CONFLICT (id) DO NOTHING;
+
 -- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) FROM user_roles));
 SELECT setval('areas_id_seq', (SELECT COALESCE(MAX(id), 0) FROM areas));
 SELECT setval('subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM subjects));
 SELECT setval('area_coordinators_id_seq', (SELECT COALESCE(MAX(id), 0) FROM area_coordinators));
+SELECT setval('topics_id_seq', (SELECT COALESCE(MAX(id), 0) FROM topics));

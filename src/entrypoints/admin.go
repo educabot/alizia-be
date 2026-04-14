@@ -11,6 +11,56 @@ import (
 )
 
 // ---------------------------------------------------------------------------
+// Topics
+// ---------------------------------------------------------------------------
+
+type createTopicBody struct {
+	ParentID    *int64  `json:"parent_id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (a *AdminContainer) HandleCreateTopic(req web.Request) web.Response {
+	var body createTopicBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := a.CreateTopic.Execute(req.Context(), admin.CreateTopicRequest{
+		OrgID:       middleware.OrgID(req),
+		ParentID:    body.ParentID,
+		Name:        body.Name,
+		Description: body.Description,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.Created(result)
+}
+
+func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
+	r := admin.GetTopicsRequest{
+		OrgID: middleware.OrgID(req),
+	}
+
+	if lvl := req.Query("level"); lvl != "" {
+		v, err := strconv.Atoi(lvl)
+		if err != nil {
+			return rest.HandleError(err)
+		}
+		r.Level = &v
+	}
+
+	result, err := a.GetTopics.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
+}
+
+// ---------------------------------------------------------------------------
 // Areas & Subjects
 // ---------------------------------------------------------------------------
 
@@ -99,6 +149,8 @@ type AdminContainer struct {
 	ListAreas         admin.ListAreas
 	CreateSubject     admin.CreateSubject
 	ListSubjects      admin.ListSubjects
+	CreateTopic       admin.CreateTopic
+	GetTopics         admin.GetTopics
 }
 
 type assignCoordinatorBody struct {
