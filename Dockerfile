@@ -13,8 +13,10 @@ RUN CGO_ENABLED=0 go build -o /alizia-api ./cmd
 # Run stage
 FROM alpine:3.19
 RUN apk --no-cache add ca-certificates
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 COPY --from=builder /alizia-api .
 COPY db/migrations ./db/migrations
 EXPOSE 8080
+USER appuser
 CMD ["./alizia-api"]

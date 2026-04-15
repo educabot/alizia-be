@@ -46,6 +46,7 @@ func (r *topicRepo) GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entiti
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
 		Order("level ASC, name ASC").
+		Limit(500).
 		Find(&topics).Error
 	if err != nil {
 		return nil, err
@@ -58,6 +59,7 @@ func (r *topicRepo) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ? AND level = ?", orgID, level).
 		Order("name ASC").
+		Limit(100).
 		Find(&topics).Error
 	return topics, err
 }

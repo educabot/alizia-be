@@ -29,6 +29,7 @@ func (r *subjectRepo) ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, a
 	var subjects []entities.Subject
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ? AND area_id = ?", orgID, areaID).
+		Order("name ASC").Limit(100).
 		Find(&subjects).Error
 	return subjects, err
 }

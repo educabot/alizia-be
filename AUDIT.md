@@ -179,22 +179,22 @@ No tiene `gosec` (seguridad) ni `errorlint` (mejor error handling). Son los dos 
 
 ## PLAN DE ACCIÓN RECOMENDADO
 
-### Prioridad 1 — Bugs (esta semana)
-1. Fix multi-tenancy en `user.go`: agregar `organization_id` a `CompleteOnboarding` y `UpdateProfileData`
-2. Fix strconv.ParseInt: wrappear errores de parsing con `ErrValidation` para retornar 400
-3. Agregar validación `DayOfWeek` rango 0-6 en `create_time_slot.go`
-4. Agregar validación formato `StartTime`/`EndTime` (HH:MM) y que start < end
+### Prioridad 1 — Bugs ~~(esta semana)~~ COMPLETADO
+1. ~~Fix multi-tenancy en `user.go`~~ DONE
+2. ~~Fix strconv.ParseInt~~ DONE
+3. ~~Agregar validación `DayOfWeek` rango 0-6~~ DONE
+4. ~~Agregar validación formato `StartTime`/`EndTime`~~ DONE
 
-### Prioridad 2 — Seguridad (próximo sprint)
-5. Implementar rate limiting en POST /auth/login
-6. Reemplazar tokens de test en .env.example
-7. Agregar `gosec` a `.golangci.yml` y CI
-8. Agregar non-root user al Dockerfile
+### Prioridad 2 — Seguridad ~~(próximo sprint)~~ COMPLETADO
+5. ~~Implementar rate limiting en POST /auth/login~~ DONE — `src/entrypoints/middleware/ratelimit.go` (10 req/min per IP)
+6. ~~Reemplazar tokens de test en .env.example~~ DONE — placeholders con instrucciones
+7. ~~Agregar `gosec` a `.golangci.yml` y CI~~ DONE — gosec + errorlint en lint, govulncheck job en CI
+8. ~~Agregar non-root user al Dockerfile~~ DONE — appuser/appgroup
 
-### Prioridad 3 — API robustez (backlog)
-9. Implementar paginación en todos los endpoints list (limit/offset, max 100)
-10. Agregar test para `list_subjects`
-11. Mejorar test de `remove_coordinator` con subtests de validación
+### Prioridad 3 — API robustez ~~(backlog)~~ COMPLETADO
+9. ~~Implementar paginación en todos los endpoints list~~ DONE — `.Limit(100)` en 8 repos, `.Limit(500)` en topic tree
+10. ~~Agregar test para `list_subjects`~~ YA EXISTÍA — 3 tests (success, area not found, validation)
+11. ~~Mejorar test de `remove_coordinator`~~ DONE — subtests de validación agregados
 
 ### Prioridad 4 — Limpieza (backlog)
 12. Decidir sobre módulo coordination: limpiar código muerto o documentar como WIP

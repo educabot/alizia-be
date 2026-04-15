@@ -45,6 +45,7 @@ func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.A
 	var areas []entities.Area
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
+		Order("name ASC").Limit(100).
 		Find(&areas).Error
 	return areas, err
 }

@@ -28,6 +28,7 @@ func (r *studentRepo) ListByCourse(ctx context.Context, courseID int64) ([]entit
 	var students []entities.Student
 	err := r.db.WithContext(ctx).
 		Where("course_id = ?", courseID).
+		Limit(100).
 		Find(&students).Error
 	return students, err
 }

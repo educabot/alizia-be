@@ -33,6 +33,7 @@ func (r *timeSlotRepo) ListByCourse(ctx context.Context, courseID int64) ([]enti
 		Preload("Subjects.CourseSubject.Subject").
 		Preload("Subjects.CourseSubject.Teacher").
 		Order("day_of_week, start_time").
+		Limit(100).
 		Find(&slots).Error
 	return slots, err
 }

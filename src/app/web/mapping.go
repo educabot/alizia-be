@@ -1,6 +1,8 @@
 package web
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	webgin "github.com/educabot/team-ai-toolkit/web/gin"
@@ -19,8 +21,10 @@ const (
 func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _ *config.Config) {
 	// Public auth routes: NO AuthMiddleware, NO TenantMiddleware.
 	// Login issues the JWT and logout is intentionally stateless.
+	loginLimiter := middleware.NewRateLimiter(10, time.Minute)
+
 	public := engine.Group("/api/v1")
-	public.POST("/auth/login", webgin.Adapt(h.Login))
+	public.POST("/auth/login", webgin.AdaptMiddleware(loginLimiter.Middleware()), webgin.Adapt(h.Login))
 	public.POST("/auth/logout", webgin.Adapt(h.Logout))
 
 	// Protected routes: every endpoint below requires a valid JWT and a tenant.

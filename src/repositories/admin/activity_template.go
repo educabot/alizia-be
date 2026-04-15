@@ -31,6 +31,6 @@ func (r *activityTemplateRepo) ListActivities(ctx context.Context, orgID uuid.UU
 		query = query.Where("moment = ?", *moment)
 	}
 	var activities []entities.ActivityTemplate
-	err := query.Order("moment, name").Find(&activities).Error
+	err := query.Order("moment, name").Limit(100).Find(&activities).Error
 	return activities, err
 }

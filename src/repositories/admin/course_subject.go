@@ -38,6 +38,7 @@ func (r *courseSubjectRepo) ListByCourse(ctx context.Context, courseID int64) ([
 		Where("course_id = ?", courseID).
 		Preload("Subject").
 		Preload("Teacher").
+		Limit(100).
 		Find(&results).Error
 	return results, err
 }
