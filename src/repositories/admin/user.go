@@ -90,20 +90,20 @@ func (r *userRepo) RemoveRole(ctx context.Context, userID int64, role entities.R
 	return nil
 }
 
-func (r *userRepo) CompleteOnboarding(ctx context.Context, userID int64) error {
+func (r *userRepo) CompleteOnboarding(ctx context.Context, orgID uuid.UUID, userID int64) error {
 	return r.db.WithContext(ctx).
 		Model(&entities.User{}).
-		Where("id = ?", userID).
+		Where("id = ? AND organization_id = ?", userID, orgID).
 		Update("onboarding_completed_at", time.Now()).Error
 }
 
-func (r *userRepo) UpdateProfileData(ctx context.Context, userID int64, data map[string]any) error {
+func (r *userRepo) UpdateProfileData(ctx context.Context, orgID uuid.UUID, userID int64, data map[string]any) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	return r.db.WithContext(ctx).
 		Model(&entities.User{}).
-		Where("id = ?", userID).
+		Where("id = ? AND organization_id = ?", userID, orgID).
 		Update("profile_data", gorm.Expr("?::jsonb", string(jsonData))).Error
 }

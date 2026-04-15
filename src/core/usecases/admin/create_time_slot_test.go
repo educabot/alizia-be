@@ -115,6 +115,12 @@ func TestCreateTimeSlot_ValidationErrors(t *testing.T) {
 		{"missing course_id", admin.CreateTimeSlotRequest{OrgID: uuid.New(), StartTime: "08:00", EndTime: "09:00", CourseSubjectIDs: []int64{1}}},
 		{"missing start_time", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, EndTime: "09:00", CourseSubjectIDs: []int64{1}}},
 		{"missing end_time", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "08:00", CourseSubjectIDs: []int64{1}}},
+		{"day_of_week negative", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, DayOfWeek: -1, StartTime: "08:00", EndTime: "09:00", CourseSubjectIDs: []int64{1}}},
+		{"day_of_week too high", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, DayOfWeek: 7, StartTime: "08:00", EndTime: "09:00", CourseSubjectIDs: []int64{1}}},
+		{"invalid start_time format", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "8am", EndTime: "09:00", CourseSubjectIDs: []int64{1}}},
+		{"invalid end_time format", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "08:00", EndTime: "nine", CourseSubjectIDs: []int64{1}}},
+		{"start_time after end_time", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "10:00", EndTime: "08:00", CourseSubjectIDs: []int64{1}}},
+		{"start_time equals end_time", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "08:00", EndTime: "08:00", CourseSubjectIDs: []int64{1}}},
 		{"no subjects", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "08:00", EndTime: "09:00"}},
 		{"too many subjects", admin.CreateTimeSlotRequest{OrgID: uuid.New(), CourseID: 1, StartTime: "08:00", EndTime: "09:00", CourseSubjectIDs: []int64{1, 2, 3}}},
 	}

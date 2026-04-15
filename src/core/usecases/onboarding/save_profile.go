@@ -64,7 +64,7 @@ func (uc *saveProfileImpl) Execute(ctx context.Context, req SaveProfileRequest) 
 		return err
 	}
 
-	return uc.users.UpdateProfileData(ctx, req.UserID, req.Data)
+	return uc.users.UpdateProfileData(ctx, req.OrgID, req.UserID, req.Data)
 }
 
 func extractProfileFields(configJSON []byte) []entities.ProfileField {

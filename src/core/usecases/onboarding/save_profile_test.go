@@ -48,7 +48,7 @@ func TestSaveProfile_Success(t *testing.T) {
 
 	users.On("FindByID", ctx, orgID, int64(1)).Return(&entities.User{ID: 1}, nil)
 	orgs.On("FindByID", ctx, orgID).Return(org, nil)
-	users.On("UpdateProfileData", ctx, int64(1), data).Return(nil)
+	users.On("UpdateProfileData", ctx, orgID, int64(1), data).Return(nil)
 
 	err := uc.Execute(ctx, onboarding.SaveProfileRequest{OrgID: orgID, UserID: 1, Data: data})
 
@@ -148,7 +148,7 @@ func TestSaveProfile_NoFieldsConfigured(t *testing.T) {
 
 	users.On("FindByID", ctx, orgID, int64(1)).Return(&entities.User{ID: 1}, nil)
 	orgs.On("FindByID", ctx, orgID).Return(org, nil)
-	users.On("UpdateProfileData", ctx, int64(1), data).Return(nil)
+	users.On("UpdateProfileData", ctx, orgID, int64(1), data).Return(nil)
 
 	err := uc.Execute(ctx, onboarding.SaveProfileRequest{OrgID: orgID, UserID: 1, Data: data})
 

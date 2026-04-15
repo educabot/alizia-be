@@ -52,12 +52,12 @@ func (m *MockUserProvider) RemoveRole(ctx context.Context, userID int64, role en
 	return args.Error(0)
 }
 
-func (m *MockUserProvider) CompleteOnboarding(ctx context.Context, userID int64) error {
-	args := m.Called(ctx, userID)
+func (m *MockUserProvider) CompleteOnboarding(ctx context.Context, orgID uuid.UUID, userID int64) error {
+	args := m.Called(ctx, orgID, userID)
 	return args.Error(0)
 }
 
-func (m *MockUserProvider) UpdateProfileData(ctx context.Context, userID int64, data map[string]any) error {
-	args := m.Called(ctx, userID, data)
+func (m *MockUserProvider) UpdateProfileData(ctx context.Context, orgID uuid.UUID, userID int64, data map[string]any) error {
+	args := m.Called(ctx, orgID, userID, data)
 	return args.Error(0)
 }

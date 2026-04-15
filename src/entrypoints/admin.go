@@ -1,10 +1,12 @@
 package entrypoints
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/educabot/team-ai-toolkit/web"
 
+	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/core/usecases/admin"
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 	"github.com/educabot/alizia-be/src/entrypoints/rest"
@@ -94,7 +96,7 @@ func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
 	if lvl := req.Query("level"); lvl != "" {
 		v, err := strconv.Atoi(lvl)
 		if err != nil {
-			return rest.HandleError(err)
+			return rest.HandleError(fmt.Errorf("%w: invalid level", providers.ErrValidation))
 		}
 		r.Level = &v
 	}
@@ -173,7 +175,7 @@ func (a *AdminContainer) HandleCreateSubject(req web.Request) web.Response {
 func (a *AdminContainer) HandleListSubjects(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
 	}
 
 	result, err := a.ListSubjects.Execute(req.Context(), admin.ListSubjectsRequest{
@@ -209,7 +211,7 @@ type assignCoordinatorBody struct {
 func (a *AdminContainer) HandleAssignCoordinator(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
 	}
 
 	var body assignCoordinatorBody
@@ -232,12 +234,12 @@ func (a *AdminContainer) HandleAssignCoordinator(req web.Request) web.Response {
 func (a *AdminContainer) HandleRemoveCoordinator(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
 	}
 
 	userID, err := strconv.ParseInt(req.Param("user_id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	if err := a.RemoveCoordinator.Execute(req.Context(), admin.RemoveCoordinatorRequest{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,8 @@ type CreateTimeSlotRequest struct {
 	CourseSubjectIDs []int64
 }
 
+var timeFormatRe = regexp.MustCompile(`^\d{2}:\d{2}$`)
+
 func (r CreateTimeSlotRequest) Validate() error {
 	if r.OrgID == uuid.Nil {
 		return fmt.Errorf("%w: org_id is required", providers.ErrValidation)
@@ -27,11 +30,23 @@ func (r CreateTimeSlotRequest) Validate() error {
 	if r.CourseID == 0 {
 		return fmt.Errorf("%w: course_id is required", providers.ErrValidation)
 	}
+	if r.DayOfWeek < 0 || r.DayOfWeek > 6 {
+		return fmt.Errorf("%w: day_of_week must be between 0 and 6", providers.ErrValidation)
+	}
 	if r.StartTime == "" {
 		return fmt.Errorf("%w: start_time is required", providers.ErrValidation)
 	}
 	if r.EndTime == "" {
 		return fmt.Errorf("%w: end_time is required", providers.ErrValidation)
+	}
+	if !timeFormatRe.MatchString(r.StartTime) {
+		return fmt.Errorf("%w: start_time must be in HH:MM format", providers.ErrValidation)
+	}
+	if !timeFormatRe.MatchString(r.EndTime) {
+		return fmt.Errorf("%w: end_time must be in HH:MM format", providers.ErrValidation)
+	}
+	if r.StartTime >= r.EndTime {
+		return fmt.Errorf("%w: start_time must be before end_time", providers.ErrValidation)
 	}
 	if len(r.CourseSubjectIDs) == 0 {
 		return fmt.Errorf("%w: at least one course_subject_id is required", providers.ErrValidation)

@@ -52,5 +52,5 @@ func (uc *completeImpl) Execute(ctx context.Context, req CompleteRequest) error 
 		return nil
 	}
 
-	return uc.users.CompleteOnboarding(ctx, req.UserID)
+	return uc.users.CompleteOnboarding(ctx, req.OrgID, req.UserID)
 }

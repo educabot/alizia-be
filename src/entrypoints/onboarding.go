@@ -1,10 +1,12 @@
 package entrypoints
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/educabot/team-ai-toolkit/web"
 
+	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/core/usecases/onboarding"
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 	"github.com/educabot/alizia-be/src/entrypoints/rest"
@@ -22,7 +24,7 @@ type OnboardingContainer struct {
 func (o *OnboardingContainer) HandleGetStatus(req web.Request) web.Response {
 	userID, err := strconv.ParseInt(middleware.UserID(req), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	result, err := o.GetStatus.Execute(req.Context(), onboarding.GetStatusRequest{
@@ -39,7 +41,7 @@ func (o *OnboardingContainer) HandleGetStatus(req web.Request) web.Response {
 func (o *OnboardingContainer) HandleComplete(req web.Request) web.Response {
 	userID, err := strconv.ParseInt(middleware.UserID(req), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	if err := o.Complete.Execute(req.Context(), onboarding.CompleteRequest{
@@ -55,7 +57,7 @@ func (o *OnboardingContainer) HandleComplete(req web.Request) web.Response {
 func (o *OnboardingContainer) HandleGetProfile(req web.Request) web.Response {
 	userID, err := strconv.ParseInt(middleware.UserID(req), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	result, err := o.GetProfile.Execute(req.Context(), onboarding.GetProfileRequest{
@@ -72,7 +74,7 @@ func (o *OnboardingContainer) HandleGetProfile(req web.Request) web.Response {
 func (o *OnboardingContainer) HandleSaveProfile(req web.Request) web.Response {
 	userID, err := strconv.ParseInt(middleware.UserID(req), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	var data map[string]any
@@ -94,7 +96,7 @@ func (o *OnboardingContainer) HandleSaveProfile(req web.Request) web.Response {
 func (o *OnboardingContainer) HandleGetTourSteps(req web.Request) web.Response {
 	userID, err := strconv.ParseInt(middleware.UserID(req), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid user_id", providers.ErrValidation))
 	}
 
 	steps, err := o.GetTourSteps.Execute(req.Context(), onboarding.GetTourStepsRequest{

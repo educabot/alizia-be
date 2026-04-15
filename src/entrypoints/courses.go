@@ -1,11 +1,13 @@
 package entrypoints
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/educabot/team-ai-toolkit/web"
 
+	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/core/usecases/admin"
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 	"github.com/educabot/alizia-be/src/entrypoints/rest"
@@ -58,7 +60,7 @@ func (c *CoursesContainer) HandleListCourses(req web.Request) web.Response {
 func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
 	}
 
 	result, err := c.GetCourse.Execute(req.Context(), admin.GetCourseRequest{
@@ -79,7 +81,7 @@ type addStudentBody struct {
 func (c *CoursesContainer) HandleAddStudent(req web.Request) web.Response {
 	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
 	}
 
 	var body addStudentBody
@@ -109,7 +111,7 @@ type createTimeSlotBody struct {
 func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
 	}
 
 	var body createTimeSlotBody
@@ -135,7 +137,7 @@ func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 func (c *CoursesContainer) HandleGetSchedule(req web.Request) web.Response {
 	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(err)
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
 	}
 
 	result, err := c.GetSchedule.Execute(req.Context(), admin.GetScheduleRequest{
@@ -175,14 +177,14 @@ func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Respon
 	if body.StartDate != nil {
 		t, err := time.Parse("2006-01-02", *body.StartDate)
 		if err != nil {
-			return rest.HandleError(err)
+			return rest.HandleError(fmt.Errorf("%w: invalid start_date format, expected YYYY-MM-DD", providers.ErrValidation))
 		}
 		r.StartDate = &t
 	}
 	if body.EndDate != nil {
 		t, err := time.Parse("2006-01-02", *body.EndDate)
 		if err != nil {
-			return rest.HandleError(err)
+			return rest.HandleError(fmt.Errorf("%w: invalid end_date format, expected YYYY-MM-DD", providers.ErrValidation))
 		}
 		r.EndDate = &t
 	}
