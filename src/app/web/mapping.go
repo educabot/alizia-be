@@ -10,6 +10,11 @@ import (
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
 )
 
+const (
+	coordinator = "coordinator"
+	admin       = "admin"
+)
+
 // ConfigureMappings registers all API routes on the Gin engine.
 func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _ *config.Config) {
 	// Public auth routes: NO AuthMiddleware, NO TenantMiddleware.
@@ -25,7 +30,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 
 	// Coordinator-only routes (coordinator or admin)
 	coordOnly := api.Group("")
-	coordOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("coordinator", "admin")))
+	coordOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole(coordinator, admin)))
 
 	// Organization (any authenticated user can read their own org)
 	api.GET("/organizations/me", webgin.Adapt(h.Admin.HandleGetOrganization))
@@ -50,7 +55,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 
 	// Admin-only routes
 	adminOnly := api.Group("")
-	adminOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole("admin")))
+	adminOnly.Use(webgin.AdaptMiddleware(middleware.RequireRole(admin)))
 	adminOnly.PATCH("/organizations/me/config", webgin.Adapt(h.Admin.HandleUpdateOrgConfig))
 	adminOnly.POST("/areas/:id/coordinators", webgin.Adapt(h.Admin.HandleAssignCoordinator))
 	adminOnly.DELETE("/areas/:id/coordinators/:user_id", webgin.Adapt(h.Admin.HandleRemoveCoordinator))
