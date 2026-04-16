@@ -1,6 +1,6 @@
 module github.com/educabot/alizia-be
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/educabot/team-ai-toolkit v1.8.0

@@ -98,7 +98,7 @@ func TestCreateTopic_ExceedsMaxLevels(t *testing.T) {
 	})
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, providers.ErrValidation)
+	assert.ErrorIs(t, err, providers.ErrTopicMaxLevel)
 	assert.Contains(t, err.Error(), "exceeds maximum")
 	topics.AssertNotCalled(t, "CreateTopic", mock.Anything, mock.Anything)
 }
