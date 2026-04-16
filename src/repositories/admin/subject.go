@@ -33,3 +33,14 @@ func (r *subjectRepo) ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, a
 		Find(&subjects).Error
 	return subjects, err
 }
+
+// ListSubjectsByOrg returns all subjects for an org, optionally filtered by area.
+func (r *subjectRepo) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error) {
+	var subjects []entities.Subject
+	q := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
+	if areaID != nil {
+		q = q.Where("area_id = ?", *areaID)
+	}
+	err := q.Order("name ASC").Limit(200).Find(&subjects).Error
+	return subjects, err
+}

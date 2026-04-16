@@ -79,3 +79,55 @@ func TestGetTopics_InvalidLevel(t *testing.T) {
 	})
 	assert.ErrorIs(t, err, providers.ErrValidation)
 }
+
+func TestGetTopics_ByParent(t *testing.T) {
+	topics := new(mockproviders.MockTopicProvider)
+	uc := admin.NewGetTopics(topics)
+
+	orgID := uuid.New()
+	ctx := context.Background()
+	pid := int64(7)
+
+	expected := []entities.Topic{
+		{ID: 10, Name: "Child A", Level: 2, ParentID: &pid},
+		{ID: 11, Name: "Child B", Level: 2, ParentID: &pid},
+	}
+	topics.On("GetTopicsByParent", ctx, orgID, &pid).Return(expected, nil)
+
+	result, err := uc.Execute(ctx, admin.GetTopicsRequest{
+		OrgID:     orgID,
+		ParentID:  &pid,
+		SetParent: true,
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, "Child A", result[0].Name)
+	topics.AssertExpectations(t)
+	topics.AssertNotCalled(t, "GetTopicTree", mock.Anything, mock.Anything)
+	topics.AssertNotCalled(t, "GetTopicsByLevel", mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestGetTopics_ByRootParent(t *testing.T) {
+	topics := new(mockproviders.MockTopicProvider)
+	uc := admin.NewGetTopics(topics)
+
+	orgID := uuid.New()
+	ctx := context.Background()
+
+	expected := []entities.Topic{
+		{ID: 1, Name: "Root A", Level: 1},
+		{ID: 2, Name: "Root B", Level: 1},
+	}
+	topics.On("GetTopicsByParent", ctx, orgID, (*int64)(nil)).Return(expected, nil)
+
+	result, err := uc.Execute(ctx, admin.GetTopicsRequest{
+		OrgID:     orgID,
+		SetParent: true,
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	topics.AssertExpectations(t)
+	topics.AssertNotCalled(t, "GetTopicTree", mock.Anything, mock.Anything)
+}

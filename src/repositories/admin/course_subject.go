@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
@@ -39,6 +40,32 @@ func (r *courseSubjectRepo) ListByCourse(ctx context.Context, courseID int64) ([
 		Preload("Subject").
 		Preload("Teacher").
 		Limit(100).
+		Find(&results).Error
+	return results, err
+}
+
+// ListCourseSubjects returns course-subjects for an org, applying optional
+// filters. We filter directly on course_subjects.organization_id (denormalized
+// in the schema, indexed via idx_course_subjects_org_year) instead of joining
+// with courses — same tenant guarantee, fewer rows scanned.
+func (r *courseSubjectRepo) ListCourseSubjects(ctx context.Context, orgID uuid.UUID, filter providers.CourseSubjectFilter) ([]entities.CourseSubject, error) {
+	var results []entities.CourseSubject
+	q := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
+
+	if filter.CourseID != nil {
+		q = q.Where("course_id = ?", *filter.CourseID)
+	}
+	if filter.SubjectID != nil {
+		q = q.Where("subject_id = ?", *filter.SubjectID)
+	}
+	if filter.TeacherID != nil {
+		q = q.Where("teacher_id = ?", *filter.TeacherID)
+	}
+
+	err := q.Preload("Subject").
+		Preload("Teacher").
+		Order("course_id ASC, subject_id ASC").
+		Limit(200).
 		Find(&results).Error
 	return results, err
 }

@@ -64,6 +64,20 @@ func (r *topicRepo) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level
 	return topics, err
 }
 
+// GetTopicsByParent returns direct children of parentID. If parentID is nil,
+// returns root topics (parent_id IS NULL).
+func (r *topicRepo) GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64) ([]entities.Topic, error) {
+	var topics []entities.Topic
+	q := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
+	if parentID == nil {
+		q = q.Where("parent_id IS NULL")
+	} else {
+		q = q.Where("parent_id = ?", *parentID)
+	}
+	err := q.Order("name ASC").Limit(200).Find(&topics).Error
+	return topics, err
+}
+
 func (r *topicRepo) ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {
 	var topics []entities.Topic
 	err := r.db.WithContext(ctx).

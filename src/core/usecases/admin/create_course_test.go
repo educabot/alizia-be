@@ -23,13 +23,12 @@ func TestCreateCourse_Success(t *testing.T) {
 	courses.On("CreateCourse", ctx, mock.AnythingOfType("*entities.Course")).Return(int64(1), nil)
 
 	result, err := uc.Execute(ctx, admin.CreateCourseRequest{
-		OrgID: orgID, Name: "2do 1era", Year: 2026,
+		OrgID: orgID, Name: "2do 1era",
 	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), result.ID)
 	assert.Equal(t, "2do 1era", result.Name)
-	assert.Equal(t, 2026, result.Year)
 	courses.AssertExpectations(t)
 }
 
@@ -41,9 +40,8 @@ func TestCreateCourse_ValidationErrors(t *testing.T) {
 		name string
 		req  admin.CreateCourseRequest
 	}{
-		{"missing org_id", admin.CreateCourseRequest{Name: "Test", Year: 2026}},
-		{"missing name", admin.CreateCourseRequest{OrgID: uuid.New(), Year: 2026}},
-		{"missing year", admin.CreateCourseRequest{OrgID: uuid.New(), Name: "Test"}},
+		{"missing org_id", admin.CreateCourseRequest{Name: "Test"}},
+		{"missing name", admin.CreateCourseRequest{OrgID: uuid.New()}},
 	}
 
 	for _, tt := range tests {

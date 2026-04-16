@@ -22,7 +22,7 @@ func TestGetCourse_Success(t *testing.T) {
 	ctx := context.Background()
 
 	courses.On("GetCourse", ctx, orgID, int64(1)).Return(&entities.Course{
-		ID: 1, OrganizationID: orgID, Name: "2do 1era", Year: 2026,
+		ID: 1, OrganizationID: orgID, Name: "2do 1era",
 		Students:       []entities.Student{{ID: 1, Name: "Lucía"}},
 		CourseSubjects: []entities.CourseSubject{{ID: 1, SubjectID: 1, TeacherID: 2}},
 	}, nil)

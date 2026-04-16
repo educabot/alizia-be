@@ -33,3 +33,8 @@ func (m *MockAreaProvider) ListAreas(ctx context.Context, orgID uuid.UUID) ([]en
 	}
 	return args.Get(0).([]entities.Area), args.Error(1)
 }
+
+func (m *MockAreaProvider) UpdateArea(ctx context.Context, area *entities.Area) error {
+	args := m.Called(ctx, area)
+	return args.Error(0)
+}

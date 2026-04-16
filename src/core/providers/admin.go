@@ -29,6 +29,7 @@ type AreaProvider interface {
 	CreateArea(ctx context.Context, area *entities.Area) (int64, error)
 	GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Area, error)
 	ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error)
+	UpdateArea(ctx context.Context, area *entities.Area) error
 }
 
 type AreaCoordinatorProvider interface {
@@ -42,6 +43,8 @@ type AreaCoordinatorProvider interface {
 type SubjectProvider interface {
 	CreateSubject(ctx context.Context, subject *entities.Subject) (int64, error)
 	ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, areaID int64) ([]entities.Subject, error)
+	// ListSubjectsByOrg returns all subjects of an org. If areaID is non-nil, filters by area too.
+	ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error)
 }
 
 type TopicProvider interface {
@@ -49,6 +52,9 @@ type TopicProvider interface {
 	GetTopicByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Topic, error)
 	GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error)
+	// GetTopicsByParent returns direct children of parentID. If parentID is nil,
+	// returns root topics (parent_id IS NULL).
+	GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64) ([]entities.Topic, error)
 	ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	UpdateTopic(ctx context.Context, topic *entities.Topic) error
 	UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error
@@ -68,6 +74,17 @@ type StudentProvider interface {
 type CourseSubjectProvider interface {
 	CreateCourseSubject(ctx context.Context, cs *entities.CourseSubject) (int64, error)
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error)
+	// ListCourseSubjects returns all course-subjects for an org. Any non-nil filter
+	// is applied; nil filters are skipped. Subject and Teacher are always preloaded.
+	ListCourseSubjects(ctx context.Context, orgID uuid.UUID, filter CourseSubjectFilter) ([]entities.CourseSubject, error)
+}
+
+// CourseSubjectFilter holds optional filters for ListCourseSubjects. Any nil
+// field is ignored.
+type CourseSubjectFilter struct {
+	CourseID  *int64
+	SubjectID *int64
+	TeacherID *int64
 }
 
 type ActivityTemplateProvider interface {

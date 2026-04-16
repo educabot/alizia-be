@@ -25,3 +25,11 @@ func (m *MockSubjectProvider) ListSubjectsByArea(ctx context.Context, orgID uuid
 	}
 	return args.Get(0).([]entities.Subject), args.Error(1)
 }
+
+func (m *MockSubjectProvider) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error) {
+	args := m.Called(ctx, orgID, areaID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entities.Subject), args.Error(1)
+}

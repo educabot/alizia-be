@@ -24,11 +24,11 @@ type CoursesContainer struct {
 	CreateTimeSlot        admin.CreateTimeSlot
 	GetSchedule           admin.GetSchedule
 	GetSharedClassNumbers admin.GetSharedClassNumbers
+	ListCourseSubjects    admin.ListCourseSubjects
 }
 
 type createCourseBody struct {
 	Name string `json:"name"`
-	Year int    `json:"year"`
 }
 
 func (c *CoursesContainer) HandleCreateCourse(req web.Request) web.Response {
@@ -40,7 +40,6 @@ func (c *CoursesContainer) HandleCreateCourse(req web.Request) web.Response {
 	result, err := c.CreateCourse.Execute(req.Context(), admin.CreateCourseRequest{
 		OrgID: middleware.OrgID(req),
 		Name:  body.Name,
-		Year:  body.Year,
 	})
 	if err != nil {
 		return rest.HandleError(err)
@@ -143,7 +142,6 @@ func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 type courseResponse struct {
 	ID             int64                   `json:"id"`
 	Name           string                  `json:"name"`
-	Year           int                     `json:"year"`
 	Students       []studentResponse       `json:"students"`
 	CourseSubjects []courseSubjectResponse `json:"course_subjects"`
 }
@@ -241,7 +239,6 @@ func mapCourse(e entities.Course) courseResponse {
 	return courseResponse{
 		ID:             e.ID,
 		Name:           e.Name,
-		Year:           e.Year,
 		Students:       mapStudents(e.Students),
 		CourseSubjects: mapCourseSubjects(e.CourseSubjects),
 	}
@@ -418,4 +415,47 @@ func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Respon
 	}
 
 	return web.Created(mapCourseSubject(*result))
+}
+
+// HandleListCourseSubjects exposes a flat, filterable view of course-subject
+// assignments for the current org. Used by the FE on teacher pages and in the
+// lesson-plan creation wizard. All query params are optional integers; an empty
+// value is treated as "no filter", a non-empty non-integer is a validation error.
+func (c *CoursesContainer) HandleListCourseSubjects(req web.Request) web.Response {
+	parseOptionalInt64 := func(name string) (*int64, error) {
+		raw := req.Query(name)
+		if raw == "" {
+			return nil, nil
+		}
+		v, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s must be an integer", providers.ErrValidation, name)
+		}
+		return &v, nil
+	}
+
+	courseID, err := parseOptionalInt64("course_id")
+	if err != nil {
+		return rest.HandleError(err)
+	}
+	subjectID, err := parseOptionalInt64("subject_id")
+	if err != nil {
+		return rest.HandleError(err)
+	}
+	teacherID, err := parseOptionalInt64("teacher_id")
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := c.ListCourseSubjects.Execute(req.Context(), admin.ListCourseSubjectsRequest{
+		OrgID:     middleware.OrgID(req),
+		CourseID:  courseID,
+		SubjectID: subjectID,
+		TeacherID: teacherID,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(rest.Page(mapCourseSubjects(result), false))
 }

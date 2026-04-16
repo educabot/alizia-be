@@ -13,6 +13,11 @@ import (
 type GetTopicsRequest struct {
 	OrgID uuid.UUID
 	Level *int // optional: if set, filter by level instead of returning tree
+	// ParentID, when SetParent==true, filters direct children of that parent.
+	// A nil ParentID with SetParent==true means "return root topics".
+	// SetParent==false means "do not filter by parent" (default tree/level behavior).
+	ParentID  *int64
+	SetParent bool
 }
 
 func (r GetTopicsRequest) Validate() error {
@@ -21,6 +26,9 @@ func (r GetTopicsRequest) Validate() error {
 	}
 	if r.Level != nil && *r.Level < 1 {
 		return fmt.Errorf("%w: level must be >= 1", providers.ErrValidation)
+	}
+	if r.SetParent && r.ParentID != nil && *r.ParentID <= 0 {
+		return fmt.Errorf("%w: parent_id must be > 0", providers.ErrValidation)
 	}
 	return nil
 }
@@ -44,6 +52,10 @@ func (uc *getTopicsImpl) Execute(ctx context.Context, req GetTopicsRequest) ([]e
 
 	if req.Level != nil {
 		return uc.topics.GetTopicsByLevel(ctx, req.OrgID, *req.Level)
+	}
+
+	if req.SetParent {
+		return uc.topics.GetTopicsByParent(ctx, req.OrgID, req.ParentID)
 	}
 
 	return uc.topics.GetTopicTree(ctx, req.OrgID)

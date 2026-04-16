@@ -13,7 +13,6 @@ import (
 type CreateCourseRequest struct {
 	OrgID uuid.UUID
 	Name  string
-	Year  int
 }
 
 func (r CreateCourseRequest) Validate() error {
@@ -22,9 +21,6 @@ func (r CreateCourseRequest) Validate() error {
 	}
 	if r.Name == "" {
 		return fmt.Errorf("%w: name is required", providers.ErrValidation)
-	}
-	if r.Year == 0 {
-		return fmt.Errorf("%w: year is required", providers.ErrValidation)
 	}
 	return nil
 }
@@ -49,7 +45,6 @@ func (uc *createCourseImpl) Execute(ctx context.Context, req CreateCourseRequest
 	course := &entities.Course{
 		OrganizationID: req.OrgID,
 		Name:           req.Name,
-		Year:           req.Year,
 	}
 
 	id, err := uc.courses.CreateCourse(ctx, course)

@@ -22,8 +22,8 @@ func TestListCourses_Success(t *testing.T) {
 	ctx := context.Background()
 
 	expected := []entities.Course{
-		{ID: 1, Name: "2do 1era", Year: 2026},
-		{ID: 2, Name: "3ro 2da", Year: 2026},
+		{ID: 1, Name: "2do 1era"},
+		{ID: 2, Name: "3ro 2da"},
 	}
 	courses.On("ListCourses", ctx, orgID).Return(expected, nil)
 

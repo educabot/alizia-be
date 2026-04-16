@@ -59,3 +59,21 @@ func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.A
 		Find(&areas).Error
 	return areas, err
 }
+
+func (r *areaRepo) UpdateArea(ctx context.Context, area *entities.Area) error {
+	err := r.db.WithContext(ctx).
+		Model(&entities.Area{}).
+		Where("organization_id = ? AND id = ?", area.OrganizationID, area.ID).
+		Updates(map[string]any{
+			"name":        area.Name,
+			"description": area.Description,
+		}).Error
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return fmt.Errorf("%w: area name already exists in this organization", providers.ErrConflict)
+		}
+		return err
+	}
+	return nil
+}

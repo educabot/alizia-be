@@ -362,6 +362,17 @@ func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
 		r.Level = &v
 	}
 
+	// parent_id query: empty/missing means "don't filter by parent".
+	// A literal value (e.g. "5") filters direct children of that topic.
+	if pidStr := req.Query("parent_id"); pidStr != "" {
+		v, err := strconv.ParseInt(pidStr, 10, 64)
+		if err != nil {
+			return rest.HandleError(fmt.Errorf("%w: invalid parent_id", providers.ErrValidation))
+		}
+		r.ParentID = &v
+		r.SetParent = true
+	}
+
 	result, err := a.GetTopics.Execute(req.Context(), r)
 	if err != nil {
 		return rest.HandleError(err)
@@ -406,6 +417,52 @@ func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
 	}
 
 	return web.OK(rest.Page(mapAreas(result), false))
+}
+
+// HandleUpdateArea applies a partial update on an area. A missing JSON key
+// means "leave the field alone"; an explicit `description: null` clears it.
+func (a *AdminContainer) HandleUpdateArea(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+	}
+
+	raw := map[string]any{}
+	if err := req.BindJSON(&raw); err != nil {
+		return rest.HandleError(err)
+	}
+
+	r := admin.UpdateAreaRequest{
+		OrgID:  middleware.OrgID(req),
+		AreaID: id,
+	}
+
+	if v, ok := raw["name"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return rest.HandleError(fmt.Errorf("%w: name must be a string", providers.ErrValidation))
+		}
+		r.Name = &s
+	}
+
+	if v, ok := raw["description"]; ok {
+		r.SetDescription = true
+		switch d := v.(type) {
+		case nil:
+			r.Description = nil
+		case string:
+			r.Description = &d
+		default:
+			return rest.HandleError(fmt.Errorf("%w: description must be a string or null", providers.ErrValidation))
+		}
+	}
+
+	result, err := a.UpdateArea.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapArea(*result))
 }
 
 type createSubjectBody struct {
@@ -457,8 +514,10 @@ type AdminContainer struct {
 	RemoveCoordinator admin.RemoveCoordinator
 	CreateArea        admin.CreateArea
 	ListAreas         admin.ListAreas
+	UpdateArea        admin.UpdateArea
 	CreateSubject     admin.CreateSubject
 	ListSubjects      admin.ListSubjects
+	ListAllSubjects   admin.ListAllSubjects
 	CreateTopic       admin.CreateTopic
 	UpdateTopic       admin.UpdateTopic
 	GetTopics         admin.GetTopics
@@ -548,4 +607,27 @@ func (a *AdminContainer) HandleUpdateOrgConfig(req web.Request) web.Response {
 	}
 
 	return web.OK(mapOrganization(*org))
+}
+
+// HandleListAllSubjects lists subjects across the whole org. Optional
+// ?area_id=N filters by area (verifying the area belongs to the org).
+func (a *AdminContainer) HandleListAllSubjects(req web.Request) web.Response {
+	r := admin.ListAllSubjectsRequest{
+		OrgID: middleware.OrgID(req),
+	}
+
+	if aidStr := req.Query("area_id"); aidStr != "" {
+		v, err := strconv.ParseInt(aidStr, 10, 64)
+		if err != nil {
+			return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
+		}
+		r.AreaID = &v
+	}
+
+	result, err := a.ListAllSubjects.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(rest.Page(mapSubjects(result), false))
 }
