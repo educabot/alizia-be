@@ -419,6 +419,25 @@ func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
 	return web.OK(rest.Page(mapAreas(result), false))
 }
 
+// HandleGetArea returns a single area with its subjects and coordinators
+// preloaded. 404 if the area doesn't exist in the caller's org.
+func (a *AdminContainer) HandleGetArea(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+	}
+
+	result, err := a.GetArea.Execute(req.Context(), admin.GetAreaRequest{
+		OrgID:  middleware.OrgID(req),
+		AreaID: id,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapArea(*result))
+}
+
 // HandleUpdateArea applies a partial update on an area. A missing JSON key
 // means "leave the field alone"; an explicit `description: null` clears it.
 func (a *AdminContainer) HandleUpdateArea(req web.Request) web.Response {
@@ -463,6 +482,25 @@ func (a *AdminContainer) HandleUpdateArea(req web.Request) web.Response {
 	}
 
 	return web.OK(mapArea(*result))
+}
+
+// HandleDeleteArea removes an area. Returns 409 Conflict if subjects or
+// coordination documents still reference the area — the admin must clean
+// those up first. Area coordinator role assignments are cascade-removed.
+func (a *AdminContainer) HandleDeleteArea(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+	}
+
+	if err := a.DeleteArea.Execute(req.Context(), admin.DeleteAreaRequest{
+		OrgID:  middleware.OrgID(req),
+		AreaID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
 }
 
 type createSubjectBody struct {
@@ -513,8 +551,10 @@ type AdminContainer struct {
 	AssignCoordinator admin.AssignCoordinator
 	RemoveCoordinator admin.RemoveCoordinator
 	CreateArea        admin.CreateArea
+	GetArea           admin.GetArea
 	ListAreas         admin.ListAreas
 	UpdateArea        admin.UpdateArea
+	DeleteArea        admin.DeleteArea
 	CreateSubject     admin.CreateSubject
 	ListSubjects      admin.ListSubjects
 	ListAllSubjects   admin.ListAllSubjects

@@ -33,6 +33,22 @@ func (r *courseSubjectRepo) CreateCourseSubject(ctx context.Context, cs *entitie
 	return cs.ID, nil
 }
 
+func (r *courseSubjectRepo) GetCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.CourseSubject, error) {
+	var cs entities.CourseSubject
+	err := r.db.WithContext(ctx).
+		Preload("Subject").
+		Preload("Teacher").
+		Where("organization_id = ? AND id = ?", orgID, id).
+		First(&cs).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("%w: course-subject %d", providers.ErrNotFound, id)
+		}
+		return nil, err
+	}
+	return &cs, nil
+}
+
 func (r *courseSubjectRepo) ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error) {
 	var results []entities.CourseSubject
 	err := r.db.WithContext(ctx).

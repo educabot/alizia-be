@@ -13,8 +13,10 @@ type UseCases struct {
 	AssignCoordinator     adminuc.AssignCoordinator
 	RemoveCoordinator     adminuc.RemoveCoordinator
 	CreateArea            adminuc.CreateArea
+	GetArea               adminuc.GetArea
 	ListAreas             adminuc.ListAreas
 	UpdateArea            adminuc.UpdateArea
+	DeleteArea            adminuc.DeleteArea
 	CreateSubject         adminuc.CreateSubject
 	ListSubjects          adminuc.ListSubjects
 	ListAllSubjects       adminuc.ListAllSubjects
@@ -27,6 +29,7 @@ type UseCases struct {
 	AddStudent            adminuc.AddStudent
 	AssignCourseSubj      adminuc.AssignCourseSubject
 	ListCourseSubjects    adminuc.ListCourseSubjects
+	GetCourseSubject      adminuc.GetCourseSubject
 	CreateTimeSlot        adminuc.CreateTimeSlot
 	GetSchedule           adminuc.GetSchedule
 	GetSharedClassNumbers adminuc.GetSharedClassNumbers
@@ -47,8 +50,10 @@ func NewUseCases(repos *Repositories) *UseCases {
 		AssignCoordinator:     adminuc.NewAssignCoordinator(repos.Areas, repos.Users, repos.AreaCoordinators),
 		RemoveCoordinator:     adminuc.NewRemoveCoordinator(repos.Areas, repos.AreaCoordinators),
 		CreateArea:            adminuc.NewCreateArea(repos.Areas),
+		GetArea:               adminuc.NewGetArea(repos.Areas),
 		ListAreas:             adminuc.NewListAreas(repos.Areas),
 		UpdateArea:            adminuc.NewUpdateArea(repos.Areas),
+		DeleteArea:            adminuc.NewDeleteArea(repos.Areas),
 		CreateSubject:         adminuc.NewCreateSubject(repos.Areas, repos.Subjects),
 		ListSubjects:          adminuc.NewListSubjects(repos.Areas, repos.Subjects),
 		ListAllSubjects:       adminuc.NewListAllSubjects(repos.Areas, repos.Subjects),
@@ -61,6 +66,7 @@ func NewUseCases(repos *Repositories) *UseCases {
 		AddStudent:            adminuc.NewAddStudent(repos.Courses, repos.Students),
 		AssignCourseSubj:      adminuc.NewAssignCourseSubject(repos.Courses, repos.Users, repos.CourseSubjects),
 		ListCourseSubjects:    adminuc.NewListCourseSubjects(repos.CourseSubjects),
+		GetCourseSubject:      adminuc.NewGetCourseSubject(repos.CourseSubjects),
 		CreateTimeSlot:        adminuc.NewCreateTimeSlot(repos.Organizations, repos.Courses, repos.TimeSlots),
 		GetSchedule:           adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
 		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.TimeSlots),

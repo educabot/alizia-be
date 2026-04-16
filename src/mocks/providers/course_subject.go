@@ -19,6 +19,14 @@ func (m *MockCourseSubjectProvider) CreateCourseSubject(ctx context.Context, cs 
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockCourseSubjectProvider) GetCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.CourseSubject, error) {
+	args := m.Called(ctx, orgID, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entities.CourseSubject), args.Error(1)
+}
+
 func (m *MockCourseSubjectProvider) ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error) {
 	args := m.Called(ctx, courseID)
 	if args.Get(0) == nil {

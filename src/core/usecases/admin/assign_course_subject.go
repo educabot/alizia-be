@@ -92,6 +92,9 @@ func (uc *assignCourseSubjectImpl) Execute(ctx context.Context, req AssignCourse
 		return nil, err
 	}
 
-	cs.ID = id
-	return cs, nil
+	// Reload through the repo so the response includes Subject and Teacher.
+	// The FE contract requires both fields populated (see
+	// docs/frontend-breaking-changes-dtos.md §7); returning the in-memory
+	// struct here would silently omit them via `omitempty`.
+	return uc.courseSubjects.GetCourseSubject(ctx, req.OrgID, id)
 }

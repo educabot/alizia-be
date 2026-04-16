@@ -25,6 +25,7 @@ type CoursesContainer struct {
 	GetSchedule           admin.GetSchedule
 	GetSharedClassNumbers admin.GetSharedClassNumbers
 	ListCourseSubjects    admin.ListCourseSubjects
+	GetCourseSubject      admin.GetCourseSubject
 }
 
 type createCourseBody struct {
@@ -378,6 +379,25 @@ func (c *CoursesContainer) HandleGetSharedClassNumbers(req web.Request) web.Resp
 	}
 
 	return web.OK(result)
+}
+
+// HandleGetCourseSubject returns a single course-subject scoped to the
+// caller's org, with Subject and Teacher preloaded. 404 if not found.
+func (c *CoursesContainer) HandleGetCourseSubject(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course_subject id", providers.ErrValidation))
+	}
+
+	result, err := c.GetCourseSubject.Execute(req.Context(), admin.GetCourseSubjectRequest{
+		OrgID:           middleware.OrgID(req),
+		CourseSubjectID: id,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapCourseSubject(*result))
 }
 
 func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Response {

@@ -30,6 +30,27 @@ type AreaProvider interface {
 	GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Area, error)
 	ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error)
 	UpdateArea(ctx context.Context, area *entities.Area) error
+	// CountDependencies reports how many entities reference this area and
+	// would block a destructive operation. Used by DeleteArea to return a 409
+	// conflict with actionable detail instead of silently cascading data loss.
+	CountDependencies(ctx context.Context, orgID uuid.UUID, id int64) (AreaDependencies, error)
+	// DeleteArea hard-deletes an area and its coordinator assignments in a
+	// single transaction. It does NOT check external dependencies — callers
+	// must call CountDependencies first. Returns ErrNotFound if the area
+	// doesn't belong to the org.
+	DeleteArea(ctx context.Context, orgID uuid.UUID, id int64) error
+}
+
+// AreaDependencies reports the number of entities that depend on an area.
+// IsEmpty reports whether the area is safe to delete.
+type AreaDependencies struct {
+	Subjects              int64
+	CoordinationDocuments int64
+}
+
+// IsEmpty reports whether there are no blocking dependencies.
+func (d AreaDependencies) IsEmpty() bool {
+	return d.Subjects == 0 && d.CoordinationDocuments == 0
 }
 
 type AreaCoordinatorProvider interface {
@@ -73,6 +94,10 @@ type StudentProvider interface {
 
 type CourseSubjectProvider interface {
 	CreateCourseSubject(ctx context.Context, cs *entities.CourseSubject) (int64, error)
+	// GetCourseSubject returns a single course-subject scoped to the org with
+	// Subject and Teacher preloaded. Returns ErrNotFound if it doesn't exist
+	// or belongs to a different tenant.
+	GetCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.CourseSubject, error)
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.CourseSubject, error)
 	// ListCourseSubjects returns all course-subjects for an org. Any non-nil filter
 	// is applied; nil filters are skipped. Subject and Teacher are always preloaded.

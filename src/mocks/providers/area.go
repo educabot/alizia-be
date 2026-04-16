@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/educabot/alizia-be/src/core/providers"
 )
 
 type MockAreaProvider struct {
@@ -36,5 +37,15 @@ func (m *MockAreaProvider) ListAreas(ctx context.Context, orgID uuid.UUID) ([]en
 
 func (m *MockAreaProvider) UpdateArea(ctx context.Context, area *entities.Area) error {
 	args := m.Called(ctx, area)
+	return args.Error(0)
+}
+
+func (m *MockAreaProvider) CountDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.AreaDependencies, error) {
+	args := m.Called(ctx, orgID, id)
+	return args.Get(0).(providers.AreaDependencies), args.Error(1)
+}
+
+func (m *MockAreaProvider) DeleteArea(ctx context.Context, orgID uuid.UUID, id int64) error {
+	args := m.Called(ctx, orgID, id)
 	return args.Error(0)
 }

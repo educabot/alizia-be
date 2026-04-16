@@ -77,3 +77,45 @@ func (r *areaRepo) UpdateArea(ctx context.Context, area *entities.Area) error {
 	}
 	return nil
 }
+
+// CountDependencies counts subjects and coordination documents that reference
+// the area. Course-subjects are not counted separately because they reference
+// subjects (not areas directly); a non-zero Subjects count already implies any
+// downstream course-subjects would also block deletion.
+func (r *areaRepo) CountDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.AreaDependencies, error) {
+	var deps providers.AreaDependencies
+	db := r.db.WithContext(ctx)
+
+	if err := db.Model(&entities.Subject{}).
+		Where("organization_id = ? AND area_id = ?", orgID, id).
+		Count(&deps.Subjects).Error; err != nil {
+		return deps, err
+	}
+	if err := db.Model(&entities.CoordinationDocument{}).
+		Where("organization_id = ? AND area_id = ?", orgID, id).
+		Count(&deps.CoordinationDocuments).Error; err != nil {
+		return deps, err
+	}
+	return deps, nil
+}
+
+// DeleteArea removes the area and its coordinator assignments in a single
+// transaction. Caller must verify with CountDependencies that no blocking
+// dependencies exist. Coordinator rows are role assignments (no domain data)
+// so they're cascade-removed here rather than forcing admins to remove them
+// individually via DELETE /areas/:id/coordinators/:user_id.
+func (r *areaRepo) DeleteArea(ctx context.Context, orgID uuid.UUID, id int64) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("area_id = ?", id).Delete(&entities.AreaCoordinator{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("organization_id = ? AND id = ?", orgID, id).Delete(&entities.Area{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("%w: area %d", providers.ErrNotFound, id)
+		}
+		return nil
+	})
+}

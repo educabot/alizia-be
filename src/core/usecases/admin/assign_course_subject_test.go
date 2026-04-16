@@ -23,9 +23,16 @@ func TestAssignCourseSubject_Success(t *testing.T) {
 	orgID := uuid.New()
 	ctx := context.Background()
 
+	reloaded := &entities.CourseSubject{
+		ID: 1, OrganizationID: orgID, CourseID: 1, SubjectID: 2, TeacherID: 3, SchoolYear: 2026,
+		Subject: &entities.Subject{ID: 2, Name: "Algebra"},
+		Teacher: &entities.User{ID: 3, FirstName: "Ada", LastName: "Lovelace"},
+	}
+
 	courses.On("GetCourse", ctx, orgID, int64(1)).Return(&entities.Course{ID: 1, OrganizationID: orgID}, nil)
 	users.On("FindByID", ctx, orgID, int64(3)).Return(&entities.User{ID: 3}, nil)
 	cs.On("CreateCourseSubject", ctx, mock.AnythingOfType("*entities.CourseSubject")).Return(int64(1), nil)
+	cs.On("GetCourseSubject", ctx, orgID, int64(1)).Return(reloaded, nil)
 
 	result, err := uc.Execute(ctx, admin.AssignCourseSubjectRequest{
 		OrgID: orgID, CourseID: 1, SubjectID: 2, TeacherID: 3, SchoolYear: 2026,
@@ -35,6 +42,10 @@ func TestAssignCourseSubject_Success(t *testing.T) {
 	assert.Equal(t, int64(1), result.ID)
 	assert.Equal(t, int64(1), result.CourseID)
 	assert.Equal(t, int64(2), result.SubjectID)
+	assert.NotNil(t, result.Subject, "Subject must be preloaded so the FE can render result.subject.name")
+	assert.Equal(t, "Algebra", result.Subject.Name)
+	assert.NotNil(t, result.Teacher, "Teacher must be preloaded so the FE can render result.teacher.first_name")
+	assert.Equal(t, "Ada", result.Teacher.FirstName)
 	courses.AssertExpectations(t)
 	users.AssertExpectations(t)
 	cs.AssertExpectations(t)
