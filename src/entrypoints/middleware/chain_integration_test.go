@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	chainTestSecret = "chain-test-secret"
+	chainTestSecret = "chain-test-secret" // #nosec G101 -- test-only fixture, not a real credential
 	chainTestIssuer = "alizia-be-test"
 )
 

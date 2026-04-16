@@ -88,6 +88,65 @@ func (a *AdminContainer) HandleCreateTopic(req web.Request) web.Response {
 	return web.Created(result)
 }
 
+type updateTopicBody struct {
+	ParentID    *int64  `json:"parent_id"`
+	HasParent   *bool   `json:"-"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
+
+func (a *AdminContainer) HandleUpdateTopic(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid topic id", providers.ErrValidation))
+	}
+
+	// Parse the raw payload first to detect whether parent_id was supplied
+	// (a missing key means "don't touch parent"; an explicit null means "make root").
+	raw := map[string]any{}
+	if err := req.BindJSON(&raw); err != nil {
+		return rest.HandleError(err)
+	}
+	_, setParent := raw["parent_id"]
+
+	var body updateTopicBody
+	if v, ok := raw["name"]; ok {
+		if s, ok := v.(string); ok {
+			body.Name = &s
+		}
+	}
+	if v, ok := raw["description"]; ok {
+		if s, ok := v.(string); ok {
+			body.Description = &s
+		}
+	}
+	if setParent {
+		switch v := raw["parent_id"].(type) {
+		case nil:
+			body.ParentID = nil
+		case float64:
+			pid := int64(v)
+			body.ParentID = &pid
+		default:
+			return rest.HandleError(fmt.Errorf("%w: parent_id must be a number or null", providers.ErrValidation))
+		}
+	}
+
+	result, err := a.UpdateTopic.Execute(req.Context(), admin.UpdateTopicRequest{
+		OrgID:       middleware.OrgID(req),
+		TopicID:     id,
+		ParentID:    body.ParentID,
+		SetParent:   setParent,
+		Name:        body.Name,
+		Description: body.Description,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
+}
+
 func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
 	r := admin.GetTopicsRequest{
 		OrgID: middleware.OrgID(req),
@@ -199,6 +258,7 @@ type AdminContainer struct {
 	CreateSubject     admin.CreateSubject
 	ListSubjects      admin.ListSubjects
 	CreateTopic       admin.CreateTopic
+	UpdateTopic       admin.UpdateTopic
 	GetTopics         admin.GetTopics
 	CreateActivity    admin.CreateActivity
 	ListActivities    admin.ListActivities

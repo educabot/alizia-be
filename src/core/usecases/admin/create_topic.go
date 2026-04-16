@@ -66,7 +66,7 @@ func (uc *createTopicImpl) Execute(ctx context.Context, req CreateTopicRequest) 
 
 	maxLevels := topicMaxLevels(org)
 	if level > maxLevels {
-		return nil, fmt.Errorf("%w: level %d exceeds maximum allowed (%d)", providers.ErrValidation, level, maxLevels)
+		return nil, fmt.Errorf("%w: level %d exceeds maximum allowed (%d)", providers.ErrTopicMaxLevel, level, maxLevels)
 	}
 
 	topic := &entities.Topic{

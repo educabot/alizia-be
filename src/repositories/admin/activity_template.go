@@ -34,3 +34,12 @@ func (r *activityTemplateRepo) ListActivities(ctx context.Context, orgID uuid.UU
 	err := query.Order("moment, name").Limit(100).Find(&activities).Error
 	return activities, err
 }
+
+func (r *activityTemplateRepo) CountByMoment(ctx context.Context, orgID uuid.UUID, moment entities.ClassMoment) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&entities.ActivityTemplate{}).
+		Where("organization_id = ? AND moment = ?", orgID, moment).
+		Count(&count).Error
+	return count, err
+}

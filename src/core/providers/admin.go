@@ -49,6 +49,9 @@ type TopicProvider interface {
 	GetTopicByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Topic, error)
 	GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error)
+	ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
+	UpdateTopic(ctx context.Context, topic *entities.Topic) error
+	UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error
 }
 
 type CourseProvider interface {
@@ -70,9 +73,11 @@ type CourseSubjectProvider interface {
 type ActivityTemplateProvider interface {
 	CreateActivity(ctx context.Context, activity *entities.ActivityTemplate) (int64, error)
 	ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment) ([]entities.ActivityTemplate, error)
+	CountByMoment(ctx context.Context, orgID uuid.UUID, moment entities.ClassMoment) (int64, error)
 }
 
 type TimeSlotProvider interface {
 	CreateTimeSlot(ctx context.Context, slot *entities.TimeSlot) (int64, error)
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.TimeSlot, error)
+	GetSharedClassNumbers(ctx context.Context, courseSubjectID int64, totalClasses int) ([]int, error)
 }

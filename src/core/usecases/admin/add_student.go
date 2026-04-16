@@ -54,7 +54,7 @@ func (uc *addStudentImpl) Execute(ctx context.Context, req AddStudentRequest) (*
 
 	student := &entities.Student{
 		CourseID: req.CourseID,
-		Name:    req.Name,
+		Name:     req.Name,
 	}
 
 	id, err := uc.students.CreateStudent(ctx, student)

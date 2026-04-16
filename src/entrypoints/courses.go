@@ -14,13 +14,14 @@ import (
 )
 
 type CoursesContainer struct {
-	CreateCourse        admin.CreateCourse
-	ListCourses         admin.ListCourses
-	GetCourse           admin.GetCourse
-	AddStudent          admin.AddStudent
-	AssignCourseSubject admin.AssignCourseSubject
-	CreateTimeSlot      admin.CreateTimeSlot
-	GetSchedule         admin.GetSchedule
+	CreateCourse          admin.CreateCourse
+	ListCourses           admin.ListCourses
+	GetCourse             admin.GetCourse
+	AddStudent            admin.AddStudent
+	AssignCourseSubject   admin.AssignCourseSubject
+	CreateTimeSlot        admin.CreateTimeSlot
+	GetSchedule           admin.GetSchedule
+	GetSharedClassNumbers admin.GetSharedClassNumbers
 }
 
 type createCourseBody struct {
@@ -158,6 +159,33 @@ type assignCourseSubjectBody struct {
 	SchoolYear int     `json:"school_year"`
 	StartDate  *string `json:"start_date"`
 	EndDate    *string `json:"end_date"`
+}
+
+func (c *CoursesContainer) HandleGetSharedClassNumbers(req web.Request) web.Response {
+	csID, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course_subject id", providers.ErrValidation))
+	}
+
+	totalStr := req.Query("total_classes")
+	if totalStr == "" {
+		return rest.HandleError(fmt.Errorf("%w: total_classes query param is required", providers.ErrValidation))
+	}
+	total, err := strconv.Atoi(totalStr)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: total_classes must be an integer", providers.ErrValidation))
+	}
+
+	result, err := c.GetSharedClassNumbers.Execute(req.Context(), admin.GetSharedClassNumbersRequest{
+		OrgID:           middleware.OrgID(req),
+		CourseSubjectID: csID,
+		TotalClasses:    total,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(result)
 }
 
 func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Response {

@@ -64,6 +64,44 @@ func (r *topicRepo) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level
 	return topics, err
 }
 
+func (r *topicRepo) ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {
+	var topics []entities.Topic
+	err := r.db.WithContext(ctx).
+		Where("organization_id = ?", orgID).
+		Order("level ASC, name ASC").
+		Limit(500).
+		Find(&topics).Error
+	return topics, err
+}
+
+func (r *topicRepo) UpdateTopic(ctx context.Context, topic *entities.Topic) error {
+	return r.db.WithContext(ctx).
+		Model(&entities.Topic{}).
+		Where("organization_id = ? AND id = ?", topic.OrganizationID, topic.ID).
+		Updates(map[string]any{
+			"parent_id":   topic.ParentID,
+			"name":        topic.Name,
+			"description": topic.Description,
+			"level":       topic.Level,
+		}).Error
+}
+
+func (r *topicRepo) UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error {
+	if len(levels) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for id, level := range levels {
+			if err := tx.Model(&entities.Topic{}).
+				Where("organization_id = ? AND id = ?", orgID, id).
+				Update("level", level).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // buildTree assembles a flat list of topics into a tree structure in memory.
 // Topics are expected to be sorted by level ASC so parents appear before children.
 func buildTree(flat []entities.Topic) []entities.Topic {

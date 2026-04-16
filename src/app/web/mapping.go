@@ -68,13 +68,17 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	coordOnly.POST("/areas", webgin.Adapt(h.Admin.HandleCreateArea))
 	coordOnly.POST("/subjects", webgin.Adapt(h.Admin.HandleCreateSubject))
 
-	// Topics (coordinator or admin can create)
+	// Topics (coordinator or admin can create/update)
 	coordOnly.POST("/topics", webgin.Adapt(h.Admin.HandleCreateTopic))
+	coordOnly.PATCH("/topics/:id", webgin.Adapt(h.Admin.HandleUpdateTopic))
 
 	// Courses (any authenticated user can list/get)
 	api.GET("/courses", webgin.Adapt(h.Courses.HandleListCourses))
 	api.GET("/courses/:id", webgin.Adapt(h.Courses.HandleGetCourse))
 	api.GET("/courses/:id/schedule", webgin.Adapt(h.Courses.HandleGetSchedule))
+
+	// Course-subjects (any authenticated user can query shared class numbers)
+	api.GET("/course-subjects/:id/shared-class-numbers", webgin.Adapt(h.Courses.HandleGetSharedClassNumbers))
 
 	// Courses (admin-only: create, add students, assign subjects)
 	adminOnly.POST("/courses", webgin.Adapt(h.Courses.HandleCreateCourse))

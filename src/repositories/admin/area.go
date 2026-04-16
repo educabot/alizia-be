@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -22,14 +24,29 @@ func NewAreaRepo(db *gorm.DB) providers.AreaProvider {
 
 func (r *areaRepo) CreateArea(ctx context.Context, area *entities.Area) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(area).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: area name already exists in this organization", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return area.ID, nil
 }
 
+// coordinatorUserCols are the only columns we want to surface for a coordinator's
+// User record — we deliberately avoid password_hash and the JSONB profile_data blob.
+const coordinatorUserCols = "id, organization_id, email, first_name, last_name, avatar_url"
+
 func (r *areaRepo) GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Area, error) {
 	var area entities.Area
 	err := r.db.WithContext(ctx).
+		Preload("Subjects", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, organization_id, area_id, name, description")
+		}).
+		Preload("Coordinators").
+		Preload("Coordinators.User", func(db *gorm.DB) *gorm.DB {
+			return db.Select(coordinatorUserCols)
+		}).
 		Where("organization_id = ? AND id = ?", orgID, id).
 		First(&area).Error
 	if err != nil {
@@ -44,6 +61,13 @@ func (r *areaRepo) GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*ent
 func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error) {
 	var areas []entities.Area
 	err := r.db.WithContext(ctx).
+		Preload("Subjects", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, organization_id, area_id, name, description")
+		}).
+		Preload("Coordinators").
+		Preload("Coordinators.User", func(db *gorm.DB) *gorm.DB {
+			return db.Select(coordinatorUserCols)
+		}).
 		Where("organization_id = ?", orgID).
 		Order("name ASC").Limit(100).
 		Find(&areas).Error

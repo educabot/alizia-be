@@ -41,3 +41,21 @@ func (m *MockTopicProvider) GetTopicsByLevel(ctx context.Context, orgID uuid.UUI
 	}
 	return args.Get(0).([]entities.Topic), args.Error(1)
 }
+
+func (m *MockTopicProvider) ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {
+	args := m.Called(ctx, orgID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]entities.Topic), args.Error(1)
+}
+
+func (m *MockTopicProvider) UpdateTopic(ctx context.Context, topic *entities.Topic) error {
+	args := m.Called(ctx, topic)
+	return args.Error(0)
+}
+
+func (m *MockTopicProvider) UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error {
+	args := m.Called(ctx, orgID, levels)
+	return args.Error(0)
+}
