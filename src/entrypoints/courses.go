@@ -46,7 +46,7 @@ func (c *CoursesContainer) HandleCreateCourse(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.Created(result)
+	return web.Created(mapCourse(*result))
 }
 
 func (c *CoursesContainer) HandleListCourses(req web.Request) web.Response {
@@ -57,7 +57,7 @@ func (c *CoursesContainer) HandleListCourses(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(result, false))
+	return web.OK(rest.Page(mapCourses(result), false))
 }
 
 func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
@@ -74,7 +74,7 @@ func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(mapCourse(*result))
 }
 
 type addStudentBody struct {
@@ -101,7 +101,7 @@ func (c *CoursesContainer) HandleAddStudent(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.Created(result)
+	return web.Created(mapStudent(*result))
 }
 
 type createTimeSlotBody struct {
@@ -135,6 +135,124 @@ func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 	}
 
 	return web.Created(result)
+}
+
+// courseResponse, studentResponse, courseSubjectResponse and friends are the API
+// contract for courses. They intentionally hide infrastructure fields
+// (timestamps, organization_id) and sensitive user data (password hash, profile).
+type courseResponse struct {
+	ID             int64                   `json:"id"`
+	Name           string                  `json:"name"`
+	Year           int                     `json:"year"`
+	Students       []studentResponse       `json:"students"`
+	CourseSubjects []courseSubjectResponse `json:"course_subjects"`
+}
+
+type studentResponse struct {
+	ID       int64  `json:"id"`
+	CourseID int64  `json:"course_id"`
+	Name     string `json:"name"`
+}
+
+type courseSubjectResponse struct {
+	ID         int64                     `json:"id"`
+	CourseID   int64                     `json:"course_id"`
+	SubjectID  int64                     `json:"subject_id"`
+	TeacherID  int64                     `json:"teacher_id"`
+	SchoolYear int                       `json:"school_year"`
+	StartDate  *string                   `json:"start_date,omitempty"`
+	EndDate    *string                   `json:"end_date,omitempty"`
+	Subject    *courseSubjectSubjectInfo `json:"subject,omitempty"`
+	Teacher    *courseSubjectTeacherInfo `json:"teacher,omitempty"`
+}
+
+type courseSubjectSubjectInfo struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type courseSubjectTeacherInfo struct {
+	ID        int64  `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+// formatDateOnly returns a YYYY-MM-DD pointer or nil. We treat zero time as
+// "not set" because GORM may decode missing dates that way instead of as nil.
+func formatDateOnly(t *time.Time) *string {
+	if t == nil || t.IsZero() {
+		return nil
+	}
+	s := t.Format("2006-01-02")
+	return &s
+}
+
+func mapStudent(e entities.Student) studentResponse {
+	return studentResponse{
+		ID:       e.ID,
+		CourseID: e.CourseID,
+		Name:     e.Name,
+	}
+}
+
+func mapStudents(es []entities.Student) []studentResponse {
+	out := make([]studentResponse, len(es))
+	for i, s := range es {
+		out[i] = mapStudent(s)
+	}
+	return out
+}
+
+func mapCourseSubject(e entities.CourseSubject) courseSubjectResponse {
+	r := courseSubjectResponse{
+		ID:         e.ID,
+		CourseID:   e.CourseID,
+		SubjectID:  e.SubjectID,
+		TeacherID:  e.TeacherID,
+		SchoolYear: e.SchoolYear,
+		StartDate:  formatDateOnly(e.StartDate),
+		EndDate:    formatDateOnly(e.EndDate),
+	}
+	if e.Subject != nil {
+		r.Subject = &courseSubjectSubjectInfo{
+			ID:   e.Subject.ID,
+			Name: e.Subject.Name,
+		}
+	}
+	if e.Teacher != nil {
+		r.Teacher = &courseSubjectTeacherInfo{
+			ID:        e.Teacher.ID,
+			FirstName: e.Teacher.FirstName,
+			LastName:  e.Teacher.LastName,
+		}
+	}
+	return r
+}
+
+func mapCourseSubjects(es []entities.CourseSubject) []courseSubjectResponse {
+	out := make([]courseSubjectResponse, len(es))
+	for i, cs := range es {
+		out[i] = mapCourseSubject(cs)
+	}
+	return out
+}
+
+func mapCourse(e entities.Course) courseResponse {
+	return courseResponse{
+		ID:             e.ID,
+		Name:           e.Name,
+		Year:           e.Year,
+		Students:       mapStudents(e.Students),
+		CourseSubjects: mapCourseSubjects(e.CourseSubjects),
+	}
+}
+
+func mapCourses(es []entities.Course) []courseResponse {
+	out := make([]courseResponse, len(es))
+	for i, c := range es {
+		out[i] = mapCourse(c)
+	}
+	return out
 }
 
 // timeSlotResponse is the API contract for time slots, intentionally decoupled
@@ -299,5 +417,5 @@ func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Respon
 		return rest.HandleError(err)
 	}
 
-	return web.Created(result)
+	return web.Created(mapCourseSubject(*result))
 }
