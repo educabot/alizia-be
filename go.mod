@@ -3,7 +3,7 @@ module github.com/educabot/alizia-be
 go 1.26.2
 
 require (
-	github.com/educabot/team-ai-toolkit v1.8.0
+	github.com/educabot/team-ai-toolkit v1.8.1
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0

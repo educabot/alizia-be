@@ -26,16 +26,11 @@ func NewApp(cfg *config.Config) *App {
 		URL:                cfg.DatabaseURL,
 		MaxOpenConnections: cfg.DBMaxOpenConns,
 		MaxIdleConnections: cfg.DBMaxIdleConns,
+		ConnMaxLifetime:    cfg.DBConnMaxLifetime,
+		ConnMaxIdleTime:    cfg.DBConnMaxIdleTime,
 	}).Connect()
 	if err != nil {
 		log.Fatal("failed to connect to database: ", err)
-	}
-
-	if sqlDB, derr := db.DB(); derr == nil {
-		sqlDB.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
-		sqlDB.SetConnMaxIdleTime(cfg.DBConnMaxIdleTime)
-	} else {
-		log.Printf("warn: could not access sql.DB to tune lifetimes: %v", derr)
 	}
 
 	repos := NewRepositories(db)
