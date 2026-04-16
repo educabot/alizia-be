@@ -126,11 +126,11 @@ INSERT INTO topics (id, organization_id, parent_id, name, description, level) VA
     (14, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 6, 'Texto informativo', 'Escritura de informes, noticias y descripciones', 3)
 ON CONFLICT (id) DO NOTHING;
 
--- Courses
-INSERT INTO courses (id, organization_id, name, year) VALUES
-    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 1era', 2026),
-    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 2da', 2026),
-    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '3ro 1era', 2026)
+-- Courses (year removed in migration 000013; academic year now lives in course_subjects.school_year)
+INSERT INTO courses (id, organization_id, name) VALUES
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 1era'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '2do 2da'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '3ro 1era')
 ON CONFLICT (id) DO NOTHING;
 
 -- Students
@@ -166,6 +166,21 @@ INSERT INTO activities (id, organization_id, moment, name, description, duration
     (10, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'cierre',    'Autoevaluación',           'Reflexión personal sobre el aprendizaje', 10)
 ON CONFLICT (id) DO NOTHING;
 
+-- Time slots: weekly schedule grid. Demo: 1 normal class + 1 shared class on course 1 (2do 1era).
+-- Slot 1 (lunes 8:00-9:00) = Matemática only.
+-- Slot 2 (martes 10:00-11:00) = Matemática + Historia dictadas en simultáneo (clase compartida, HU-3.5).
+INSERT INTO time_slots (id, course_id, day_of_week, start_time, end_time) VALUES
+    (1, 1, 1, '08:00', '09:00'),
+    (2, 1, 2, '10:00', '11:00')
+ON CONFLICT (id) DO NOTHING;
+
+-- 1 row per slot = clase normal. 2 rows con el mismo time_slot_id = clase compartida.
+INSERT INTO time_slot_subjects (id, time_slot_id, course_subject_id) VALUES
+    (1, 1, 1),
+    (2, 2, 1),
+    (3, 2, 2)
+ON CONFLICT (id) DO NOTHING;
+
 -- Reset sequences to avoid conflicts with future inserts
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) FROM user_roles));
@@ -177,3 +192,5 @@ SELECT setval('courses_id_seq', (SELECT COALESCE(MAX(id), 0) FROM courses));
 SELECT setval('students_id_seq', (SELECT COALESCE(MAX(id), 0) FROM students));
 SELECT setval('course_subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM course_subjects));
 SELECT setval('activities_id_seq', (SELECT COALESCE(MAX(id), 0) FROM activities));
+SELECT setval('time_slots_id_seq', (SELECT COALESCE(MAX(id), 0) FROM time_slots));
+SELECT setval('time_slot_subjects_id_seq', (SELECT COALESCE(MAX(id), 0) FROM time_slot_subjects));
