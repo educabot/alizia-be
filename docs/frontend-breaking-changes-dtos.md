@@ -219,7 +219,6 @@ Removido: `organization_id`, `created_at`, `updated_at`.
 {
   "id": 1,
   "name": "1° A",
-  "year": 2026,
   "students": [
     { "id": 1, "course_id": 1, "name": "Juan Pérez" }
   ],
@@ -238,11 +237,13 @@ Removido: `organization_id`, `created_at`, `updated_at`.
 ```
 
 **Cambios clave:**
+- `Course` ya no tiene `year` (migración `000013_drop_courses_year.up.sql`). El curso es atemporal; el ciclo lectivo vive en `course_subjects[].school_year`.
 - `students` y `course_subjects` siempre son arrays (`[]` si vacíos, nunca `null`).
 - `start_date`/`end_date` ahora son **strings `YYYY-MM-DD`** (antes era timestamp ISO 8601 completo). Si están vacíos o no seteados se omiten (`omitempty`).
 - `subject` (dentro de `course_subjects`) es un objeto compacto `{id, name}` — no la entidad Subject completa.
 - `teacher` es un objeto compacto `{id, first_name, last_name}` — sin email, avatar, roles, etc.
 - Removido en student/course/course_subject: `organization_id`, `created_at`, `updated_at`.
+- **`POST /course-subjects` preloadea `subject` y `teacher` en la response** (fix G-10): la creación devuelve la entidad recargada desde el repo con ambos campos populados, no el struct en memoria.
 
 ---
 
