@@ -3,10 +3,12 @@ package entrypoints
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/educabot/team-ai-toolkit/web"
 
+	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/core/usecases/admin"
 	"github.com/educabot/alizia-be/src/entrypoints/middleware"
@@ -55,7 +57,7 @@ func (c *CoursesContainer) HandleListCourses(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(rest.Page(result, false))
 }
 
 func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
@@ -135,6 +137,81 @@ func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 	return web.Created(result)
 }
 
+// timeSlotResponse is the API contract for time slots, intentionally decoupled
+// from the GORM entity so persistence changes don't leak into the public API.
+type timeSlotResponse struct {
+	ID        int64                     `json:"id"`
+	CourseID  int64                     `json:"course_id"`
+	Day       string                    `json:"day"`
+	StartTime string                    `json:"start_time"`
+	EndTime   string                    `json:"end_time"`
+	Subjects  []timeSlotSubjectResponse `json:"subjects"`
+}
+
+type timeSlotSubjectResponse struct {
+	CourseSubjectID int64   `json:"course_subject_id"`
+	SubjectName     string  `json:"subject_name"`
+	TeacherName     *string `json:"teacher_name"`
+}
+
+// dayOfWeekToString maps the storage int (0=Sunday..6=Saturday) to the public string
+// representation. Returns "" for out-of-range values so clients can detect bad data
+// rather than silently receiving a wrong day.
+func dayOfWeekToString(d int) string {
+	switch d {
+	case 0:
+		return "sunday"
+	case 1:
+		return "monday"
+	case 2:
+		return "tuesday"
+	case 3:
+		return "wednesday"
+	case 4:
+		return "thursday"
+	case 5:
+		return "friday"
+	case 6:
+		return "saturday"
+	default:
+		return ""
+	}
+}
+
+func mapTimeSlot(slot entities.TimeSlot) timeSlotResponse {
+	subjects := make([]timeSlotSubjectResponse, 0, len(slot.Subjects))
+	for _, ts := range slot.Subjects {
+		sub := timeSlotSubjectResponse{CourseSubjectID: ts.CourseSubjectID}
+		if cs := ts.CourseSubject; cs != nil {
+			if cs.Subject != nil {
+				sub.SubjectName = cs.Subject.Name
+			}
+			if cs.Teacher != nil {
+				if name := strings.TrimSpace(cs.Teacher.FirstName + " " + cs.Teacher.LastName); name != "" {
+					sub.TeacherName = &name
+				}
+			}
+		}
+		subjects = append(subjects, sub)
+	}
+	return timeSlotResponse{
+		ID:        slot.ID,
+		CourseID:  slot.CourseID,
+		Day:       dayOfWeekToString(slot.DayOfWeek),
+		StartTime: slot.StartTime,
+		EndTime:   slot.EndTime,
+		Subjects:  subjects,
+	}
+}
+
+func mapTimeSlots(slots []entities.TimeSlot) []timeSlotResponse {
+	out := make([]timeSlotResponse, len(slots))
+	for i, s := range slots {
+		out[i] = mapTimeSlot(s)
+	}
+	return out
+}
+
 func (c *CoursesContainer) HandleGetSchedule(req web.Request) web.Response {
 	courseID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
@@ -149,7 +226,7 @@ func (c *CoursesContainer) HandleGetSchedule(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(mapTimeSlots(result))
 }
 
 type assignCourseSubjectBody struct {

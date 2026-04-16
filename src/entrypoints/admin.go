@@ -56,7 +56,7 @@ func (a *AdminContainer) HandleListActivities(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(rest.Page(result, false))
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +165,7 @@ func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(rest.Page(result, false))
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +203,7 @@ func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(rest.Page(result, false))
 }
 
 type createSubjectBody struct {
@@ -245,7 +245,7 @@ func (a *AdminContainer) HandleListSubjects(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(rest.Page(result, false))
 }
 
 type AdminContainer struct {
