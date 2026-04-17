@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -10,8 +9,6 @@ import (
 	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 )
-
-const defaultDesarrolloMaxActivities = 0 // 0 = unlimited
 
 type CreateActivityRequest struct {
 	OrgID           uuid.UUID
@@ -39,12 +36,17 @@ type CreateActivity interface {
 }
 
 type createActivityImpl struct {
-	orgs       providers.OrganizationProvider
 	activities providers.ActivityTemplateProvider
 }
 
-func NewCreateActivity(orgs providers.OrganizationProvider, activities providers.ActivityTemplateProvider) CreateActivity {
-	return &createActivityImpl{orgs: orgs, activities: activities}
+// NewCreateActivity wires the usecase that adds an activity template to the
+// org's catalog. Note: `config.desarrollo_max_activities` is intentionally NOT
+// enforced here — per RFC HU-3.6 / HU-5.3, that limit applies to how many
+// desarrollo activities a teacher may pick per class in a lesson plan, not to
+// how many templates exist in the catalog. Enforcing it here would wrongly
+// cap the catalog and contradict HU-5.3's runtime validation.
+func NewCreateActivity(activities providers.ActivityTemplateProvider) CreateActivity {
+	return &createActivityImpl{activities: activities}
 }
 
 func (uc *createActivityImpl) Execute(ctx context.Context, req CreateActivityRequest) (*entities.ActivityTemplate, error) {
@@ -52,27 +54,9 @@ func (uc *createActivityImpl) Execute(ctx context.Context, req CreateActivityReq
 		return nil, err
 	}
 
-	moment := entities.ClassMoment(req.Moment)
-
-	if moment == entities.MomentDesarrollo {
-		org, err := uc.orgs.FindByID(ctx, req.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		if maxAllowed := desarrolloMaxActivities(org); maxAllowed > 0 {
-			count, err := uc.activities.CountByMoment(ctx, req.OrgID, moment)
-			if err != nil {
-				return nil, err
-			}
-			if count >= int64(maxAllowed) {
-				return nil, fmt.Errorf("%w: desarrollo activities limit %d reached", providers.ErrActivityMaxReached, maxAllowed)
-			}
-		}
-	}
-
 	activity := &entities.ActivityTemplate{
 		OrganizationID:  req.OrgID,
-		Moment:          moment,
+		Moment:          entities.ClassMoment(req.Moment),
 		Name:            req.Name,
 		Description:     req.Description,
 		DurationMinutes: req.DurationMinutes,
@@ -85,19 +69,4 @@ func (uc *createActivityImpl) Execute(ctx context.Context, req CreateActivityReq
 
 	activity.ID = id
 	return activity, nil
-}
-
-// desarrolloMaxActivities reads `desarrollo_max_activities` from org config.
-// A value <= 0 means unlimited.
-func desarrolloMaxActivities(org *entities.Organization) int {
-	var cfg map[string]any
-	if err := json.Unmarshal(org.Config, &cfg); err != nil {
-		return defaultDesarrolloMaxActivities
-	}
-	if v, ok := cfg["desarrollo_max_activities"]; ok {
-		if f, ok := v.(float64); ok && f > 0 {
-			return int(f)
-		}
-	}
-	return defaultDesarrolloMaxActivities
 }

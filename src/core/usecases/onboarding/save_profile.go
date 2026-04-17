@@ -79,7 +79,28 @@ func extractProfileFields(configJSON []byte) []entities.ProfileField {
 	return config.Onboarding.ProfileFields
 }
 
+// validateProfileData checks the submitted data against the org's declared
+// profile schema. When no schema is configured we accept whatever the client
+// sends (onboarding is optional in that case). When a schema IS configured we
+// enforce two things: (1) declared required fields must be present and
+// well-typed, and (2) the client may not introduce keys outside the schema —
+// profile_data is stored as JSONB so any unknown key would persist verbatim.
 func validateProfileData(fields []entities.ProfileField, data map[string]any) error {
+	if len(fields) == 0 {
+		return nil
+	}
+
+	allowed := make(map[string]entities.ProfileField, len(fields))
+	for _, f := range fields {
+		allowed[f.Key] = f
+	}
+
+	for key := range data {
+		if _, ok := allowed[key]; !ok {
+			return fmt.Errorf("%w: field %q is not part of the organization's profile schema", providers.ErrValidation, key)
+		}
+	}
+
 	for _, f := range fields {
 		val, exists := data[f.Key]
 		if f.Required && !exists {

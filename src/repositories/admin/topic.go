@@ -116,32 +116,46 @@ func (r *topicRepo) UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, leve
 	})
 }
 
-// buildTree assembles a flat list of topics into a tree structure in memory.
-// Topics are expected to be sorted by level ASC so parents appear before children.
+// buildTree assembles a flat list of topics into a tree of arbitrary depth.
+//
+// The earlier single-pass approach (append-by-value while walking) only worked
+// for two levels: when a grandchild was later attached to a parent, the parent
+// had already been appended by value into its own parent's Children slice, so
+// the grandchild never made it up. We avoid that by first indexing child IDs
+// per parent and then materializing the tree recursively from the roots — each
+// node is assembled only after all its descendants are known.
+//
+// Input is expected to be sorted by (level ASC, name ASC) so sibling order in
+// the resulting tree matches DB order at every depth.
 func buildTree(flat []entities.Topic) []entities.Topic {
-	byID := make(map[int64]*entities.Topic, len(flat))
-	for i := range flat {
-		flat[i].Children = []entities.Topic{}
-		byID[flat[i].ID] = &flat[i]
-	}
+	byID := make(map[int64]entities.Topic, len(flat))
+	childIDs := make(map[int64][]int64, len(flat))
+	var rootIDs []int64
 
-	var roots []entities.Topic
-	for i := range flat {
-		if flat[i].ParentID == nil {
-			roots = append(roots, flat[i])
+	for _, t := range flat {
+		t.Children = nil
+		byID[t.ID] = t
+		if t.ParentID == nil {
+			rootIDs = append(rootIDs, t.ID)
 		} else {
-			if parent, ok := byID[*flat[i].ParentID]; ok {
-				parent.Children = append(parent.Children, flat[i])
-			}
+			childIDs[*t.ParentID] = append(childIDs[*t.ParentID], t.ID)
 		}
 	}
 
-	// Refresh roots from map to pick up accumulated children
-	for i := range roots {
-		if updated, ok := byID[roots[i].ID]; ok {
-			roots[i] = *updated
+	var assemble func(id int64) entities.Topic
+	assemble = func(id int64) entities.Topic {
+		t := byID[id]
+		kids := childIDs[id]
+		t.Children = make([]entities.Topic, 0, len(kids))
+		for _, cid := range kids {
+			t.Children = append(t.Children, assemble(cid))
 		}
+		return t
 	}
 
+	roots := make([]entities.Topic, 0, len(rootIDs))
+	for _, id := range rootIDs {
+		roots = append(roots, assemble(id))
+	}
 	return roots
 }

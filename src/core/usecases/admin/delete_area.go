@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 
@@ -58,20 +57,9 @@ func (uc *deleteAreaImpl) Execute(ctx context.Context, req DeleteAreaRequest) er
 		return err
 	}
 	if !deps.IsEmpty() {
-		return fmt.Errorf("%w: area has dependencies (%s); remove them before deleting",
-			providers.ErrConflict, formatDependencies(deps))
+		return fmt.Errorf("%w: area has dependencies (%d subjects); remove them before deleting",
+			providers.ErrConflict, deps.Subjects)
 	}
 
 	return uc.areas.DeleteArea(ctx, req.OrgID, req.AreaID)
-}
-
-func formatDependencies(d providers.AreaDependencies) string {
-	parts := make([]string, 0, 2)
-	if d.Subjects > 0 {
-		parts = append(parts, fmt.Sprintf("%d subjects", d.Subjects))
-	}
-	if d.CoordinationDocuments > 0 {
-		parts = append(parts, fmt.Sprintf("%d coordination documents", d.CoordinationDocuments))
-	}
-	return strings.Join(parts, ", ")
 }

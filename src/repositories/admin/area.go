@@ -78,22 +78,17 @@ func (r *areaRepo) UpdateArea(ctx context.Context, area *entities.Area) error {
 	return nil
 }
 
-// CountDependencies counts subjects and coordination documents that reference
-// the area. Course-subjects are not counted separately because they reference
-// subjects (not areas directly); a non-zero Subjects count already implies any
-// downstream course-subjects would also block deletion.
+// CountDependencies counts subjects that reference the area. Course-subjects
+// are not counted separately because they reference subjects (not areas
+// directly); a non-zero Subjects count already implies any downstream
+// course-subjects would also block deletion. Coordination documents are not
+// counted yet: the table ships in Épica 4.
 func (r *areaRepo) CountDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.AreaDependencies, error) {
 	var deps providers.AreaDependencies
-	db := r.db.WithContext(ctx)
-
-	if err := db.Model(&entities.Subject{}).
+	if err := r.db.WithContext(ctx).
+		Model(&entities.Subject{}).
 		Where("organization_id = ? AND area_id = ?", orgID, id).
 		Count(&deps.Subjects).Error; err != nil {
-		return deps, err
-	}
-	if err := db.Model(&entities.CoordinationDocument{}).
-		Where("organization_id = ? AND area_id = ?", orgID, id).
-		Count(&deps.CoordinationDocuments).Error; err != nil {
 		return deps, err
 	}
 	return deps, nil

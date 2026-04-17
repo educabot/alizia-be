@@ -134,7 +134,7 @@ func (c *CoursesContainer) HandleCreateTimeSlot(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.Created(result)
+	return web.Created(mapTimeSlot(*result))
 }
 
 // courseResponse, studentResponse, courseSubjectResponse and friends are the API

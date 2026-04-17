@@ -7,18 +7,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/datatypes"
 
-	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/core/usecases/admin"
 	mockproviders "github.com/educabot/alizia-be/src/mocks/providers"
 )
 
 func TestCreateActivity_Success(t *testing.T) {
-	orgs := new(mockproviders.MockOrganizationProvider)
 	activities := new(mockproviders.MockActivityTemplateProvider)
-	uc := admin.NewCreateActivity(orgs, activities)
+	uc := admin.NewCreateActivity(activities)
 
 	orgID := uuid.New()
 	ctx := context.Background()
@@ -40,9 +37,8 @@ func TestCreateActivity_Success(t *testing.T) {
 }
 
 func TestCreateActivity_InvalidMoment(t *testing.T) {
-	orgs := new(mockproviders.MockOrganizationProvider)
 	activities := new(mockproviders.MockActivityTemplateProvider)
-	uc := admin.NewCreateActivity(orgs, activities)
+	uc := admin.NewCreateActivity(activities)
 
 	_, err := uc.Execute(context.Background(), admin.CreateActivityRequest{
 		OrgID: uuid.New(), Moment: "invalid", Name: "Test",
@@ -53,9 +49,8 @@ func TestCreateActivity_InvalidMoment(t *testing.T) {
 }
 
 func TestCreateActivity_ValidationErrors(t *testing.T) {
-	orgs := new(mockproviders.MockOrganizationProvider)
 	activities := new(mockproviders.MockActivityTemplateProvider)
-	uc := admin.NewCreateActivity(orgs, activities)
+	uc := admin.NewCreateActivity(activities)
 
 	tests := []struct {
 		name string
@@ -74,48 +69,22 @@ func TestCreateActivity_ValidationErrors(t *testing.T) {
 	activities.AssertNotCalled(t, "CreateActivity", mock.Anything, mock.Anything)
 }
 
-func TestCreateActivity_DesarrolloLimitReached(t *testing.T) {
-	orgs := new(mockproviders.MockOrganizationProvider)
+// TestCreateActivity_DoesNotCapCatalog guards against regressing to enforcing
+// config.desarrollo_max_activities at template creation time. Per RFC HU-3.6 /
+// HU-5.3 that limit is runtime-only (lesson plan per-class pick), not a cap on
+// how many templates an admin may register.
+func TestCreateActivity_DoesNotCapCatalog(t *testing.T) {
 	activities := new(mockproviders.MockActivityTemplateProvider)
-	uc := admin.NewCreateActivity(orgs, activities)
-
-	orgID := uuid.New()
+	uc := admin.NewCreateActivity(activities)
 	ctx := context.Background()
 
-	orgs.On("FindByID", ctx, orgID).Return(&entities.Organization{
-		ID:     orgID,
-		Config: datatypes.JSON([]byte(`{"desarrollo_max_activities": 3}`)),
-	}, nil)
-	activities.On("CountByMoment", ctx, orgID, entities.MomentDesarrollo).Return(int64(3), nil)
+	activities.On("CreateActivity", ctx, mock.AnythingOfType("*entities.ActivityTemplate")).
+		Return(int64(42), nil)
 
 	_, err := uc.Execute(ctx, admin.CreateActivityRequest{
-		OrgID: orgID, Moment: "desarrollo", Name: "Cuarta",
-	})
-
-	assert.ErrorIs(t, err, providers.ErrActivityMaxReached)
-	activities.AssertNotCalled(t, "CreateActivity", mock.Anything, mock.Anything)
-}
-
-func TestCreateActivity_DesarrolloUnderLimit(t *testing.T) {
-	orgs := new(mockproviders.MockOrganizationProvider)
-	activities := new(mockproviders.MockActivityTemplateProvider)
-	uc := admin.NewCreateActivity(orgs, activities)
-
-	orgID := uuid.New()
-	ctx := context.Background()
-
-	orgs.On("FindByID", ctx, orgID).Return(&entities.Organization{
-		ID:     orgID,
-		Config: datatypes.JSON([]byte(`{"desarrollo_max_activities": 3}`)),
-	}, nil)
-	activities.On("CountByMoment", ctx, orgID, entities.MomentDesarrollo).Return(int64(2), nil)
-	activities.On("CreateActivity", ctx, mock.AnythingOfType("*entities.ActivityTemplate")).Return(int64(7), nil)
-
-	result, err := uc.Execute(ctx, admin.CreateActivityRequest{
-		OrgID: orgID, Moment: "desarrollo", Name: "Tercera",
+		OrgID: uuid.New(), Moment: "desarrollo", Name: "Cuarta desarrollo",
 	})
 
 	assert.NoError(t, err)
-	assert.Equal(t, int64(7), result.ID)
-	activities.AssertExpectations(t)
+	activities.AssertNotCalled(t, "CountByMoment", mock.Anything, mock.Anything, mock.Anything)
 }

@@ -66,42 +66,6 @@ func TestDeleteArea_BlockedBySubjects(t *testing.T) {
 	areas.AssertNotCalled(t, "DeleteArea", mock.Anything, mock.Anything, mock.Anything)
 }
 
-func TestDeleteArea_BlockedByCoordinationDocuments(t *testing.T) {
-	areas := new(mockproviders.MockAreaProvider)
-	uc := admin.NewDeleteArea(areas)
-
-	orgID := uuid.New()
-	ctx := context.Background()
-
-	areas.On("GetArea", ctx, orgID, int64(10)).Return(&entities.Area{ID: 10}, nil)
-	areas.On("CountDependencies", ctx, orgID, int64(10)).
-		Return(providers.AreaDependencies{CoordinationDocuments: 2}, nil)
-
-	err := uc.Execute(ctx, admin.DeleteAreaRequest{OrgID: orgID, AreaID: 10})
-
-	assert.ErrorIs(t, err, providers.ErrConflict)
-	assert.Contains(t, err.Error(), "2 coordination documents")
-	areas.AssertNotCalled(t, "DeleteArea", mock.Anything, mock.Anything, mock.Anything)
-}
-
-func TestDeleteArea_BlockedByBoth(t *testing.T) {
-	areas := new(mockproviders.MockAreaProvider)
-	uc := admin.NewDeleteArea(areas)
-
-	orgID := uuid.New()
-	ctx := context.Background()
-
-	areas.On("GetArea", ctx, orgID, int64(10)).Return(&entities.Area{ID: 10}, nil)
-	areas.On("CountDependencies", ctx, orgID, int64(10)).
-		Return(providers.AreaDependencies{Subjects: 1, CoordinationDocuments: 4}, nil)
-
-	err := uc.Execute(ctx, admin.DeleteAreaRequest{OrgID: orgID, AreaID: 10})
-
-	assert.ErrorIs(t, err, providers.ErrConflict)
-	assert.Contains(t, err.Error(), "1 subjects")
-	assert.Contains(t, err.Error(), "4 coordination documents")
-}
-
 func TestDeleteArea_ValidationErrors(t *testing.T) {
 	areas := new(mockproviders.MockAreaProvider)
 	uc := admin.NewDeleteArea(areas)

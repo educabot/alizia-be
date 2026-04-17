@@ -43,14 +43,19 @@ type AreaProvider interface {
 
 // AreaDependencies reports the number of entities that depend on an area.
 // IsEmpty reports whether the area is safe to delete.
+//
+// CoordinationDocuments are intentionally NOT tracked here yet: the
+// `coordination_documents` table is introduced in Épica 4 and no migration
+// creates it today. Counting against a missing relation would make the endpoint
+// 500 instead of returning a useful 409. Re-add the field once the table
+// ships.
 type AreaDependencies struct {
-	Subjects              int64
-	CoordinationDocuments int64
+	Subjects int64
 }
 
 // IsEmpty reports whether there are no blocking dependencies.
 func (d AreaDependencies) IsEmpty() bool {
-	return d.Subjects == 0 && d.CoordinationDocuments == 0
+	return d.Subjects == 0
 }
 
 type AreaCoordinatorProvider interface {

@@ -64,12 +64,16 @@ func TestSaveProfile_MissingRequiredField(t *testing.T) {
 
 	orgID := uuid.New()
 	ctx := context.Background()
+	// Send only an optional declared field, omitting the required one. The
+	// unknown-key guard would otherwise mask the "missing required" signal, so
+	// we keep the payload strictly within the declared schema.
 	data := map[string]any{
 		"years_of_experience": float64(5),
 	}
 
 	org := orgWithProfileFields([]entities.ProfileField{
 		{Key: "disciplines", Type: entities.ProfileFieldMultiselect, Required: true, Options: []string{"Math"}},
+		{Key: "years_of_experience", Type: entities.ProfileFieldNumber, Required: false},
 	})
 	org.ID = orgID
 
@@ -153,6 +157,33 @@ func TestSaveProfile_NoFieldsConfigured(t *testing.T) {
 	err := uc.Execute(ctx, onboarding.SaveProfileRequest{OrgID: orgID, UserID: 1, Data: data})
 
 	assert.NoError(t, err)
+}
+
+func TestSaveProfile_RejectsUnknownKey(t *testing.T) {
+	users := new(mockproviders.MockUserProvider)
+	orgs := new(mockproviders.MockOrganizationProvider)
+	uc := onboarding.NewSaveProfile(users, orgs)
+
+	orgID := uuid.New()
+	ctx := context.Background()
+	data := map[string]any{
+		"disciplines": []any{"Math"},
+		"evil_key":    "should be rejected",
+	}
+
+	org := orgWithProfileFields([]entities.ProfileField{
+		{Key: "disciplines", Type: entities.ProfileFieldMultiselect, Required: true, Options: []string{"Math"}},
+	})
+	org.ID = orgID
+
+	users.On("FindByID", ctx, orgID, int64(1)).Return(&entities.User{ID: 1}, nil)
+	orgs.On("FindByID", ctx, orgID).Return(org, nil)
+
+	err := uc.Execute(ctx, onboarding.SaveProfileRequest{OrgID: orgID, UserID: 1, Data: data})
+
+	assert.ErrorIs(t, err, providers.ErrValidation)
+	assert.Contains(t, err.Error(), "evil_key")
+	users.AssertNotCalled(t, "UpdateProfileData")
 }
 
 func TestSaveProfile_ValidationErrors(t *testing.T) {
