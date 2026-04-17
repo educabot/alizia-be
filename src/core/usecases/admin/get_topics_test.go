@@ -31,9 +31,10 @@ func TestGetTopics_TreeSuccess(t *testing.T) {
 	result, err := uc.Execute(ctx, admin.GetTopicsRequest{OrgID: orgID})
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, "Root", result[0].Name)
-	assert.Len(t, result[0].Children, 1)
+	assert.Len(t, result.Items, 1)
+	assert.Equal(t, "Root", result.Items[0].Name)
+	assert.Len(t, result.Items[0].Children, 1)
+	assert.False(t, result.More, "tree responses are never paginable")
 	topics.AssertExpectations(t)
 }
 
@@ -49,14 +50,37 @@ func TestGetTopics_ByLevel(t *testing.T) {
 		{ID: 2, Name: "Level 2 Topic A", Level: 2},
 		{ID: 3, Name: "Level 2 Topic B", Level: 2},
 	}
-	topics.On("GetTopicsByLevel", ctx, orgID, 2).Return(expected, nil)
+	topics.On("GetTopicsByLevel", ctx, orgID, 2, providers.Pagination{}).Return(expected, false, nil)
 
 	result, err := uc.Execute(ctx, admin.GetTopicsRequest{OrgID: orgID, Level: &level})
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
+	assert.Len(t, result.Items, 2)
 	topics.AssertExpectations(t)
 	topics.AssertNotCalled(t, "GetTopicTree", mock.Anything, mock.Anything)
+}
+
+func TestGetTopics_ByLevelPagesMore(t *testing.T) {
+	topics := new(mockproviders.MockTopicProvider)
+	uc := admin.NewGetTopics(topics)
+
+	orgID := uuid.New()
+	ctx := context.Background()
+	level := 2
+	page := providers.Pagination{Limit: 2, Offset: 0}
+
+	expected := []entities.Topic{
+		{ID: 2, Name: "A", Level: 2},
+		{ID: 3, Name: "B", Level: 2},
+	}
+	topics.On("GetTopicsByLevel", ctx, orgID, 2, page).Return(expected, true, nil)
+
+	result, err := uc.Execute(ctx, admin.GetTopicsRequest{OrgID: orgID, Level: &level, Pagination: page})
+
+	assert.NoError(t, err)
+	assert.Len(t, result.Items, 2)
+	assert.True(t, result.More)
+	topics.AssertExpectations(t)
 }
 
 func TestGetTopics_ValidationError(t *testing.T) {
@@ -92,7 +116,7 @@ func TestGetTopics_ByParent(t *testing.T) {
 		{ID: 10, Name: "Child A", Level: 2, ParentID: &pid},
 		{ID: 11, Name: "Child B", Level: 2, ParentID: &pid},
 	}
-	topics.On("GetTopicsByParent", ctx, orgID, &pid).Return(expected, nil)
+	topics.On("GetTopicsByParent", ctx, orgID, &pid, providers.Pagination{}).Return(expected, false, nil)
 
 	result, err := uc.Execute(ctx, admin.GetTopicsRequest{
 		OrgID:     orgID,
@@ -101,11 +125,11 @@ func TestGetTopics_ByParent(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
-	assert.Equal(t, "Child A", result[0].Name)
+	assert.Len(t, result.Items, 2)
+	assert.Equal(t, "Child A", result.Items[0].Name)
 	topics.AssertExpectations(t)
 	topics.AssertNotCalled(t, "GetTopicTree", mock.Anything, mock.Anything)
-	topics.AssertNotCalled(t, "GetTopicsByLevel", mock.Anything, mock.Anything, mock.Anything)
+	topics.AssertNotCalled(t, "GetTopicsByLevel", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 
 func TestGetTopics_ByRootParent(t *testing.T) {
@@ -119,7 +143,7 @@ func TestGetTopics_ByRootParent(t *testing.T) {
 		{ID: 1, Name: "Root A", Level: 1},
 		{ID: 2, Name: "Root B", Level: 1},
 	}
-	topics.On("GetTopicsByParent", ctx, orgID, (*int64)(nil)).Return(expected, nil)
+	topics.On("GetTopicsByParent", ctx, orgID, (*int64)(nil), providers.Pagination{}).Return(expected, false, nil)
 
 	result, err := uc.Execute(ctx, admin.GetTopicsRequest{
 		OrgID:     orgID,
@@ -127,7 +151,7 @@ func TestGetTopics_ByRootParent(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
+	assert.Len(t, result.Items, 2)
 	topics.AssertExpectations(t)
 	topics.AssertNotCalled(t, "GetTopicTree", mock.Anything, mock.Anything)
 }

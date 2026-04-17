@@ -26,7 +26,7 @@ const (
 // createTokenWithAudience creates a signed JWT with roles and audience (org_id).
 func createTokenWithAudience(roles []string, orgID uuid.UUID) string {
 	claims := tokens.Claims{
-		ID:    "user-1",
+		ID:    "1",
 		Name:  "Test User",
 		Email: "test@example.com",
 		Roles: roles,
@@ -113,7 +113,7 @@ func TestChain_InvalidToken_Returns401(t *testing.T) {
 
 func TestChain_ExpiredToken_Returns401(t *testing.T) {
 	claims := tokens.Claims{
-		ID:    "user-1",
+		ID:    "1",
 		Roles: []string{"coordinator"},
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
