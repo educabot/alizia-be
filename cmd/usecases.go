@@ -69,7 +69,7 @@ func NewUseCases(repos *Repositories) *UseCases {
 		GetCourseSubject:      adminuc.NewGetCourseSubject(repos.CourseSubjects),
 		CreateTimeSlot:        adminuc.NewCreateTimeSlot(repos.Organizations, repos.Courses, repos.TimeSlots),
 		GetSchedule:           adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
-		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.TimeSlots),
+		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.CourseSubjects, repos.TimeSlots),
 		CreateActivity:        adminuc.NewCreateActivity(repos.Organizations, repos.Activities),
 		ListActivities:        adminuc.NewListActivities(repos.Activities),
 		GetOnboardStatus:      onboardinguc.NewGetStatus(repos.Users),

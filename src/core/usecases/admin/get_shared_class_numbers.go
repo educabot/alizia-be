@@ -39,15 +39,22 @@ type GetSharedClassNumbers interface {
 }
 
 type getSharedClassNumbersImpl struct {
-	timeSlots providers.TimeSlotProvider
+	courseSubjects providers.CourseSubjectProvider
+	timeSlots      providers.TimeSlotProvider
 }
 
-func NewGetSharedClassNumbers(timeSlots providers.TimeSlotProvider) GetSharedClassNumbers {
-	return &getSharedClassNumbersImpl{timeSlots: timeSlots}
+func NewGetSharedClassNumbers(courseSubjects providers.CourseSubjectProvider, timeSlots providers.TimeSlotProvider) GetSharedClassNumbers {
+	return &getSharedClassNumbersImpl{courseSubjects: courseSubjects, timeSlots: timeSlots}
 }
 
 func (uc *getSharedClassNumbersImpl) Execute(ctx context.Context, req GetSharedClassNumbersRequest) (*GetSharedClassNumbersResponse, error) {
 	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// Tenant check: resolving the course-subject scoped by org ensures callers
+	// cannot probe class structures of other tenants via this endpoint.
+	if _, err := uc.courseSubjects.GetCourseSubject(ctx, req.OrgID, req.CourseSubjectID); err != nil {
 		return nil, err
 	}
 
