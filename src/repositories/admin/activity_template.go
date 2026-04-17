@@ -25,14 +25,24 @@ func (r *activityTemplateRepo) CreateActivity(ctx context.Context, activity *ent
 	return activity.ID, nil
 }
 
-func (r *activityTemplateRepo) ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment) ([]entities.ActivityTemplate, error) {
+func (r *activityTemplateRepo) ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment, p providers.Pagination) ([]entities.ActivityTemplate, bool, error) {
+	p = p.Normalize()
 	query := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
 	if moment != nil {
 		query = query.Where("moment = ?", *moment)
 	}
-	var activities []entities.ActivityTemplate
-	err := query.Order("moment, name").Limit(100).Find(&activities).Error
-	return activities, err
+	var rows []entities.ActivityTemplate
+	err := query.Order("moment, name").
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
+		Find(&rows).Error
+	if err != nil {
+		return nil, false, err
+	}
+	if len(rows) > p.Limit {
+		return rows[:p.Limit], true, nil
+	}
+	return rows, false, nil
 }
 
 func (r *activityTemplateRepo) CountByMoment(ctx context.Context, orgID uuid.UUID, moment entities.ClassMoment) (int64, error) {

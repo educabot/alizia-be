@@ -18,6 +18,9 @@ type GetTopicsRequest struct {
 	// SetParent==false means "do not filter by parent" (default tree/level behavior).
 	ParentID  *int64
 	SetParent bool
+	// Pagination applies only to level/parent queries. The tree response is
+	// hierarchical and not paginable.
+	Pagination providers.Pagination
 }
 
 func (r GetTopicsRequest) Validate() error {
@@ -33,8 +36,16 @@ func (r GetTopicsRequest) Validate() error {
 	return nil
 }
 
+// GetTopicsResponse is the result of GetTopics. More reports whether there is
+// another page (only meaningful for level/parent queries; always false for
+// tree responses, which are non-paginable).
+type GetTopicsResponse struct {
+	Items []entities.Topic
+	More  bool
+}
+
 type GetTopics interface {
-	Execute(ctx context.Context, req GetTopicsRequest) ([]entities.Topic, error)
+	Execute(ctx context.Context, req GetTopicsRequest) (GetTopicsResponse, error)
 }
 
 type getTopicsImpl struct {
@@ -45,18 +56,30 @@ func NewGetTopics(topics providers.TopicProvider) GetTopics {
 	return &getTopicsImpl{topics: topics}
 }
 
-func (uc *getTopicsImpl) Execute(ctx context.Context, req GetTopicsRequest) ([]entities.Topic, error) {
+func (uc *getTopicsImpl) Execute(ctx context.Context, req GetTopicsRequest) (GetTopicsResponse, error) {
 	if err := req.Validate(); err != nil {
-		return nil, err
+		return GetTopicsResponse{}, err
 	}
 
 	if req.Level != nil {
-		return uc.topics.GetTopicsByLevel(ctx, req.OrgID, *req.Level)
+		items, more, err := uc.topics.GetTopicsByLevel(ctx, req.OrgID, *req.Level, req.Pagination)
+		if err != nil {
+			return GetTopicsResponse{}, err
+		}
+		return GetTopicsResponse{Items: items, More: more}, nil
 	}
 
 	if req.SetParent {
-		return uc.topics.GetTopicsByParent(ctx, req.OrgID, req.ParentID)
+		items, more, err := uc.topics.GetTopicsByParent(ctx, req.OrgID, req.ParentID, req.Pagination)
+		if err != nil {
+			return GetTopicsResponse{}, err
+		}
+		return GetTopicsResponse{Items: items, More: more}, nil
 	}
 
-	return uc.topics.GetTopicTree(ctx, req.OrgID)
+	items, err := uc.topics.GetTopicTree(ctx, req.OrgID)
+	if err != nil {
+		return GetTopicsResponse{}, err
+	}
+	return GetTopicsResponse{Items: items, More: false}, nil
 }

@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -10,8 +9,6 @@ import (
 	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 )
-
-const defaultTopicMaxLevels = 3
 
 type CreateTopicRequest struct {
 	OrgID       uuid.UUID
@@ -48,7 +45,6 @@ func (uc *createTopicImpl) Execute(ctx context.Context, req CreateTopicRequest) 
 		return nil, err
 	}
 
-	// Determine level based on parent
 	level := 1
 	if req.ParentID != nil {
 		parent, err := uc.topics.GetTopicByID(ctx, req.OrgID, *req.ParentID)
@@ -58,13 +54,12 @@ func (uc *createTopicImpl) Execute(ctx context.Context, req CreateTopicRequest) 
 		level = parent.Level + 1
 	}
 
-	// Validate against org's topic_max_levels config
 	org, err := uc.orgs.FindByID(ctx, req.OrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	maxLevels := topicMaxLevels(org)
+	maxLevels := entities.ParseOrgConfig(org.Config).TopicMaxLevels
 	if level > maxLevels {
 		return nil, fmt.Errorf("%w: level %d exceeds maximum allowed (%d)", providers.ErrTopicMaxLevel, level, maxLevels)
 	}
@@ -84,18 +79,4 @@ func (uc *createTopicImpl) Execute(ctx context.Context, req CreateTopicRequest) 
 
 	topic.ID = id
 	return topic, nil
-}
-
-// topicMaxLevels extracts topic_max_levels from org config, or returns the default.
-func topicMaxLevels(org *entities.Organization) int {
-	var cfg map[string]any
-	if err := json.Unmarshal(org.Config, &cfg); err != nil {
-		return defaultTopicMaxLevels
-	}
-	if v, ok := cfg["topic_max_levels"]; ok {
-		if f, ok := v.(float64); ok && f > 0 {
-			return int(f)
-		}
-	}
-	return defaultTopicMaxLevels
 }

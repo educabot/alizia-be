@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -40,21 +41,23 @@ func (r *timeSlotRepo) ListByCourse(ctx context.Context, courseID int64) ([]enti
 			return db.Select("id, organization_id, email, first_name, last_name, avatar_url")
 		}).
 		Order("day_of_week, start_time").
-		Limit(100).
+		Limit(boundedListCap).
 		Find(&slots).Error
 	return slots, err
 }
 
 // GetSharedClassNumbers projects the weekly schedule of a course_subject onto a
 // total class count and returns the 1-based class numbers that are shared
-// (i.e. happen in a time_slot containing more than one course_subject).
-func (r *timeSlotRepo) GetSharedClassNumbers(ctx context.Context, courseSubjectID int64, totalClasses int) ([]int, error) {
+// (i.e. happen in a time_slot containing more than one course_subject). The
+// query joins course_subjects.organization_id so a row from another tenant
+// cannot leak even if the caller forgets the pre-check.
+func (r *timeSlotRepo) GetSharedClassNumbers(ctx context.Context, orgID uuid.UUID, courseSubjectID int64, totalClasses int) ([]int, error) {
 	type weeklySlot struct {
 		WeeklyPosition int  `gorm:"column:weekly_position"`
 		IsShared       bool `gorm:"column:is_shared"`
 	}
 	var slots []weeklySlot
-	err := r.db.WithContext(ctx).Raw(queries.SharedClassNumbers, courseSubjectID).Scan(&slots).Error
+	err := r.db.WithContext(ctx).Raw(queries.SharedClassNumbers, courseSubjectID, orgID).Scan(&slots).Error
 	if err != nil {
 		return nil, err
 	}

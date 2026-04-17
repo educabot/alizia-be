@@ -55,7 +55,7 @@ func (r *courseSubjectRepo) ListByCourse(ctx context.Context, courseID int64) ([
 		Where("course_id = ?", courseID).
 		Preload("Subject").
 		Preload("Teacher").
-		Limit(100).
+		Limit(boundedListCap).
 		Find(&results).Error
 	return results, err
 }
@@ -81,7 +81,7 @@ func (r *courseSubjectRepo) ListCourseSubjects(ctx context.Context, orgID uuid.U
 	err := q.Preload("Subject").
 		Preload("Teacher").
 		Order("course_id ASC, subject_id ASC").
-		Limit(200).
+		Limit(boundedListCap).
 		Find(&results).Error
 	return results, err
 }

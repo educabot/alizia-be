@@ -58,7 +58,7 @@ func (uc *getSharedClassNumbersImpl) Execute(ctx context.Context, req GetSharedC
 		return nil, err
 	}
 
-	numbers, err := uc.timeSlots.GetSharedClassNumbers(ctx, req.CourseSubjectID, req.TotalClasses)
+	numbers, err := uc.timeSlots.GetSharedClassNumbers(ctx, req.OrgID, req.CourseSubjectID, req.TotalClasses)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package onboarding
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -44,15 +43,6 @@ func (uc *getConfigImpl) Execute(ctx context.Context, req GetConfigRequest) (*en
 		return nil, err
 	}
 
-	return parseOnboardingConfig(org.Config), nil
-}
-
-func parseOnboardingConfig(configJSON []byte) *entities.OnboardingConfig {
-	var config struct {
-		Onboarding entities.OnboardingConfig `json:"onboarding"`
-	}
-	if err := json.Unmarshal(configJSON, &config); err != nil {
-		return &entities.OnboardingConfig{SkipAllowed: true}
-	}
-	return &config.Onboarding
+	cfg := entities.ParseOrgConfig(org.Config)
+	return &cfg.Onboarding, nil
 }

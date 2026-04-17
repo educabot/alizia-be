@@ -11,8 +11,9 @@ import (
 )
 
 type ListActivitiesRequest struct {
-	OrgID  uuid.UUID
-	Moment *string // optional filter
+	OrgID      uuid.UUID
+	Moment     *string // optional filter
+	Pagination providers.Pagination
 }
 
 func (r ListActivitiesRequest) Validate() error {
@@ -25,8 +26,13 @@ func (r ListActivitiesRequest) Validate() error {
 	return nil
 }
 
+type ListActivitiesResponse struct {
+	Items []entities.ActivityTemplate
+	More  bool
+}
+
 type ListActivities interface {
-	Execute(ctx context.Context, req ListActivitiesRequest) ([]entities.ActivityTemplate, error)
+	Execute(ctx context.Context, req ListActivitiesRequest) (ListActivitiesResponse, error)
 }
 
 type listActivitiesImpl struct {
@@ -37,9 +43,9 @@ func NewListActivities(activities providers.ActivityTemplateProvider) ListActivi
 	return &listActivitiesImpl{activities: activities}
 }
 
-func (uc *listActivitiesImpl) Execute(ctx context.Context, req ListActivitiesRequest) ([]entities.ActivityTemplate, error) {
+func (uc *listActivitiesImpl) Execute(ctx context.Context, req ListActivitiesRequest) (ListActivitiesResponse, error) {
 	if err := req.Validate(); err != nil {
-		return nil, err
+		return ListActivitiesResponse{}, err
 	}
 
 	var moment *entities.ClassMoment
@@ -48,5 +54,9 @@ func (uc *listActivitiesImpl) Execute(ctx context.Context, req ListActivitiesReq
 		moment = &m
 	}
 
-	return uc.activities.ListActivities(ctx, req.OrgID, moment)
+	items, more, err := uc.activities.ListActivities(ctx, req.OrgID, moment, req.Pagination)
+	if err != nil {
+		return ListActivitiesResponse{}, err
+	}
+	return ListActivitiesResponse{Items: items, More: more}, nil
 }

@@ -41,12 +41,17 @@ func (r *topicRepo) GetTopicByID(ctx context.Context, orgID uuid.UUID, id int64)
 	return &topic, nil
 }
 
+// maxTopicTreeSize caps GetTopicTree to avoid unbounded memory use when
+// rendering a full taxonomy tree. A tree cannot be paginated without breaking
+// parent/child linkage, so we pick a generous ceiling instead.
+const maxTopicTreeSize = 1000
+
 func (r *topicRepo) GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {
 	var topics []entities.Topic
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
 		Order("level ASC, name ASC").
-		Limit(500).
+		Limit(maxTopicTreeSize).
 		Find(&topics).Error
 	if err != nil {
 		return nil, err
@@ -54,38 +59,61 @@ func (r *topicRepo) GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entiti
 	return buildTree(topics), nil
 }
 
-func (r *topicRepo) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error) {
-	var topics []entities.Topic
+func (r *topicRepo) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int, p providers.Pagination) ([]entities.Topic, bool, error) {
+	p = p.Normalize()
+	var rows []entities.Topic
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ? AND level = ?", orgID, level).
 		Order("name ASC").
-		Limit(100).
-		Find(&topics).Error
-	return topics, err
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
+		Find(&rows).Error
+	if err != nil {
+		return nil, false, err
+	}
+	return trimPage(rows, p.Limit)
 }
 
 // GetTopicsByParent returns direct children of parentID. If parentID is nil,
 // returns root topics (parent_id IS NULL).
-func (r *topicRepo) GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64) ([]entities.Topic, error) {
-	var topics []entities.Topic
+func (r *topicRepo) GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64, p providers.Pagination) ([]entities.Topic, bool, error) {
+	p = p.Normalize()
 	q := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
 	if parentID == nil {
 		q = q.Where("parent_id IS NULL")
 	} else {
 		q = q.Where("parent_id = ?", *parentID)
 	}
-	err := q.Order("name ASC").Limit(200).Find(&topics).Error
-	return topics, err
+	var rows []entities.Topic
+	err := q.Order("name ASC").
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
+		Find(&rows).Error
+	if err != nil {
+		return nil, false, err
+	}
+	return trimPage(rows, p.Limit)
 }
 
+// ListAllTopics intentionally does NOT cap or paginate: callers (cycle
+// detection, level recomputation) operate on the full graph and a partial
+// result would silently produce wrong answers.
 func (r *topicRepo) ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {
 	var topics []entities.Topic
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
 		Order("level ASC, name ASC").
-		Limit(500).
 		Find(&topics).Error
 	return topics, err
+}
+
+// trimPage applies the limit+1 fetch trick: if we got more rows than limit,
+// there is at least one more page available.
+func trimPage(rows []entities.Topic, limit int) ([]entities.Topic, bool, error) {
+	if len(rows) > limit {
+		return rows[:limit], true, nil
+	}
+	return rows, false, nil
 }
 
 func (r *topicRepo) UpdateTopic(ctx context.Context, topic *entities.Topic) error {

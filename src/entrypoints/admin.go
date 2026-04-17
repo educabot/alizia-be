@@ -246,8 +246,13 @@ func (a *AdminContainer) HandleCreateActivity(req web.Request) web.Response {
 }
 
 func (a *AdminContainer) HandleListActivities(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
 	r := admin.ListActivitiesRequest{
-		OrgID: middleware.OrgID(req),
+		OrgID:      middleware.OrgID(req),
+		Pagination: page,
 	}
 	if m := req.Query("moment"); m != "" {
 		r.Moment = &m
@@ -258,7 +263,7 @@ func (a *AdminContainer) HandleListActivities(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(mapActivities(result), false))
+	return web.OK(rest.Page(mapActivities(result.Items), result.More))
 }
 
 // ---------------------------------------------------------------------------
@@ -350,8 +355,13 @@ func (a *AdminContainer) HandleUpdateTopic(req web.Request) web.Response {
 }
 
 func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
 	r := admin.GetTopicsRequest{
-		OrgID: middleware.OrgID(req),
+		OrgID:      middleware.OrgID(req),
+		Pagination: page,
 	}
 
 	if lvl := req.Query("level"); lvl != "" {
@@ -378,7 +388,7 @@ func (a *AdminContainer) HandleGetTopics(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(mapTopics(result), false))
+	return web.OK(rest.Page(mapTopics(result.Items), result.More))
 }
 
 // ---------------------------------------------------------------------------

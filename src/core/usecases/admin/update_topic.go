@@ -99,7 +99,7 @@ func (uc *updateTopicImpl) Execute(ctx context.Context, req UpdateTopicRequest) 
 	if err != nil {
 		return nil, err
 	}
-	maxLevels := topicMaxLevels(org)
+	maxLevels := entities.ParseOrgConfig(org.Config).TopicMaxLevels
 
 	delta := newLevel - topic.Level
 	levelUpdates := map[int64]int{topic.ID: newLevel}

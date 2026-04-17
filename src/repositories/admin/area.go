@@ -55,7 +55,7 @@ func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.A
 		Preload("Subjects").
 		Preload("Coordinators.User").
 		Where("organization_id = ?", orgID).
-		Order("name ASC").Limit(100).
+		Order("name ASC").Limit(boundedListCap).
 		Find(&areas).Error
 	return areas, err
 }

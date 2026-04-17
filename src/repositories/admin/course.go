@@ -49,7 +49,7 @@ func (r *courseRepo) ListCourses(ctx context.Context, orgID uuid.UUID) ([]entiti
 	var courses []entities.Course
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
-		Order("name ASC").Limit(100).
+		Order("name ASC").Limit(boundedListCap).
 		Find(&courses).Error
 	return courses, err
 }

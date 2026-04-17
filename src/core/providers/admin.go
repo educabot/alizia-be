@@ -77,10 +77,13 @@ type TopicProvider interface {
 	CreateTopic(ctx context.Context, topic *entities.Topic) (int64, error)
 	GetTopicByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Topic, error)
 	GetTopicTree(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
-	GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error)
+	GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int, p Pagination) (items []entities.Topic, more bool, err error)
 	// GetTopicsByParent returns direct children of parentID. If parentID is nil,
 	// returns root topics (parent_id IS NULL).
-	GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64) ([]entities.Topic, error)
+	GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64, p Pagination) (items []entities.Topic, more bool, err error)
+	// ListAllTopics returns every topic for the org. Used internally for cycle
+	// detection and level recomputation — callers need the full graph, so this
+	// MUST NOT be paginated or capped.
 	ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	UpdateTopic(ctx context.Context, topic *entities.Topic) error
 	UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error
@@ -119,12 +122,12 @@ type CourseSubjectFilter struct {
 
 type ActivityTemplateProvider interface {
 	CreateActivity(ctx context.Context, activity *entities.ActivityTemplate) (int64, error)
-	ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment) ([]entities.ActivityTemplate, error)
+	ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment, p Pagination) (items []entities.ActivityTemplate, more bool, err error)
 	CountByMoment(ctx context.Context, orgID uuid.UUID, moment entities.ClassMoment) (int64, error)
 }
 
 type TimeSlotProvider interface {
 	CreateTimeSlot(ctx context.Context, slot *entities.TimeSlot) (int64, error)
 	ListByCourse(ctx context.Context, courseID int64) ([]entities.TimeSlot, error)
-	GetSharedClassNumbers(ctx context.Context, courseSubjectID int64, totalClasses int) ([]int, error)
+	GetSharedClassNumbers(ctx context.Context, orgID uuid.UUID, courseSubjectID int64, totalClasses int) ([]int, error)
 }

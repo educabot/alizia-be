@@ -2,7 +2,6 @@ package onboarding
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -59,24 +58,12 @@ func (uc *saveProfileImpl) Execute(ctx context.Context, req SaveProfileRequest) 
 		return err
 	}
 
-	fields := extractProfileFields(org.Config)
+	fields := entities.ParseOrgConfig(org.Config).Onboarding.ProfileFields
 	if err := validateProfileData(fields, req.Data); err != nil {
 		return err
 	}
 
 	return uc.users.UpdateProfileData(ctx, req.OrgID, req.UserID, req.Data)
-}
-
-func extractProfileFields(configJSON []byte) []entities.ProfileField {
-	var config struct {
-		Onboarding struct {
-			ProfileFields []entities.ProfileField `json:"profile_fields"`
-		} `json:"onboarding"`
-	}
-	if err := json.Unmarshal(configJSON, &config); err != nil {
-		return nil
-	}
-	return config.Onboarding.ProfileFields
 }
 
 // validateProfileData checks the submitted data against the org's declared

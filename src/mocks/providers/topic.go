@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/educabot/alizia-be/src/core/providers"
 )
 
 type MockTopicProvider struct {
@@ -34,20 +35,20 @@ func (m *MockTopicProvider) GetTopicTree(ctx context.Context, orgID uuid.UUID) (
 	return args.Get(0).([]entities.Topic), args.Error(1)
 }
 
-func (m *MockTopicProvider) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int) ([]entities.Topic, error) {
-	args := m.Called(ctx, orgID, level)
+func (m *MockTopicProvider) GetTopicsByLevel(ctx context.Context, orgID uuid.UUID, level int, p providers.Pagination) ([]entities.Topic, bool, error) {
+	args := m.Called(ctx, orgID, level, p)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, args.Bool(1), args.Error(2)
 	}
-	return args.Get(0).([]entities.Topic), args.Error(1)
+	return args.Get(0).([]entities.Topic), args.Bool(1), args.Error(2)
 }
 
-func (m *MockTopicProvider) GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64) ([]entities.Topic, error) {
-	args := m.Called(ctx, orgID, parentID)
+func (m *MockTopicProvider) GetTopicsByParent(ctx context.Context, orgID uuid.UUID, parentID *int64, p providers.Pagination) ([]entities.Topic, bool, error) {
+	args := m.Called(ctx, orgID, parentID, p)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, args.Bool(1), args.Error(2)
 	}
-	return args.Get(0).([]entities.Topic), args.Error(1)
+	return args.Get(0).([]entities.Topic), args.Bool(1), args.Error(2)
 }
 
 func (m *MockTopicProvider) ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error) {

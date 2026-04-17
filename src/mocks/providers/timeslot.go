@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -25,8 +26,8 @@ func (m *MockTimeSlotProvider) ListByCourse(ctx context.Context, courseID int64)
 	return args.Get(0).([]entities.TimeSlot), args.Error(1)
 }
 
-func (m *MockTimeSlotProvider) GetSharedClassNumbers(ctx context.Context, courseSubjectID int64, totalClasses int) ([]int, error) {
-	args := m.Called(ctx, courseSubjectID, totalClasses)
+func (m *MockTimeSlotProvider) GetSharedClassNumbers(ctx context.Context, orgID uuid.UUID, courseSubjectID int64, totalClasses int) ([]int, error) {
+	args := m.Called(ctx, orgID, courseSubjectID, totalClasses)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

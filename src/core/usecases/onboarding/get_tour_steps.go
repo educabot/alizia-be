@@ -2,12 +2,12 @@ package onboarding
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 
 	"github.com/google/uuid"
 
+	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
 )
 
@@ -21,15 +21,6 @@ type TourStep struct {
 var defaultTourSteps = []TourStep{
 	{Key: "welcome", Title: "Welcome to Alizia", Description: "Alizia helps you plan the school year collaboratively.", Order: 1},
 	{Key: "explore", Title: "Explore the platform", Description: "Browse the sections to discover available tools.", Order: 2},
-}
-
-type tourStepConfig struct {
-	Key             string   `json:"key"`
-	Title           string   `json:"title"`
-	Description     string   `json:"description"`
-	Order           int      `json:"order"`
-	Roles           []string `json:"roles,omitempty"`
-	RequiresFeature string   `json:"requires_feature,omitempty"`
 }
 
 type GetTourStepsRequest struct {
@@ -75,25 +66,24 @@ func (uc *getTourStepsImpl) Execute(ctx context.Context, req GetTourStepsRequest
 		return nil, err
 	}
 
-	tourConfig := extractTourStepsConfig(org.Config)
-	if len(tourConfig) == 0 {
+	cfg := entities.ParseOrgConfig(org.Config)
+	if len(cfg.Onboarding.TourSteps) == 0 {
 		return defaultTourSteps, nil
 	}
 
 	userRoles := user.RoleNames()
-	activeFeatures := extractActiveFeatures(org.Config)
 
 	var steps []TourStep
 	seen := make(map[string]bool)
 
-	for _, sc := range tourConfig {
+	for _, sc := range cfg.Onboarding.TourSteps {
 		if seen[sc.Key] {
 			continue
 		}
 		if !matchesRoles(sc.Roles, userRoles) {
 			continue
 		}
-		if sc.RequiresFeature != "" && !activeFeatures[sc.RequiresFeature] {
+		if sc.RequiresFeature != "" && !cfg.IsFeatureActive(sc.RequiresFeature) {
 			continue
 		}
 		seen[sc.Key] = true
@@ -110,28 +100,6 @@ func (uc *getTourStepsImpl) Execute(ctx context.Context, req GetTourStepsRequest
 	})
 
 	return steps, nil
-}
-
-func extractTourStepsConfig(configJSON []byte) []tourStepConfig {
-	var config struct {
-		Onboarding struct {
-			TourSteps []tourStepConfig `json:"tour_steps"`
-		} `json:"onboarding"`
-	}
-	if err := json.Unmarshal(configJSON, &config); err != nil {
-		return nil
-	}
-	return config.Onboarding.TourSteps
-}
-
-func extractActiveFeatures(configJSON []byte) map[string]bool {
-	var config struct {
-		Features map[string]bool `json:"features"`
-	}
-	if err := json.Unmarshal(configJSON, &config); err != nil {
-		return nil
-	}
-	return config.Features
 }
 
 func matchesRoles(stepRoles []string, userRoles []string) bool {

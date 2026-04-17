@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -80,18 +79,16 @@ func (uc *createTimeSlotImpl) Execute(ctx context.Context, req CreateTimeSlotReq
 		return nil, err
 	}
 
-	// Verify course belongs to the org
 	if _, err := uc.courses.GetCourse(ctx, req.OrgID, req.CourseID); err != nil {
 		return nil, fmt.Errorf("course not found: %w", err)
 	}
 
-	// If shared class (2 subjects), check org config
 	if len(req.CourseSubjectIDs) > 1 {
 		org, err := uc.orgs.FindByID(ctx, req.OrgID)
 		if err != nil {
 			return nil, err
 		}
-		if !sharedClassesEnabled(org) {
+		if !entities.ParseOrgConfig(org.Config).SharedClassesEnabled {
 			return nil, fmt.Errorf("%w: shared classes are not enabled for this organization", providers.ErrValidation)
 		}
 	}
@@ -115,17 +112,4 @@ func (uc *createTimeSlotImpl) Execute(ctx context.Context, req CreateTimeSlotReq
 
 	slot.ID = id
 	return slot, nil
-}
-
-func sharedClassesEnabled(org *entities.Organization) bool {
-	var cfg map[string]any
-	if err := json.Unmarshal(org.Config, &cfg); err != nil {
-		return false
-	}
-	if v, ok := cfg["shared_classes_enabled"]; ok {
-		if b, ok := v.(bool); ok {
-			return b
-		}
-	}
-	return false
 }
