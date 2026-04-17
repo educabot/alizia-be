@@ -7,9 +7,6 @@ import (
 	"github.com/educabot/alizia-be/src/core/providers"
 	adminr "github.com/educabot/alizia-be/src/repositories/admin"
 	authr "github.com/educabot/alizia-be/src/repositories/auth"
-	coordr "github.com/educabot/alizia-be/src/repositories/coordination"
-	resr "github.com/educabot/alizia-be/src/repositories/resources"
-	teachr "github.com/educabot/alizia-be/src/repositories/teaching"
 )
 
 type Repositories struct {
@@ -25,9 +22,6 @@ type Repositories struct {
 	Activities       providers.ActivityTemplateProvider
 	AreaCoordinators providers.AreaCoordinatorProvider
 	AuthCredentials  ttauth.CredentialsProvider
-	Coordination     *coordr.Repository
-	Teaching         *teachr.Repository
-	Resources        *resr.Repository
 }
 
 func NewRepositories(db *gorm.DB) *Repositories {
@@ -44,8 +38,5 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Activities:       adminr.NewActivityTemplateRepo(db),
 		AreaCoordinators: adminr.NewAreaCoordinatorRepo(db),
 		AuthCredentials:  authr.NewCredentialsProvider(db),
-		Coordination:     coordr.New(db),
-		Teaching:         teachr.New(db),
-		Resources:        resr.New(db),
 	}
 }

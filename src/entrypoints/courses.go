@@ -270,9 +270,11 @@ type timeSlotSubjectResponse struct {
 	TeacherName     *string `json:"teacher_name"`
 }
 
-// dayOfWeekToString maps the storage int (0=Sunday..6=Saturday) to the public string
-// representation. Returns "" for out-of-range values so clients can detect bad data
-// rather than silently receiving a wrong day.
+// dayOfWeekToString maps the storage int (0=Sunday..6=Saturday) to the public
+// string representation. The time_slots.day_of_week column has a CHECK (0..6)
+// constraint, so any out-of-range value means the invariant has been violated
+// by a schema change or a direct DB write — we panic to surface that loudly
+// rather than emit a silent "" that the client would render as a missing day.
 func dayOfWeekToString(d int) string {
 	switch d {
 	case 0:
@@ -290,7 +292,7 @@ func dayOfWeekToString(d int) string {
 	case 6:
 		return "saturday"
 	default:
-		return ""
+		panic(fmt.Sprintf("dayOfWeekToString: invalid day_of_week %d (CHECK constraint breach)", d))
 	}
 }
 

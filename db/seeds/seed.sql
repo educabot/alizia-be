@@ -58,16 +58,15 @@ INSERT INTO organizations (id, name, slug, config) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Users
--- password_hash for all seeded users = argon2id('admin123', OWASP 2024 params)
+-- password_hash for all seeded users = argon2id('admin123', OWASP 2024 params).
 -- Regenerate with: go run ./scripts/hash_password admin123
--- NB: argon2id is salted — each run returns a different hash. All 4 users
--- share the same hash string here only because the seed is deterministic for
--- local dev; in real usage each user must have its own salt/hash pair.
+-- Each user has its own salt/hash so the seed mirrors production behavior and
+-- avoids the anti-pattern of reusing argon2id hashes across accounts.
 INSERT INTO users (id, organization_id, email, first_name, last_name, password_hash) VALUES
-    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar',    'Ana',    'Admin',        '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
-    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar',    'Carlos', 'Coordinador',  '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
-    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María',  'Docente',      '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c'),
-    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro',  'Multirol',     '$argon2id$v=19$m=19456,t=2,p=1$KVZrrFCXd0/xP3whwMoErQ$sM8triBmp3RFIIpm0j6JPEMXuuoCa/JWUet61LyRw7c')
+    (1, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@neuquen.edu.ar',    'Ana',    'Admin',        '$argon2id$v=19$m=19456,t=2,p=1$VaKh6LQ9ytjvW3XEJ5WqCQ$X7V3mReWhC3CWAt7DB7gbxnjevO+PFa1GbSD1q77MHA'),
+    (2, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'coord@neuquen.edu.ar',    'Carlos', 'Coordinador',  '$argon2id$v=19$m=19456,t=2,p=1$El4xWACc0BOEvclmu81kLQ$hHzBQxlsJfAteoGS4ttimQSYT16txqYjopSpKecPtN4'),
+    (3, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher1@neuquen.edu.ar', 'María',  'Docente',      '$argon2id$v=19$m=19456,t=2,p=1$e+Pr+aRlNh3FyXDe5VQ5Zg$FqhB48JWwnYjCV4OHk8HeNjhjs9Rb0gIiC8I1oPI0eY'),
+    (4, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'teacher2@neuquen.edu.ar', 'Pedro',  'Multirol',     '$argon2id$v=19$m=19456,t=2,p=1$l/Dgy/ijeQtapaWaq9N8PQ$9qtRAuWVcrOiaqfvZwpnhfJZJdzyg2p9/b1v8qYpbRc')
 ON CONFLICT (id) DO NOTHING;
 
 -- Roles

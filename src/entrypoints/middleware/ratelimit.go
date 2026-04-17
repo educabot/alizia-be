@@ -77,7 +77,14 @@ func (rl *RateLimiter) Allow(ip string) bool {
 }
 
 // clientIP extracts the client IP from request headers.
-// It checks X-Forwarded-For first, then X-Real-Ip, falling back to "unknown".
+// Returns "" when no identifying header is present — callers must treat that
+// as "cannot rate-limit this request" instead of bucketing anonymous clients
+// together (a shared bucket would turn per-IP limits into a global one).
+//
+// Production is always behind a proxy that sets X-Forwarded-For, so the empty
+// case only occurs in local dev or a misconfigured deployment. We fail open
+// there rather than fail closed to avoid locking out legitimate traffic; a
+// proper fix requires wiring trusted-proxy config through the toolkit.
 func clientIP(req web.Request) string {
 	if xff := req.Header("X-Forwarded-For"); xff != "" {
 		// X-Forwarded-For may contain multiple IPs; take the first one.
@@ -89,13 +96,16 @@ func clientIP(req web.Request) string {
 	if ip := req.Header("X-Real-Ip"); ip != "" {
 		return strings.TrimSpace(ip)
 	}
-	return "unknown"
+	return ""
 }
 
 // Middleware returns a web.Interceptor that rate-limits by client IP.
 func (rl *RateLimiter) Middleware() web.Interceptor {
 	return func(req web.Request) web.Response {
 		ip := clientIP(req)
+		if ip == "" {
+			return web.Response{}
+		}
 		if !rl.Allow(ip) {
 			return web.Err(http.StatusTooManyRequests, "rate_limited", "too many login attempts, try again later")
 		}
