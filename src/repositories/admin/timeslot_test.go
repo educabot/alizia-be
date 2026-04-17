@@ -2,7 +2,6 @@ package admin_test
 
 import (
 	"context"
-	"database/sql/driver"
 	"regexp"
 	"strings"
 	"testing"
@@ -30,10 +29,6 @@ var sharedClassNumbersSQL = func() string {
 
 var timeSlotColumns = []string{
 	"id", "course_id", "day_of_week", "start_time", "end_time", "created_at", "updated_at",
-}
-
-func timeSlotRow(s entities.TimeSlot) []driver.Value {
-	return []driver.Value{s.ID, s.CourseID, s.DayOfWeek, s.StartTime, s.EndTime, s.CreatedAt, s.UpdatedAt}
 }
 
 func TestTimeSlotRepo_CreateTimeSlot(t *testing.T) {
