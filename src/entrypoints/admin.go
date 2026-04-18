@@ -566,12 +566,18 @@ type AdminContainer struct {
 	UpdateArea        admin.UpdateArea
 	DeleteArea        admin.DeleteArea
 	CreateSubject     admin.CreateSubject
+	UpdateSubject     admin.UpdateSubject
+	DeleteSubject     admin.DeleteSubject
 	ListSubjects      admin.ListSubjects
 	ListAllSubjects   admin.ListAllSubjects
 	CreateTopic       admin.CreateTopic
 	UpdateTopic       admin.UpdateTopic
+	DeleteTopic       admin.DeleteTopic
 	GetTopics         admin.GetTopics
 	CreateActivity    admin.CreateActivity
+	GetActivity       admin.GetActivity
+	UpdateActivity    admin.UpdateActivity
+	DeleteActivity    admin.DeleteActivity
 	ListActivities    admin.ListActivities
 	ListUsers         admin.ListUsers
 }
@@ -750,4 +756,207 @@ func (a *AdminContainer) HandleListAllSubjects(req web.Request) web.Response {
 	}
 
 	return web.OK(rest.Page(mapSubjects(result), false))
+}
+
+// ---------------------------------------------------------------------------
+// Subject update / delete (P2)
+// ---------------------------------------------------------------------------
+
+// HandleUpdateSubject applies a partial update. A missing JSON key means
+// "leave the field alone"; an explicit `description: null` clears it, which
+// matches the convention already set by HandleUpdateArea.
+func (a *AdminContainer) HandleUpdateSubject(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid subject id", providers.ErrValidation))
+	}
+
+	raw := map[string]any{}
+	if err := req.BindJSON(&raw); err != nil {
+		return rest.HandleError(err)
+	}
+
+	r := admin.UpdateSubjectRequest{
+		OrgID:     middleware.OrgID(req),
+		SubjectID: id,
+	}
+
+	if v, ok := raw["name"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return rest.HandleError(fmt.Errorf("%w: name must be a string", providers.ErrValidation))
+		}
+		r.Name = &s
+	}
+	if v, ok := raw["area_id"]; ok {
+		f, ok := v.(float64)
+		if !ok {
+			return rest.HandleError(fmt.Errorf("%w: area_id must be a number", providers.ErrValidation))
+		}
+		aid := int64(f)
+		r.AreaID = &aid
+	}
+	if v, ok := raw["description"]; ok {
+		r.SetDescription = true
+		switch d := v.(type) {
+		case nil:
+			r.Description = nil
+		case string:
+			r.Description = &d
+		default:
+			return rest.HandleError(fmt.Errorf("%w: description must be a string or null", providers.ErrValidation))
+		}
+	}
+
+	result, err := a.UpdateSubject.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapSubject(*result))
+}
+
+// HandleDeleteSubject removes a subject. Returns 409 Conflict if any
+// course-subject still references it — the FK has no ON DELETE action, so the
+// usecase refuses before PG would raise a 500.
+func (a *AdminContainer) HandleDeleteSubject(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid subject id", providers.ErrValidation))
+	}
+
+	if err := a.DeleteSubject.Execute(req.Context(), admin.DeleteSubjectRequest{
+		OrgID:     middleware.OrgID(req),
+		SubjectID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
+}
+
+// ---------------------------------------------------------------------------
+// Topic delete (P2)
+// ---------------------------------------------------------------------------
+
+// HandleDeleteTopic removes a topic. Follows Option A from the gap doc: we
+// refuse the delete if the node still has children, consistent with
+// HandleDeleteArea. The DB FK cascades on parent_id, but the API layer
+// refuses — admins prune leaf-first.
+func (a *AdminContainer) HandleDeleteTopic(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid topic id", providers.ErrValidation))
+	}
+
+	if err := a.DeleteTopic.Execute(req.Context(), admin.DeleteTopicRequest{
+		OrgID:   middleware.OrgID(req),
+		TopicID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
+}
+
+// ---------------------------------------------------------------------------
+// Activities — detail / update / delete (P2)
+// ---------------------------------------------------------------------------
+
+func (a *AdminContainer) HandleGetActivity(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+	}
+
+	result, err := a.GetActivity.Execute(req.Context(), admin.GetActivityRequest{
+		OrgID:      middleware.OrgID(req),
+		ActivityID: id,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapActivity(*result))
+}
+
+// HandleUpdateActivity applies a partial update. Description and
+// duration_minutes accept an explicit null to clear the field; the other
+// mutable fields reject null because they're required columns.
+func (a *AdminContainer) HandleUpdateActivity(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+	}
+
+	raw := map[string]any{}
+	if err := req.BindJSON(&raw); err != nil {
+		return rest.HandleError(err)
+	}
+
+	r := admin.UpdateActivityRequest{
+		OrgID:      middleware.OrgID(req),
+		ActivityID: id,
+	}
+
+	if v, ok := raw["moment"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return rest.HandleError(fmt.Errorf("%w: moment must be a string", providers.ErrValidation))
+		}
+		r.Moment = &s
+	}
+	if v, ok := raw["name"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return rest.HandleError(fmt.Errorf("%w: name must be a string", providers.ErrValidation))
+		}
+		r.Name = &s
+	}
+	if v, ok := raw["description"]; ok {
+		r.SetDescription = true
+		switch d := v.(type) {
+		case nil:
+			r.Description = nil
+		case string:
+			r.Description = &d
+		default:
+			return rest.HandleError(fmt.Errorf("%w: description must be a string or null", providers.ErrValidation))
+		}
+	}
+	if v, ok := raw["duration_minutes"]; ok {
+		r.SetDurationMinutes = true
+		switch d := v.(type) {
+		case nil:
+			r.DurationMinutes = nil
+		case float64:
+			i := int(d)
+			r.DurationMinutes = &i
+		default:
+			return rest.HandleError(fmt.Errorf("%w: duration_minutes must be a number or null", providers.ErrValidation))
+		}
+	}
+
+	result, err := a.UpdateActivity.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapActivity(*result))
+}
+
+func (a *AdminContainer) HandleDeleteActivity(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+	}
+
+	if err := a.DeleteActivity.Execute(req.Context(), admin.DeleteActivityRequest{
+		OrgID:      middleware.OrgID(req),
+		ActivityID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
 }

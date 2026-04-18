@@ -128,6 +128,44 @@ func (r *topicRepo) UpdateTopic(ctx context.Context, topic *entities.Topic) erro
 		}).Error
 }
 
+// CountTopicChildren returns the number of direct children of a topic scoped
+// to the given org. Used by DeleteTopic to refuse with 409 rather than rely on
+// the DB's ON DELETE CASCADE, which would silently destroy the subtree.
+func (r *topicRepo) CountTopicChildren(ctx context.Context, orgID uuid.UUID, id int64) (int64, error) {
+	var exists int64
+	if err := r.db.WithContext(ctx).
+		Model(&entities.Topic{}).
+		Where("organization_id = ? AND id = ?", orgID, id).
+		Count(&exists).Error; err != nil {
+		return 0, err
+	}
+	if exists == 0 {
+		return 0, fmt.Errorf("%w: topic %d", providers.ErrNotFound, id)
+	}
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&entities.Topic{}).
+		Where("organization_id = ? AND parent_id = ?", orgID, id).
+		Count(&count).Error
+	return count, err
+}
+
+// DeleteTopic removes a topic scoped to (org, id). Caller must verify
+// CountTopicChildren first — the DB FK cascades on parent_id, but the API layer
+// refuses so admins never wipe a subtree accidentally.
+func (r *topicRepo) DeleteTopic(ctx context.Context, orgID uuid.UUID, id int64) error {
+	result := r.db.WithContext(ctx).
+		Where("organization_id = ? AND id = ?", orgID, id).
+		Delete(&entities.Topic{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("%w: topic %d", providers.ErrNotFound, id)
+	}
+	return nil
+}
+
 func (r *topicRepo) UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error {
 	if len(levels) == 0 {
 		return nil

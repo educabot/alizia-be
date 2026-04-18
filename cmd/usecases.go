@@ -18,10 +18,13 @@ type UseCases struct {
 	UpdateArea            adminuc.UpdateArea
 	DeleteArea            adminuc.DeleteArea
 	CreateSubject         adminuc.CreateSubject
+	UpdateSubject         adminuc.UpdateSubject
+	DeleteSubject         adminuc.DeleteSubject
 	ListSubjects          adminuc.ListSubjects
 	ListAllSubjects       adminuc.ListAllSubjects
 	CreateTopic           adminuc.CreateTopic
 	UpdateTopic           adminuc.UpdateTopic
+	DeleteTopic           adminuc.DeleteTopic
 	GetTopics             adminuc.GetTopics
 	CreateCourse          adminuc.CreateCourse
 	ListCourses           adminuc.ListCourses
@@ -38,6 +41,9 @@ type UseCases struct {
 	GetSchedule           adminuc.GetSchedule
 	GetSharedClassNumbers adminuc.GetSharedClassNumbers
 	CreateActivity        adminuc.CreateActivity
+	GetActivity           adminuc.GetActivity
+	UpdateActivity        adminuc.UpdateActivity
+	DeleteActivity        adminuc.DeleteActivity
 	ListActivities        adminuc.ListActivities
 	ListUsers             adminuc.ListUsers
 	GetOnboardStatus      onboardinguc.GetStatus
@@ -60,10 +66,13 @@ func NewUseCases(repos *Repositories) *UseCases {
 		UpdateArea:            adminuc.NewUpdateArea(repos.Areas),
 		DeleteArea:            adminuc.NewDeleteArea(repos.Areas),
 		CreateSubject:         adminuc.NewCreateSubject(repos.Areas, repos.Subjects),
+		UpdateSubject:         adminuc.NewUpdateSubject(repos.Areas, repos.Subjects),
+		DeleteSubject:         adminuc.NewDeleteSubject(repos.Subjects),
 		ListSubjects:          adminuc.NewListSubjects(repos.Areas, repos.Subjects),
 		ListAllSubjects:       adminuc.NewListAllSubjects(repos.Areas, repos.Subjects),
 		CreateTopic:           adminuc.NewCreateTopic(repos.Organizations, repos.Topics),
 		UpdateTopic:           adminuc.NewUpdateTopic(repos.Organizations, repos.Topics),
+		DeleteTopic:           adminuc.NewDeleteTopic(repos.Topics),
 		GetTopics:             adminuc.NewGetTopics(repos.Topics),
 		CreateCourse:          adminuc.NewCreateCourse(repos.Courses),
 		ListCourses:           adminuc.NewListCourses(repos.Courses),
@@ -80,6 +89,9 @@ func NewUseCases(repos *Repositories) *UseCases {
 		GetSchedule:           adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
 		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.CourseSubjects, repos.TimeSlots),
 		CreateActivity:        adminuc.NewCreateActivity(repos.Activities),
+		GetActivity:           adminuc.NewGetActivity(repos.Activities),
+		UpdateActivity:        adminuc.NewUpdateActivity(repos.Activities),
+		DeleteActivity:        adminuc.NewDeleteActivity(repos.Activities),
 		ListActivities:        adminuc.NewListActivities(repos.Activities),
 		ListUsers:             adminuc.NewListUsers(repos.Users),
 		GetOnboardStatus:      onboardinguc.NewGetStatus(repos.Users),

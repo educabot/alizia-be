@@ -48,8 +48,9 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	// Topics (any authenticated user can list)
 	api.GET("/topics", webgin.Adapt(h.Admin.HandleGetTopics))
 
-	// Activities (any authenticated user can list)
+	// Activities (any authenticated user can list/read; admin-only mutate)
 	api.GET("/activities", webgin.Adapt(h.Admin.HandleListActivities))
+	api.GET("/activities/:id", webgin.Adapt(h.Admin.HandleGetActivity))
 
 	// Onboarding routes (any authenticated user)
 	api.GET("/users/me/onboarding-status", webgin.Adapt(h.Onboarding.HandleGetStatus))
@@ -72,10 +73,13 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	coordOnly.PUT("/areas/:id", webgin.Adapt(h.Admin.HandleUpdateArea))
 	adminOnly.DELETE("/areas/:id", webgin.Adapt(h.Admin.HandleDeleteArea))
 	coordOnly.POST("/subjects", webgin.Adapt(h.Admin.HandleCreateSubject))
+	coordOnly.PATCH("/subjects/:id", webgin.Adapt(h.Admin.HandleUpdateSubject))
+	adminOnly.DELETE("/subjects/:id", webgin.Adapt(h.Admin.HandleDeleteSubject))
 
-	// Topics (coordinator or admin can create/update)
+	// Topics (coordinator or admin can create/update; admin-only delete)
 	coordOnly.POST("/topics", webgin.Adapt(h.Admin.HandleCreateTopic))
 	coordOnly.PATCH("/topics/:id", webgin.Adapt(h.Admin.HandleUpdateTopic))
+	adminOnly.DELETE("/topics/:id", webgin.Adapt(h.Admin.HandleDeleteTopic))
 
 	// Courses (any authenticated user can list/get)
 	api.GET("/courses", webgin.Adapt(h.Courses.HandleListCourses))
@@ -97,5 +101,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	adminOnly.DELETE("/course-subjects/:id", webgin.Adapt(h.Courses.HandleDeleteCourseSubject))
 	adminOnly.POST("/courses/:id/time-slots", webgin.Adapt(h.Courses.HandleCreateTimeSlot))
 	adminOnly.POST("/activities", webgin.Adapt(h.Admin.HandleCreateActivity))
+	adminOnly.PATCH("/activities/:id", webgin.Adapt(h.Admin.HandleUpdateActivity))
+	adminOnly.DELETE("/activities/:id", webgin.Adapt(h.Admin.HandleDeleteActivity))
 
 }

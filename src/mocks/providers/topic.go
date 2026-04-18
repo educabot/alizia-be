@@ -68,3 +68,13 @@ func (m *MockTopicProvider) UpdateTopicLevels(ctx context.Context, orgID uuid.UU
 	args := m.Called(ctx, orgID, levels)
 	return args.Error(0)
 }
+
+func (m *MockTopicProvider) CountTopicChildren(ctx context.Context, orgID uuid.UUID, id int64) (int64, error) {
+	args := m.Called(ctx, orgID, id)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockTopicProvider) DeleteTopic(ctx context.Context, orgID uuid.UUID, id int64) error {
+	args := m.Called(ctx, orgID, id)
+	return args.Error(0)
+}

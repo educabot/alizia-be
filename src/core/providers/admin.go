@@ -80,9 +80,37 @@ type AreaCoordinatorProvider interface {
 
 type SubjectProvider interface {
 	CreateSubject(ctx context.Context, subject *entities.Subject) (int64, error)
+	// GetSubject returns a single subject scoped to the org. Returns ErrNotFound
+	// if the subject doesn't exist or belongs to another tenant.
+	GetSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Subject, error)
 	ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, areaID int64) ([]entities.Subject, error)
 	// ListSubjectsByOrg returns all subjects of an org. If areaID is non-nil, filters by area too.
 	ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error)
+	// UpdateSubject writes the mutable fields of a subject scoped to
+	// (organization_id, id). Caller loads the current row and mutates the fields
+	// to patch; the repo persists name, description and area_id.
+	UpdateSubject(ctx context.Context, subject *entities.Subject) error
+	// CountSubjectDependencies reports the number of entities referencing this
+	// subject that would block a destructive delete. Used by DeleteSubject to
+	// return 409 with a helpful message rather than letting the FK RESTRICT
+	// surface as a 500.
+	CountSubjectDependencies(ctx context.Context, orgID uuid.UUID, id int64) (SubjectDependencies, error)
+	// DeleteSubject hard-deletes a subject scoped to (org, id). Callers must
+	// call CountSubjectDependencies first. Returns ErrNotFound if the row
+	// doesn't belong to the org.
+	DeleteSubject(ctx context.Context, orgID uuid.UUID, id int64) error
+}
+
+// SubjectDependencies reports entities that block a subject delete. Only
+// course_subjects is tracked today — the `subjects.id` column has no other
+// referencing table with a non-cascading FK.
+type SubjectDependencies struct {
+	CourseSubjects int64
+}
+
+// IsEmpty reports whether there are no blocking dependencies.
+func (d SubjectDependencies) IsEmpty() bool {
+	return d.CourseSubjects == 0
 }
 
 type TopicProvider interface {
@@ -99,6 +127,16 @@ type TopicProvider interface {
 	ListAllTopics(ctx context.Context, orgID uuid.UUID) ([]entities.Topic, error)
 	UpdateTopic(ctx context.Context, topic *entities.Topic) error
 	UpdateTopicLevels(ctx context.Context, orgID uuid.UUID, levels map[int64]int) error
+	// CountTopicChildren returns the number of direct children of a topic.
+	// DeleteTopic uses this to refuse the delete with 409 if the node has
+	// descendants, mirroring delete_area's "no cascade at API layer" rule.
+	CountTopicChildren(ctx context.Context, orgID uuid.UUID, id int64) (int64, error)
+	// DeleteTopic hard-deletes a topic scoped to (org, id). Callers must verify
+	// children count first. Returns ErrNotFound if the row doesn't belong to the
+	// org. The FK on `topics.parent_id` has ON DELETE CASCADE at the DB level,
+	// but we refuse at the API layer so admins never wipe an entire subtree
+	// accidentally.
+	DeleteTopic(ctx context.Context, orgID uuid.UUID, id int64) error
 }
 
 type CourseProvider interface {
@@ -189,8 +227,21 @@ type CourseSubjectFilter struct {
 
 type ActivityTemplateProvider interface {
 	CreateActivity(ctx context.Context, activity *entities.ActivityTemplate) (int64, error)
+	// GetActivity returns a single activity template scoped to the org.
+	// Returns ErrNotFound if it doesn't exist or belongs to another tenant.
+	GetActivity(ctx context.Context, orgID uuid.UUID, id int64) (*entities.ActivityTemplate, error)
 	ListActivities(ctx context.Context, orgID uuid.UUID, moment *entities.ClassMoment, p Pagination) (items []entities.ActivityTemplate, more bool, err error)
 	CountByMoment(ctx context.Context, orgID uuid.UUID, moment entities.ClassMoment) (int64, error)
+	// UpdateActivity writes the mutable fields of an activity scoped to
+	// (organization_id, id). Caller loads the current row and mutates the fields
+	// to patch; the repo persists moment, name, description and duration_minutes.
+	UpdateActivity(ctx context.Context, activity *entities.ActivityTemplate) error
+	// DeleteActivity hard-deletes an activity scoped to (org, id). Returns
+	// ErrNotFound if the row doesn't belong to the org. No dependency counter
+	// today because lesson_plans and coordination_documents — the future
+	// referencing tables — do not exist yet. Add CountActivityDependencies when
+	// Épica 4 / 5 ships their schemas.
+	DeleteActivity(ctx context.Context, orgID uuid.UUID, id int64) error
 }
 
 type TimeSlotProvider interface {

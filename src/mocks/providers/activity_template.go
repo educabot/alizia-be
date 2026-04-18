@@ -31,3 +31,21 @@ func (m *MockActivityTemplateProvider) CountByMoment(ctx context.Context, orgID 
 	args := m.Called(ctx, orgID, moment)
 	return args.Get(0).(int64), args.Error(1)
 }
+
+func (m *MockActivityTemplateProvider) GetActivity(ctx context.Context, orgID uuid.UUID, id int64) (*entities.ActivityTemplate, error) {
+	args := m.Called(ctx, orgID, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entities.ActivityTemplate), args.Error(1)
+}
+
+func (m *MockActivityTemplateProvider) UpdateActivity(ctx context.Context, activity *entities.ActivityTemplate) error {
+	args := m.Called(ctx, activity)
+	return args.Error(0)
+}
+
+func (m *MockActivityTemplateProvider) DeleteActivity(ctx context.Context, orgID uuid.UUID, id int64) error {
+	args := m.Called(ctx, orgID, id)
+	return args.Error(0)
+}
