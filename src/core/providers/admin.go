@@ -18,11 +18,23 @@ type UserProvider interface {
 	FindByID(ctx context.Context, orgID uuid.UUID, id int64) (*entities.User, error)
 	FindByEmail(ctx context.Context, orgID uuid.UUID, email string) (*entities.User, error)
 	FindByOrgID(ctx context.Context, orgID uuid.UUID) ([]entities.User, error)
+	// ListUsers returns a paginated view of org users filtered by role, area
+	// coordinator assignment, and a free-text search against name/email.
+	ListUsers(ctx context.Context, orgID uuid.UUID, filter UserFilter, p Pagination) (items []entities.User, more bool, err error)
 	Create(ctx context.Context, user *entities.User) (int64, error)
 	AssignRole(ctx context.Context, userID int64, role entities.Role) error
 	RemoveRole(ctx context.Context, userID int64, role entities.Role) error
 	CompleteOnboarding(ctx context.Context, orgID uuid.UUID, userID int64) error
 	UpdateProfileData(ctx context.Context, orgID uuid.UUID, userID int64, data map[string]any) error
+}
+
+// UserFilter holds optional filters for ListUsers. Nil fields are ignored.
+// AreaID filters users that are assigned as coordinators of the given area
+// via the area_coordinators table.
+type UserFilter struct {
+	Role   *entities.Role
+	AreaID *int64
+	Search *string
 }
 
 type AreaProvider interface {
@@ -110,6 +122,11 @@ type CourseSubjectProvider interface {
 	// ListCourseSubjects returns all course-subjects for an org. Any non-nil filter
 	// is applied; nil filters are skipped. Subject and Teacher are always preloaded.
 	ListCourseSubjects(ctx context.Context, orgID uuid.UUID, filter CourseSubjectFilter) ([]entities.CourseSubject, error)
+	// UpdateCourseSubject applies a partial update to a course-subject identified
+	// by (OrganizationID, ID). Caller is responsible for loading the current row
+	// first and mutating the fields that should change — the repo writes all
+	// mutable fields (teacher_id, school_year, start_date, end_date).
+	UpdateCourseSubject(ctx context.Context, cs *entities.CourseSubject) error
 }
 
 // CourseSubjectFilter holds optional filters for ListCourseSubjects. Any nil

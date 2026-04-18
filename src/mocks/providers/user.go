@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/educabot/alizia-be/src/core/providers"
 )
 
 type MockUserProvider struct {
@@ -35,6 +36,14 @@ func (m *MockUserProvider) FindByOrgID(ctx context.Context, orgID uuid.UUID) ([]
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]entities.User), args.Error(1)
+}
+
+func (m *MockUserProvider) ListUsers(ctx context.Context, orgID uuid.UUID, filter providers.UserFilter, p providers.Pagination) ([]entities.User, bool, error) {
+	args := m.Called(ctx, orgID, filter, p)
+	if args.Get(0) == nil {
+		return nil, args.Bool(1), args.Error(2)
+	}
+	return args.Get(0).([]entities.User), args.Bool(1), args.Error(2)
 }
 
 func (m *MockUserProvider) Create(ctx context.Context, user *entities.User) (int64, error) {

@@ -65,6 +65,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	adminOnly.PATCH("/organizations/me/config", webgin.Adapt(h.Admin.HandleUpdateOrgConfig))
 	adminOnly.POST("/areas/:id/coordinators", webgin.Adapt(h.Admin.HandleAssignCoordinator))
 	adminOnly.DELETE("/areas/:id/coordinators/:user_id", webgin.Adapt(h.Admin.HandleRemoveCoordinator))
+	adminOnly.GET("/users", webgin.Adapt(h.Admin.HandleListUsers))
 
 	// Areas & Subjects (coordinator or admin can create / update; admin-only delete)
 	coordOnly.POST("/areas", webgin.Adapt(h.Admin.HandleCreateArea))
@@ -90,6 +91,7 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	adminOnly.POST("/courses", webgin.Adapt(h.Courses.HandleCreateCourse))
 	adminOnly.POST("/courses/:id/students", webgin.Adapt(h.Courses.HandleAddStudent))
 	adminOnly.POST("/course-subjects", webgin.Adapt(h.Courses.HandleAssignCourseSubject))
+	adminOnly.PATCH("/course-subjects/:id", webgin.Adapt(h.Courses.HandleUpdateCourseSubject))
 	adminOnly.POST("/courses/:id/time-slots", webgin.Adapt(h.Courses.HandleCreateTimeSlot))
 	adminOnly.POST("/activities", webgin.Adapt(h.Admin.HandleCreateActivity))
 

@@ -30,11 +30,13 @@ type UseCases struct {
 	AssignCourseSubj      adminuc.AssignCourseSubject
 	ListCourseSubjects    adminuc.ListCourseSubjects
 	GetCourseSubject      adminuc.GetCourseSubject
+	UpdateCourseSubject   adminuc.UpdateCourseSubject
 	CreateTimeSlot        adminuc.CreateTimeSlot
 	GetSchedule           adminuc.GetSchedule
 	GetSharedClassNumbers adminuc.GetSharedClassNumbers
 	CreateActivity        adminuc.CreateActivity
 	ListActivities        adminuc.ListActivities
+	ListUsers             adminuc.ListUsers
 	GetOnboardStatus      onboardinguc.GetStatus
 	CompleteOnboarding    onboardinguc.Complete
 	GetProfile            onboardinguc.GetProfile
@@ -67,11 +69,13 @@ func NewUseCases(repos *Repositories) *UseCases {
 		AssignCourseSubj:      adminuc.NewAssignCourseSubject(repos.Courses, repos.Users, repos.CourseSubjects),
 		ListCourseSubjects:    adminuc.NewListCourseSubjects(repos.CourseSubjects),
 		GetCourseSubject:      adminuc.NewGetCourseSubject(repos.CourseSubjects),
+		UpdateCourseSubject:   adminuc.NewUpdateCourseSubject(repos.CourseSubjects, repos.Users),
 		CreateTimeSlot:        adminuc.NewCreateTimeSlot(repos.Organizations, repos.Courses, repos.TimeSlots),
 		GetSchedule:           adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
 		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.CourseSubjects, repos.TimeSlots),
 		CreateActivity:        adminuc.NewCreateActivity(repos.Activities),
 		ListActivities:        adminuc.NewListActivities(repos.Activities),
+		ListUsers:             adminuc.NewListUsers(repos.Users),
 		GetOnboardStatus:      onboardinguc.NewGetStatus(repos.Users),
 		CompleteOnboarding:    onboardinguc.NewComplete(repos.Users),
 		GetProfile:            onboardinguc.NewGetProfile(repos.Users),

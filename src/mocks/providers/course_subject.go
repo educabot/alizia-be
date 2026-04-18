@@ -42,3 +42,8 @@ func (m *MockCourseSubjectProvider) ListCourseSubjects(ctx context.Context, orgI
 	}
 	return args.Get(0).([]entities.CourseSubject), args.Error(1)
 }
+
+func (m *MockCourseSubjectProvider) UpdateCourseSubject(ctx context.Context, cs *entities.CourseSubject) error {
+	args := m.Called(ctx, cs)
+	return args.Error(0)
+}

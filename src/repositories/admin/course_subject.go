@@ -85,3 +85,27 @@ func (r *courseSubjectRepo) ListCourseSubjects(ctx context.Context, orgID uuid.U
 		Find(&results).Error
 	return results, err
 }
+
+// UpdateCourseSubject writes the mutable fields of a course-subject scoped to
+// (organization_id, id). Caller loaded the entity via GetCourseSubject and
+// mutated the fields to patch — we don't introspect which ones changed. A
+// unique violation (course+subject+school_year) is translated to ErrConflict.
+func (r *courseSubjectRepo) UpdateCourseSubject(ctx context.Context, cs *entities.CourseSubject) error {
+	err := r.db.WithContext(ctx).
+		Model(&entities.CourseSubject{}).
+		Where("organization_id = ? AND id = ?", cs.OrganizationID, cs.ID).
+		Updates(map[string]any{
+			"teacher_id":  cs.TeacherID,
+			"school_year": cs.SchoolYear,
+			"start_date":  cs.StartDate,
+			"end_date":    cs.EndDate,
+		}).Error
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return fmt.Errorf("%w: subject already assigned to course for this year", providers.ErrConflict)
+		}
+		return err
+	}
+	return nil
+}

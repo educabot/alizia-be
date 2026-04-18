@@ -26,6 +26,7 @@ type CoursesContainer struct {
 	GetSharedClassNumbers admin.GetSharedClassNumbers
 	ListCourseSubjects    admin.ListCourseSubjects
 	GetCourseSubject      admin.GetCourseSubject
+	UpdateCourseSubject   admin.UpdateCourseSubject
 }
 
 type createCourseBody struct {
@@ -395,6 +396,57 @@ func (c *CoursesContainer) HandleGetCourseSubject(req web.Request) web.Response 
 		OrgID:           middleware.OrgID(req),
 		CourseSubjectID: id,
 	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapCourseSubject(*result))
+}
+
+type updateCourseSubjectBody struct {
+	TeacherID  *int64  `json:"teacher_id"`
+	StartDate  *string `json:"start_date"`
+	EndDate    *string `json:"end_date"`
+	SchoolYear *int    `json:"school_year"`
+}
+
+// HandleUpdateCourseSubject applies a partial update to a course-subject.
+// Missing JSON keys mean "leave the field alone"; we don't accept explicit
+// nulls here because the entity has no nullable mutable fields we want to
+// clear via PATCH (dates are optional at creation but not cleared after).
+func (c *CoursesContainer) HandleUpdateCourseSubject(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course_subject id", providers.ErrValidation))
+	}
+
+	var body updateCourseSubjectBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	r := admin.UpdateCourseSubjectRequest{
+		OrgID:           middleware.OrgID(req),
+		CourseSubjectID: id,
+		TeacherID:       body.TeacherID,
+		SchoolYear:      body.SchoolYear,
+	}
+	if body.StartDate != nil {
+		t, err := time.Parse("2006-01-02", *body.StartDate)
+		if err != nil {
+			return rest.HandleError(fmt.Errorf("%w: invalid start_date format, expected YYYY-MM-DD", providers.ErrValidation))
+		}
+		r.StartDate = &t
+	}
+	if body.EndDate != nil {
+		t, err := time.Parse("2006-01-02", *body.EndDate)
+		if err != nil {
+			return rest.HandleError(fmt.Errorf("%w: invalid end_date format, expected YYYY-MM-DD", providers.ErrValidation))
+		}
+		r.EndDate = &t
+	}
+
+	result, err := c.UpdateCourseSubject.Execute(req.Context(), r)
 	if err != nil {
 		return rest.HandleError(err)
 	}

@@ -37,6 +37,7 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			GetTopics:         uc.GetTopics,
 			CreateActivity:    uc.CreateActivity,
 			ListActivities:    uc.ListActivities,
+			ListUsers:         uc.ListUsers,
 		},
 		Onboarding: &entrypoints.OnboardingContainer{
 			GetStatus:    uc.GetOnboardStatus,
@@ -55,6 +56,7 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			AssignCourseSubject:   uc.AssignCourseSubj,
 			ListCourseSubjects:    uc.ListCourseSubjects,
 			GetCourseSubject:      uc.GetCourseSubject,
+			UpdateCourseSubject:   uc.UpdateCourseSubject,
 			CreateTimeSlot:        uc.CreateTimeSlot,
 			GetSchedule:           uc.GetSchedule,
 			GetSharedClassNumbers: uc.GetSharedClassNumbers,

@@ -573,6 +573,7 @@ type AdminContainer struct {
 	GetTopics         admin.GetTopics
 	CreateActivity    admin.CreateActivity
 	ListActivities    admin.ListActivities
+	ListUsers         admin.ListUsers
 }
 
 type assignCoordinatorBody struct {
@@ -657,6 +658,75 @@ func (a *AdminContainer) HandleUpdateOrgConfig(req web.Request) web.Response {
 	}
 
 	return web.OK(mapOrganization(*org))
+}
+
+// ---------------------------------------------------------------------------
+// Users (listing for admin dropdowns)
+// ---------------------------------------------------------------------------
+
+// userListResponse is the DTO for paginated user lists. We expose only the
+// fields an admin needs to assign coordinators or teachers — password_hash,
+// profile_data, timestamps and organization_id are intentionally omitted.
+type userListResponse struct {
+	ID        int64    `json:"id"`
+	Email     string   `json:"email"`
+	FirstName string   `json:"first_name"`
+	LastName  string   `json:"last_name"`
+	AvatarURL *string  `json:"avatar_url,omitempty"`
+	Roles     []string `json:"roles"`
+}
+
+func mapUserListItem(u entities.User) userListResponse {
+	return userListResponse{
+		ID:        u.ID,
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		AvatarURL: u.AvatarURL,
+		Roles:     u.RoleNames(),
+	}
+}
+
+func mapUserList(us []entities.User) []userListResponse {
+	out := make([]userListResponse, len(us))
+	for i, u := range us {
+		out[i] = mapUserListItem(u)
+	}
+	return out
+}
+
+// HandleListUsers returns a paginated user list filtered by role, area
+// coordinator assignment and a free-text search. Used by the FE to populate
+// coordinator/teacher dropdowns.
+func (a *AdminContainer) HandleListUsers(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+	r := admin.ListUsersRequest{
+		OrgID:      middleware.OrgID(req),
+		Pagination: page,
+	}
+	if v := req.Query("role"); v != "" {
+		r.Role = &v
+	}
+	if v := req.Query("search"); v != "" {
+		r.Search = &v
+	}
+	if v := req.Query("area_id"); v != "" {
+		id, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
+		}
+		r.AreaID = &id
+	}
+
+	result, err := a.ListUsers.Execute(req.Context(), r)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(rest.Page(mapUserList(result.Items), result.More))
 }
 
 // HandleListAllSubjects lists subjects across the whole org. Optional
