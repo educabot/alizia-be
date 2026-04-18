@@ -47,3 +47,13 @@ func (m *MockCourseSubjectProvider) UpdateCourseSubject(ctx context.Context, cs 
 	args := m.Called(ctx, cs)
 	return args.Error(0)
 }
+
+func (m *MockCourseSubjectProvider) CountCourseSubjectDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.CourseSubjectDependencies, error) {
+	args := m.Called(ctx, orgID, id)
+	return args.Get(0).(providers.CourseSubjectDependencies), args.Error(1)
+}
+
+func (m *MockCourseSubjectProvider) DeleteCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) error {
+	args := m.Called(ctx, orgID, id)
+	return args.Error(0)
+}

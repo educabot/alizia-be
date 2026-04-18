@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/educabot/alizia-be/src/core/providers"
 )
 
 type MockCourseProvider struct {
@@ -32,4 +33,19 @@ func (m *MockCourseProvider) ListCourses(ctx context.Context, orgID uuid.UUID) (
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]entities.Course), args.Error(1)
+}
+
+func (m *MockCourseProvider) UpdateCourse(ctx context.Context, course *entities.Course) error {
+	args := m.Called(ctx, course)
+	return args.Error(0)
+}
+
+func (m *MockCourseProvider) CountCourseDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.CourseDependencies, error) {
+	args := m.Called(ctx, orgID, id)
+	return args.Get(0).(providers.CourseDependencies), args.Error(1)
+}
+
+func (m *MockCourseProvider) DeleteCourse(ctx context.Context, orgID uuid.UUID, id int64) error {
+	args := m.Called(ctx, orgID, id)
+	return args.Error(0)
 }

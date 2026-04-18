@@ -87,11 +87,14 @@ func ConfigureMappings(engine *gin.Engine, h *entrypoints.WebHandlerContainer, _
 	api.GET("/course-subjects/:id", webgin.Adapt(h.Courses.HandleGetCourseSubject))
 	api.GET("/course-subjects/:id/shared-class-numbers", webgin.Adapt(h.Courses.HandleGetSharedClassNumbers))
 
-	// Courses (admin-only: create, add students, assign subjects)
+	// Courses (admin-only: create, edit, delete, add students, assign subjects)
 	adminOnly.POST("/courses", webgin.Adapt(h.Courses.HandleCreateCourse))
+	adminOnly.PATCH("/courses/:id", webgin.Adapt(h.Courses.HandleUpdateCourse))
+	adminOnly.DELETE("/courses/:id", webgin.Adapt(h.Courses.HandleDeleteCourse))
 	adminOnly.POST("/courses/:id/students", webgin.Adapt(h.Courses.HandleAddStudent))
 	adminOnly.POST("/course-subjects", webgin.Adapt(h.Courses.HandleAssignCourseSubject))
 	adminOnly.PATCH("/course-subjects/:id", webgin.Adapt(h.Courses.HandleUpdateCourseSubject))
+	adminOnly.DELETE("/course-subjects/:id", webgin.Adapt(h.Courses.HandleDeleteCourseSubject))
 	adminOnly.POST("/courses/:id/time-slots", webgin.Adapt(h.Courses.HandleCreateTimeSlot))
 	adminOnly.POST("/activities", webgin.Adapt(h.Admin.HandleCreateActivity))
 

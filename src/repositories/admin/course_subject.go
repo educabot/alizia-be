@@ -86,6 +86,48 @@ func (r *courseSubjectRepo) ListCourseSubjects(ctx context.Context, orgID uuid.U
 	return results, err
 }
 
+// CountCourseSubjectDependencies counts rows in time_slot_subjects that
+// reference this course-subject. The FK has ON DELETE CASCADE at the DB level,
+// but the API layer refuses the delete instead of silently wiping the schedule
+// — admins must unlink the slot first.
+func (r *courseSubjectRepo) CountCourseSubjectDependencies(ctx context.Context, orgID uuid.UUID, id int64) (providers.CourseSubjectDependencies, error) {
+	var deps providers.CourseSubjectDependencies
+	// Guard with the org check so a caller can't probe existence across tenants
+	// via the dependency counter.
+	var exists int64
+	if err := r.db.WithContext(ctx).
+		Model(&entities.CourseSubject{}).
+		Where("organization_id = ? AND id = ?", orgID, id).
+		Count(&exists).Error; err != nil {
+		return deps, err
+	}
+	if exists == 0 {
+		return deps, fmt.Errorf("%w: course-subject %d", providers.ErrNotFound, id)
+	}
+	if err := r.db.WithContext(ctx).
+		Model(&entities.TimeSlotSubject{}).
+		Where("course_subject_id = ?", id).
+		Count(&deps.TimeSlotSubjects).Error; err != nil {
+		return deps, err
+	}
+	return deps, nil
+}
+
+// DeleteCourseSubject removes a course-subject scoped to (org, id). Caller
+// must verify dependencies with CountCourseSubjectDependencies first.
+func (r *courseSubjectRepo) DeleteCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) error {
+	result := r.db.WithContext(ctx).
+		Where("organization_id = ? AND id = ?", orgID, id).
+		Delete(&entities.CourseSubject{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("%w: course-subject %d", providers.ErrNotFound, id)
+	}
+	return nil
+}
+
 // UpdateCourseSubject writes the mutable fields of a course-subject scoped to
 // (organization_id, id). Caller loaded the entity via GetCourseSubject and
 // mutated the fields to patch — we don't introspect which ones changed. A

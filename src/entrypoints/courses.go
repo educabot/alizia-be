@@ -19,6 +19,8 @@ type CoursesContainer struct {
 	CreateCourse          admin.CreateCourse
 	ListCourses           admin.ListCourses
 	GetCourse             admin.GetCourse
+	UpdateCourse          admin.UpdateCourse
+	DeleteCourse          admin.DeleteCourse
 	AddStudent            admin.AddStudent
 	AssignCourseSubject   admin.AssignCourseSubject
 	CreateTimeSlot        admin.CreateTimeSlot
@@ -27,6 +29,7 @@ type CoursesContainer struct {
 	ListCourseSubjects    admin.ListCourseSubjects
 	GetCourseSubject      admin.GetCourseSubject
 	UpdateCourseSubject   admin.UpdateCourseSubject
+	DeleteCourseSubject   admin.DeleteCourseSubject
 }
 
 type createCourseBody struct {
@@ -76,6 +79,56 @@ func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
 	}
 
 	return web.OK(mapCourse(*result))
+}
+
+type updateCourseBody struct {
+	Name *string `json:"name"`
+}
+
+// HandleUpdateCourse patches a course's mutable fields. Today only `name` is
+// supported — `year` moved to course_subjects in migration 000013 and no other
+// column is mutable. Adding a field here requires extending the usecase and
+// the repo together; the handler deliberately forwards nothing extra.
+func (c *CoursesContainer) HandleUpdateCourse(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
+	}
+
+	var body updateCourseBody
+	if err := req.BindJSON(&body); err != nil {
+		return rest.HandleError(err)
+	}
+
+	result, err := c.UpdateCourse.Execute(req.Context(), admin.UpdateCourseRequest{
+		OrgID:    middleware.OrgID(req),
+		CourseID: id,
+		Name:     body.Name,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(mapCourse(*result))
+}
+
+// HandleDeleteCourse removes a course. Returns 409 Conflict if course-subjects,
+// students or time-slots still reference it — the admin must clean those up
+// first even though the DB schema has ON DELETE CASCADE.
+func (c *CoursesContainer) HandleDeleteCourse(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course id", providers.ErrValidation))
+	}
+
+	if err := c.DeleteCourse.Execute(req.Context(), admin.DeleteCourseRequest{
+		OrgID:    middleware.OrgID(req),
+		CourseID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
 }
 
 type addStudentBody struct {
@@ -452,6 +505,25 @@ func (c *CoursesContainer) HandleUpdateCourseSubject(req web.Request) web.Respon
 	}
 
 	return web.OK(mapCourseSubject(*result))
+}
+
+// HandleDeleteCourseSubject removes a course-subject. Returns 409 Conflict if
+// time-slot assignments still reference it — the admin must unlink the slot
+// first instead of silently losing the schedule to ON DELETE CASCADE.
+func (c *CoursesContainer) HandleDeleteCourseSubject(req web.Request) web.Response {
+	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
+	if err != nil {
+		return rest.HandleError(fmt.Errorf("%w: invalid course_subject id", providers.ErrValidation))
+	}
+
+	if err := c.DeleteCourseSubject.Execute(req.Context(), admin.DeleteCourseSubjectRequest{
+		OrgID:           middleware.OrgID(req),
+		CourseSubjectID: id,
+	}); err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.NoContent()
 }
 
 func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Response {

@@ -26,11 +26,14 @@ type UseCases struct {
 	CreateCourse          adminuc.CreateCourse
 	ListCourses           adminuc.ListCourses
 	GetCourse             adminuc.GetCourse
+	UpdateCourse          adminuc.UpdateCourse
+	DeleteCourse          adminuc.DeleteCourse
 	AddStudent            adminuc.AddStudent
 	AssignCourseSubj      adminuc.AssignCourseSubject
 	ListCourseSubjects    adminuc.ListCourseSubjects
 	GetCourseSubject      adminuc.GetCourseSubject
 	UpdateCourseSubject   adminuc.UpdateCourseSubject
+	DeleteCourseSubject   adminuc.DeleteCourseSubject
 	CreateTimeSlot        adminuc.CreateTimeSlot
 	GetSchedule           adminuc.GetSchedule
 	GetSharedClassNumbers adminuc.GetSharedClassNumbers
@@ -65,11 +68,14 @@ func NewUseCases(repos *Repositories) *UseCases {
 		CreateCourse:          adminuc.NewCreateCourse(repos.Courses),
 		ListCourses:           adminuc.NewListCourses(repos.Courses),
 		GetCourse:             adminuc.NewGetCourse(repos.Courses),
+		UpdateCourse:          adminuc.NewUpdateCourse(repos.Courses),
+		DeleteCourse:          adminuc.NewDeleteCourse(repos.Courses),
 		AddStudent:            adminuc.NewAddStudent(repos.Courses, repos.Students),
 		AssignCourseSubj:      adminuc.NewAssignCourseSubject(repos.Courses, repos.Users, repos.CourseSubjects),
 		ListCourseSubjects:    adminuc.NewListCourseSubjects(repos.CourseSubjects),
 		GetCourseSubject:      adminuc.NewGetCourseSubject(repos.CourseSubjects),
 		UpdateCourseSubject:   adminuc.NewUpdateCourseSubject(repos.CourseSubjects, repos.Users),
+		DeleteCourseSubject:   adminuc.NewDeleteCourseSubject(repos.CourseSubjects),
 		CreateTimeSlot:        adminuc.NewCreateTimeSlot(repos.Organizations, repos.Courses, repos.TimeSlots),
 		GetSchedule:           adminuc.NewGetSchedule(repos.Courses, repos.TimeSlots),
 		GetSharedClassNumbers: adminuc.NewGetSharedClassNumbers(repos.CourseSubjects, repos.TimeSlots),

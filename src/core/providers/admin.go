@@ -105,6 +105,35 @@ type CourseProvider interface {
 	CreateCourse(ctx context.Context, course *entities.Course) (int64, error)
 	GetCourse(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Course, error)
 	ListCourses(ctx context.Context, orgID uuid.UUID) ([]entities.Course, error)
+	// UpdateCourse writes the mutable fields of a course scoped to
+	// (organization_id, id). Caller mutates the loaded entity; the repo only
+	// persists whitelisted columns.
+	UpdateCourse(ctx context.Context, course *entities.Course) error
+	// CountCourseDependencies reports how many entities reference this course
+	// and would block a destructive operation. Used by DeleteCourse to return a
+	// 409 conflict with actionable detail instead of silently cascading data
+	// loss (the DB has ON DELETE CASCADE, but at the API layer we refuse).
+	CountCourseDependencies(ctx context.Context, orgID uuid.UUID, id int64) (CourseDependencies, error)
+	// DeleteCourse hard-deletes a course scoped to (org, id). Callers must call
+	// CountCourseDependencies first — this does NOT check for blocking refs.
+	// Returns ErrNotFound if the course doesn't belong to the org.
+	DeleteCourse(ctx context.Context, orgID uuid.UUID, id int64) error
+}
+
+// CourseDependencies reports the number of entities that depend on a course.
+// IsEmpty reports whether the course is safe to delete. Students are listed
+// separately because the product policy for them is still open — today we
+// refuse delete, but if the decision is to archive we can flip this without
+// a schema change.
+type CourseDependencies struct {
+	CourseSubjects int64
+	Students       int64
+	TimeSlots      int64
+}
+
+// IsEmpty reports whether there are no blocking dependencies.
+func (d CourseDependencies) IsEmpty() bool {
+	return d.CourseSubjects == 0 && d.Students == 0 && d.TimeSlots == 0
 }
 
 type StudentProvider interface {
@@ -127,6 +156,27 @@ type CourseSubjectProvider interface {
 	// first and mutating the fields that should change — the repo writes all
 	// mutable fields (teacher_id, school_year, start_date, end_date).
 	UpdateCourseSubject(ctx context.Context, cs *entities.CourseSubject) error
+	// CountCourseSubjectDependencies reports the number of entities that
+	// reference a course-subject and would block a destructive delete. Used by
+	// DeleteCourseSubject to return 409 instead of relying on ON DELETE CASCADE
+	// silently wiping out schedule rows.
+	CountCourseSubjectDependencies(ctx context.Context, orgID uuid.UUID, id int64) (CourseSubjectDependencies, error)
+	// DeleteCourseSubject hard-deletes a course-subject scoped to (org, id).
+	// Callers must call CountCourseSubjectDependencies first. Returns
+	// ErrNotFound if the row doesn't belong to the org.
+	DeleteCourseSubject(ctx context.Context, orgID uuid.UUID, id int64) error
+}
+
+// CourseSubjectDependencies reports entities that reference a course-subject.
+// TimeSlotSubjects is the only current blocker; lesson_plans is intentionally
+// omitted because its `course_subject_id` column ships in Épica 5.
+type CourseSubjectDependencies struct {
+	TimeSlotSubjects int64
+}
+
+// IsEmpty reports whether there are no blocking dependencies.
+func (d CourseSubjectDependencies) IsEmpty() bool {
+	return d.TimeSlotSubjects == 0
 }
 
 // CourseSubjectFilter holds optional filters for ListCourseSubjects. Any nil
