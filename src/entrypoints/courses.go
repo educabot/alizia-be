@@ -516,6 +516,9 @@ func (c *CoursesContainer) HandleUpdateCourseSubject(req web.Request) web.Respon
 		}
 		r.EndDate = &t
 	}
+	if r.StartDate != nil && r.EndDate != nil && r.EndDate.Before(*r.StartDate) {
+		return rest.HandleError(fmt.Errorf("%w: end_date must be >= start_date", providers.ErrValidation))
+	}
 
 	result, err := c.UpdateCourseSubject.Execute(req.Context(), r)
 	if err != nil {
@@ -571,6 +574,9 @@ func (c *CoursesContainer) HandleAssignCourseSubject(req web.Request) web.Respon
 			return rest.HandleError(fmt.Errorf("%w: invalid end_date format, expected YYYY-MM-DD", providers.ErrValidation))
 		}
 		r.EndDate = &t
+	}
+	if r.StartDate != nil && r.EndDate != nil && r.EndDate.Before(*r.StartDate) {
+		return rest.HandleError(fmt.Errorf("%w: end_date must be >= start_date", providers.ErrValidation))
 	}
 
 	result, err := c.AssignCourseSubject.Execute(req.Context(), r)

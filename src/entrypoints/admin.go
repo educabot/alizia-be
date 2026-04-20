@@ -305,7 +305,7 @@ type updateTopicBody struct {
 func (a *AdminContainer) HandleUpdateTopic(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid topic id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid topic_id", providers.ErrValidation))
 	}
 
 	// Parse the raw payload first to detect whether parent_id was supplied
@@ -434,7 +434,7 @@ func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
 func (a *AdminContainer) HandleGetArea(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	result, err := a.GetArea.Execute(req.Context(), admin.GetAreaRequest{
@@ -453,7 +453,7 @@ func (a *AdminContainer) HandleGetArea(req web.Request) web.Response {
 func (a *AdminContainer) HandleUpdateArea(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	raw := map[string]any{}
@@ -500,7 +500,7 @@ func (a *AdminContainer) HandleUpdateArea(req web.Request) web.Response {
 func (a *AdminContainer) HandleDeleteArea(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	if err := a.DeleteArea.Execute(req.Context(), admin.DeleteAreaRequest{
@@ -541,7 +541,7 @@ func (a *AdminContainer) HandleCreateSubject(req web.Request) web.Response {
 func (a *AdminContainer) HandleListSubjects(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	result, err := a.ListSubjects.Execute(req.Context(), admin.ListSubjectsRequest{
@@ -589,7 +589,7 @@ type assignCoordinatorBody struct {
 func (a *AdminContainer) HandleAssignCoordinator(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	var body assignCoordinatorBody
@@ -612,7 +612,7 @@ func (a *AdminContainer) HandleAssignCoordinator(req web.Request) web.Response {
 func (a *AdminContainer) HandleRemoveCoordinator(req web.Request) web.Response {
 	areaID, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid area id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid area_id", providers.ErrValidation))
 	}
 
 	userID, err := strconv.ParseInt(req.Param("user_id"), 10, 64)
@@ -768,7 +768,7 @@ func (a *AdminContainer) HandleListAllSubjects(req web.Request) web.Response {
 func (a *AdminContainer) HandleUpdateSubject(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid subject id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid subject_id", providers.ErrValidation))
 	}
 
 	raw := map[string]any{}
@@ -822,7 +822,7 @@ func (a *AdminContainer) HandleUpdateSubject(req web.Request) web.Response {
 func (a *AdminContainer) HandleDeleteSubject(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid subject id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid subject_id", providers.ErrValidation))
 	}
 
 	if err := a.DeleteSubject.Execute(req.Context(), admin.DeleteSubjectRequest{
@@ -846,7 +846,7 @@ func (a *AdminContainer) HandleDeleteSubject(req web.Request) web.Response {
 func (a *AdminContainer) HandleDeleteTopic(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid topic id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid topic_id", providers.ErrValidation))
 	}
 
 	if err := a.DeleteTopic.Execute(req.Context(), admin.DeleteTopicRequest{
@@ -866,7 +866,7 @@ func (a *AdminContainer) HandleDeleteTopic(req web.Request) web.Response {
 func (a *AdminContainer) HandleGetActivity(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid activity_id", providers.ErrValidation))
 	}
 
 	result, err := a.GetActivity.Execute(req.Context(), admin.GetActivityRequest{
@@ -886,7 +886,7 @@ func (a *AdminContainer) HandleGetActivity(req web.Request) web.Response {
 func (a *AdminContainer) HandleUpdateActivity(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid activity_id", providers.ErrValidation))
 	}
 
 	raw := map[string]any{}
@@ -948,7 +948,7 @@ func (a *AdminContainer) HandleUpdateActivity(req web.Request) web.Response {
 func (a *AdminContainer) HandleDeleteActivity(req web.Request) web.Response {
 	id, err := strconv.ParseInt(req.Param("id"), 10, 64)
 	if err != nil {
-		return rest.HandleError(fmt.Errorf("%w: invalid activity id", providers.ErrValidation))
+		return rest.HandleError(fmt.Errorf("%w: invalid activity_id", providers.ErrValidation))
 	}
 
 	if err := a.DeleteActivity.Execute(req.Context(), admin.DeleteActivityRequest{

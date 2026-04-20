@@ -2,8 +2,12 @@ package admin
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -21,6 +25,10 @@ func NewTimeSlotRepo(db *gorm.DB) providers.TimeSlotProvider {
 
 func (r *timeSlotRepo) CreateTimeSlot(ctx context.Context, slot *entities.TimeSlot) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(slot).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: time slot overlaps with an existing one", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return slot.ID, nil

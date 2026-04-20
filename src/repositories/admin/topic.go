@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -22,6 +24,10 @@ func NewTopicRepo(db *gorm.DB) providers.TopicProvider {
 
 func (r *topicRepo) CreateTopic(ctx context.Context, topic *entities.Topic) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(topic).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: topic already exists", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return topic.ID, nil
@@ -117,7 +123,7 @@ func trimPage(rows []entities.Topic, limit int) ([]entities.Topic, bool, error) 
 }
 
 func (r *topicRepo) UpdateTopic(ctx context.Context, topic *entities.Topic) error {
-	return r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Model(&entities.Topic{}).
 		Where("organization_id = ? AND id = ?", topic.OrganizationID, topic.ID).
 		Updates(map[string]any{
@@ -125,7 +131,14 @@ func (r *topicRepo) UpdateTopic(ctx context.Context, topic *entities.Topic) erro
 			"name":        topic.Name,
 			"description": topic.Description,
 			"level":       topic.Level,
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("%w: topic %d", providers.ErrNotFound, topic.ID)
+	}
+	return nil
 }
 
 // CountTopicChildren returns the number of direct children of a topic scoped

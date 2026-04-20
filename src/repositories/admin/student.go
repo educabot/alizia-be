@@ -2,7 +2,11 @@ package admin
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -19,6 +23,10 @@ func NewStudentRepo(db *gorm.DB) providers.StudentProvider {
 
 func (r *studentRepo) CreateStudent(ctx context.Context, student *entities.Student) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(student).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: student already exists in this course", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return student.ID, nil

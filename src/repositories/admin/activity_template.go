@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -22,6 +24,10 @@ func NewActivityTemplateRepo(db *gorm.DB) providers.ActivityTemplateProvider {
 
 func (r *activityTemplateRepo) CreateActivity(ctx context.Context, activity *entities.ActivityTemplate) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(activity).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: activity already exists", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return activity.ID, nil

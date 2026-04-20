@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -22,6 +24,10 @@ func NewSubjectRepo(db *gorm.DB) providers.SubjectProvider {
 
 func (r *subjectRepo) CreateSubject(ctx context.Context, subject *entities.Subject) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(subject).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: subject already exists in this area", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return subject.ID, nil

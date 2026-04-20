@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
 	"github.com/educabot/alizia-be/src/core/entities"
@@ -22,6 +24,10 @@ func NewCourseRepo(db *gorm.DB) providers.CourseProvider {
 
 func (r *courseRepo) CreateCourse(ctx context.Context, course *entities.Course) (int64, error) {
 	if err := r.db.WithContext(ctx).Create(course).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return 0, fmt.Errorf("%w: course already exists in this organization", providers.ErrConflict)
+		}
 		return 0, err
 	}
 	return course.ID, nil
