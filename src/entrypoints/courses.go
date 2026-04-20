@@ -434,7 +434,25 @@ func (c *CoursesContainer) HandleGetSharedClassNumbers(req web.Request) web.Resp
 		return rest.HandleError(err)
 	}
 
-	return web.OK(result)
+	return web.OK(mapSharedClassNumbers(result))
+}
+
+type sharedClassNumbersResponse struct {
+	CourseSubjectID    int64 `json:"course_subject_id"`
+	TotalClasses       int   `json:"total_classes"`
+	SharedClassNumbers []int `json:"shared_class_numbers"`
+}
+
+func mapSharedClassNumbers(r *admin.GetSharedClassNumbersResponse) sharedClassNumbersResponse {
+	numbers := r.SharedClassNumbers
+	if numbers == nil {
+		numbers = []int{}
+	}
+	return sharedClassNumbersResponse{
+		CourseSubjectID:    r.CourseSubjectID,
+		TotalClasses:       r.TotalClasses,
+		SharedClassNumbers: numbers,
+	}
 }
 
 // HandleGetCourseSubject returns a single course-subject scoped to the

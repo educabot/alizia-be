@@ -59,15 +59,26 @@ func (o *OnboardingContainer) HandleSaveProfile(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
+	orgID := middleware.OrgID(req)
+	userID := middleware.UserID(req)
+
 	if err := o.SaveProfile.Execute(req.Context(), onboarding.SaveProfileRequest{
-		OrgID:  middleware.OrgID(req),
-		UserID: middleware.UserID(req),
+		OrgID:  orgID,
+		UserID: userID,
 		Data:   data,
 	}); err != nil {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(profileResponse(data))
+	saved, err := o.GetProfile.Execute(req.Context(), onboarding.GetProfileRequest{
+		OrgID:  orgID,
+		UserID: userID,
+	})
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
+	return web.OK(profileResponse(saved))
 }
 
 func (o *OnboardingContainer) HandleGetTourSteps(req web.Request) web.Response {

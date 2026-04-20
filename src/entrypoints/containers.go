@@ -6,9 +6,6 @@ type WebHandlerContainer struct {
 	Admin            *AdminContainer
 	Courses          *CoursesContainer
 	Onboarding       *OnboardingContainer
-	Coordination     *CoordinationContainer
-	Teaching         *TeachingContainer
-	Resources        *ResourcesContainer
 	Login            web.Handler
 	Logout           web.Handler
 	AuthMiddleware   web.Interceptor

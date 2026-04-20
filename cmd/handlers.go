@@ -71,9 +71,6 @@ func NewHandlers(uc *UseCases, repos *Repositories, cfg *config.Config) *entrypo
 			GetSharedClassNumbers: uc.GetSharedClassNumbers,
 		},
 
-		Coordination:     &entrypoints.CoordinationContainer{},
-		Teaching:         &entrypoints.TeachingContainer{},
-		Resources:        &entrypoints.ResourcesContainer{},
 		Login:            entrypoints.NewLoginHandler(repos.AuthCredentials, toker, loginTokenDuration),
 		Logout:           entrypoints.NewLogoutHandler(),
 		AuthMiddleware:   tokens.ValidateTokenMiddleware(toker, cfg.Env),
