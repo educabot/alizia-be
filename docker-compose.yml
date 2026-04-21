@@ -11,5 +11,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  app:
+    build:
+      context: .
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    container_name: alizia-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/alizia?sslmode=disable
+    depends_on:
+      - db
+    restart: unless-stopped
+
 volumes:
   postgres_data:

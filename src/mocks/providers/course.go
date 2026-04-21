@@ -27,12 +27,12 @@ func (m *MockCourseProvider) GetCourse(ctx context.Context, orgID uuid.UUID, id 
 	return args.Get(0).(*entities.Course), args.Error(1)
 }
 
-func (m *MockCourseProvider) ListCourses(ctx context.Context, orgID uuid.UUID) ([]entities.Course, error) {
-	args := m.Called(ctx, orgID)
+func (m *MockCourseProvider) ListCourses(ctx context.Context, orgID uuid.UUID, p providers.Pagination) ([]entities.Course, bool, error) {
+	args := m.Called(ctx, orgID, p)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, false, args.Error(2)
 	}
-	return args.Get(0).([]entities.Course), args.Error(1)
+	return args.Get(0).([]entities.Course), args.Bool(1), args.Error(2)
 }
 
 func (m *MockCourseProvider) UpdateCourse(ctx context.Context, course *entities.Course) error {

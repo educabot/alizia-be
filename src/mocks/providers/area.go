@@ -27,12 +27,12 @@ func (m *MockAreaProvider) GetArea(ctx context.Context, orgID uuid.UUID, id int6
 	return args.Get(0).(*entities.Area), args.Error(1)
 }
 
-func (m *MockAreaProvider) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error) {
-	args := m.Called(ctx, orgID)
+func (m *MockAreaProvider) ListAreas(ctx context.Context, orgID uuid.UUID, p providers.Pagination) ([]entities.Area, bool, error) {
+	args := m.Called(ctx, orgID, p)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, false, args.Error(2)
 	}
-	return args.Get(0).([]entities.Area), args.Error(1)
+	return args.Get(0).([]entities.Area), args.Bool(1), args.Error(2)
 }
 
 func (m *MockAreaProvider) UpdateArea(ctx context.Context, area *entities.Area) error {

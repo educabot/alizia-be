@@ -25,14 +25,38 @@ func TestListAreas_Success(t *testing.T) {
 		{ID: 1, OrganizationID: orgID, Name: "Ciencias Exactas"},
 		{ID: 2, OrganizationID: orgID, Name: "Humanidades"},
 	}
-	areas.On("ListAreas", ctx, orgID).Return(expected, nil)
+	areas.On("ListAreas", ctx, orgID, mock.AnythingOfType("providers.Pagination")).Return(expected, false, nil)
 
 	result, err := uc.Execute(ctx, admin.ListAreasRequest{OrgID: orgID})
 
 	assert.NoError(t, err)
-	assert.Len(t, result, 2)
-	assert.Equal(t, "Ciencias Exactas", result[0].Name)
-	assert.Equal(t, "Humanidades", result[1].Name)
+	assert.Len(t, result.Items, 2)
+	assert.Equal(t, "Ciencias Exactas", result.Items[0].Name)
+	assert.Equal(t, "Humanidades", result.Items[1].Name)
+	assert.False(t, result.More)
+	areas.AssertExpectations(t)
+}
+
+func TestListAreas_WithPagination(t *testing.T) {
+	areas := new(mockproviders.MockAreaProvider)
+	uc := admin.NewListAreas(areas)
+
+	orgID := uuid.New()
+	ctx := context.Background()
+
+	expected := []entities.Area{
+		{ID: 1, OrganizationID: orgID, Name: "Ciencias Exactas"},
+	}
+	areas.On("ListAreas", ctx, orgID, mock.AnythingOfType("providers.Pagination")).Return(expected, true, nil)
+
+	result, err := uc.Execute(ctx, admin.ListAreasRequest{
+		OrgID: orgID,
+		Page:  providers.Pagination{Limit: 1, Offset: 0},
+	})
+
+	assert.NoError(t, err)
+	assert.Len(t, result.Items, 1)
+	assert.True(t, result.More)
 	areas.AssertExpectations(t)
 }
 
@@ -43,12 +67,13 @@ func TestListAreas_Empty(t *testing.T) {
 	orgID := uuid.New()
 	ctx := context.Background()
 
-	areas.On("ListAreas", ctx, orgID).Return([]entities.Area{}, nil)
+	areas.On("ListAreas", ctx, orgID, mock.AnythingOfType("providers.Pagination")).Return([]entities.Area{}, false, nil)
 
 	result, err := uc.Execute(ctx, admin.ListAreasRequest{OrgID: orgID})
 
 	assert.NoError(t, err)
-	assert.Empty(t, result)
+	assert.Empty(t, result.Items)
+	assert.False(t, result.More)
 	areas.AssertExpectations(t)
 }
 
@@ -59,5 +84,5 @@ func TestListAreas_ValidationError(t *testing.T) {
 	_, err := uc.Execute(context.Background(), admin.ListAreasRequest{})
 
 	assert.ErrorIs(t, err, providers.ErrValidation)
-	areas.AssertNotCalled(t, "ListAreas", mock.Anything, mock.Anything)
+	areas.AssertNotCalled(t, "ListAreas", mock.Anything, mock.Anything, mock.Anything)
 }

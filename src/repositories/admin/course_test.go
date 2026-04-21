@@ -53,12 +53,13 @@ func TestCourseRepo_ListCourses(t *testing.T) {
 		AddRow(courseRow(entities.Course{ID: 1, OrganizationID: orgID, Name: "A"})...).
 		AddRow(courseRow(entities.Course{ID: 2, OrganizationID: orgID, Name: "B"})...)
 	mock.ExpectQuery(regexp.QuoteMeta(sql)).
-		WithArgs(orgID, 500).
+		WithArgs(orgID, 51).
 		WillReturnRows(rows)
 
-	items, err := repo.ListCourses(context.Background(), orgID)
+	items, more, err := repo.ListCourses(context.Background(), orgID, providers.Pagination{})
 	require.NoError(t, err)
 	assert.Len(t, items, 2)
+	assert.False(t, more)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

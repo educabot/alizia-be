@@ -27,12 +27,12 @@ func (m *MockSubjectProvider) ListSubjectsByArea(ctx context.Context, orgID uuid
 	return args.Get(0).([]entities.Subject), args.Error(1)
 }
 
-func (m *MockSubjectProvider) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error) {
-	args := m.Called(ctx, orgID, areaID)
+func (m *MockSubjectProvider) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64, p providers.Pagination) ([]entities.Subject, bool, error) {
+	args := m.Called(ctx, orgID, areaID, p)
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		return nil, false, args.Error(2)
 	}
-	return args.Get(0).([]entities.Subject), args.Error(1)
+	return args.Get(0).([]entities.Subject), args.Bool(1), args.Error(2)
 }
 
 func (m *MockSubjectProvider) GetSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Subject, error) {

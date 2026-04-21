@@ -12,6 +12,7 @@ import (
 
 type ListCoursesRequest struct {
 	OrgID uuid.UUID
+	Page  providers.Pagination
 }
 
 func (r ListCoursesRequest) Validate() error {
@@ -21,8 +22,13 @@ func (r ListCoursesRequest) Validate() error {
 	return nil
 }
 
+type ListCoursesResponse struct {
+	Items []entities.Course
+	More  bool
+}
+
 type ListCourses interface {
-	Execute(ctx context.Context, req ListCoursesRequest) ([]entities.Course, error)
+	Execute(ctx context.Context, req ListCoursesRequest) (*ListCoursesResponse, error)
 }
 
 type listCoursesImpl struct {
@@ -33,10 +39,14 @@ func NewListCourses(courses providers.CourseProvider) ListCourses {
 	return &listCoursesImpl{courses: courses}
 }
 
-func (uc *listCoursesImpl) Execute(ctx context.Context, req ListCoursesRequest) ([]entities.Course, error) {
+func (uc *listCoursesImpl) Execute(ctx context.Context, req ListCoursesRequest) (*ListCoursesResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
-	return uc.courses.ListCourses(ctx, req.OrgID)
+	items, more, err := uc.courses.ListCourses(ctx, req.OrgID, req.Page)
+	if err != nil {
+		return nil, err
+	}
+	return &ListCoursesResponse{Items: items, More: more}, nil
 }

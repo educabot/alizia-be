@@ -42,15 +42,25 @@ func (r *subjectRepo) ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, a
 	return subjects, err
 }
 
-// ListSubjectsByOrg returns all subjects for an org, optionally filtered by area.
-func (r *subjectRepo) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error) {
+func (r *subjectRepo) ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64, p providers.Pagination) ([]entities.Subject, bool, error) {
+	p = p.Normalize()
 	var subjects []entities.Subject
 	q := r.db.WithContext(ctx).Where("organization_id = ?", orgID)
 	if areaID != nil {
 		q = q.Where("area_id = ?", *areaID)
 	}
-	err := q.Order("name ASC").Limit(boundedListCap).Find(&subjects).Error
-	return subjects, err
+	err := q.Order("name ASC").
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
+		Find(&subjects).Error
+	if err != nil {
+		return nil, false, err
+	}
+	more := len(subjects) > p.Limit
+	if more {
+		subjects = subjects[:p.Limit]
+	}
+	return subjects, more, nil
 }
 
 func (r *subjectRepo) GetSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Subject, error) {

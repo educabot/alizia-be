@@ -49,15 +49,25 @@ func (r *areaRepo) GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*ent
 	return &area, nil
 }
 
-func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error) {
+func (r *areaRepo) ListAreas(ctx context.Context, orgID uuid.UUID, p providers.Pagination) ([]entities.Area, bool, error) {
+	p = p.Normalize()
 	var areas []entities.Area
 	err := r.db.WithContext(ctx).
 		Preload("Subjects").
 		Preload("Coordinators.User").
 		Where("organization_id = ?", orgID).
-		Order("name ASC").Limit(boundedListCap).
+		Order("name ASC").
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
 		Find(&areas).Error
-	return areas, err
+	if err != nil {
+		return nil, false, err
+	}
+	more := len(areas) > p.Limit
+	if more {
+		areas = areas[:p.Limit]
+	}
+	return areas, more, nil
 }
 
 func (r *areaRepo) UpdateArea(ctx context.Context, area *entities.Area) error {

@@ -10,11 +10,10 @@ import (
 	"github.com/educabot/alizia-be/src/core/providers"
 )
 
-// ListAllSubjectsRequest lists subjects across the org. AreaID is optional;
-// when supplied, results are filtered to that area (which must belong to the org).
 type ListAllSubjectsRequest struct {
 	OrgID  uuid.UUID
 	AreaID *int64
+	Page   providers.Pagination
 }
 
 func (r ListAllSubjectsRequest) Validate() error {
@@ -27,8 +26,13 @@ func (r ListAllSubjectsRequest) Validate() error {
 	return nil
 }
 
+type ListAllSubjectsResponse struct {
+	Items []entities.Subject
+	More  bool
+}
+
 type ListAllSubjects interface {
-	Execute(ctx context.Context, req ListAllSubjectsRequest) ([]entities.Subject, error)
+	Execute(ctx context.Context, req ListAllSubjectsRequest) (*ListAllSubjectsResponse, error)
 }
 
 type listAllSubjectsImpl struct {
@@ -40,17 +44,20 @@ func NewListAllSubjects(areas providers.AreaProvider, subjects providers.Subject
 	return &listAllSubjectsImpl{areas: areas, subjects: subjects}
 }
 
-func (uc *listAllSubjectsImpl) Execute(ctx context.Context, req ListAllSubjectsRequest) ([]entities.Subject, error) {
+func (uc *listAllSubjectsImpl) Execute(ctx context.Context, req ListAllSubjectsRequest) (*ListAllSubjectsResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
-	// When an area filter is supplied, verify the area belongs to the org.
 	if req.AreaID != nil && *req.AreaID > 0 {
 		if _, err := uc.areas.GetArea(ctx, req.OrgID, *req.AreaID); err != nil {
 			return nil, fmt.Errorf("area not found: %w", err)
 		}
 	}
 
-	return uc.subjects.ListSubjectsByOrg(ctx, req.OrgID, req.AreaID)
+	items, more, err := uc.subjects.ListSubjectsByOrg(ctx, req.OrgID, req.AreaID, req.Page)
+	if err != nil {
+		return nil, err
+	}
+	return &ListAllSubjectsResponse{Items: items, More: more}, nil
 }

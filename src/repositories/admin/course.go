@@ -51,13 +51,23 @@ func (r *courseRepo) GetCourse(ctx context.Context, orgID uuid.UUID, id int64) (
 	return &course, nil
 }
 
-func (r *courseRepo) ListCourses(ctx context.Context, orgID uuid.UUID) ([]entities.Course, error) {
+func (r *courseRepo) ListCourses(ctx context.Context, orgID uuid.UUID, p providers.Pagination) ([]entities.Course, bool, error) {
+	p = p.Normalize()
 	var courses []entities.Course
 	err := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).
-		Order("name ASC").Limit(boundedListCap).
+		Order("name ASC").
+		Offset(p.Offset).
+		Limit(p.Limit + 1).
 		Find(&courses).Error
-	return courses, err
+	if err != nil {
+		return nil, false, err
+	}
+	more := len(courses) > p.Limit
+	if more {
+		courses = courses[:p.Limit]
+	}
+	return courses, more, nil
 }
 
 // UpdateCourse writes the course's mutable columns scoped to (org, id). Today

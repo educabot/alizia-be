@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/educabot/alizia-be/src/core/entities"
+	"github.com/educabot/alizia-be/src/core/providers"
 	"github.com/educabot/alizia-be/src/repositories/admin"
 	"github.com/educabot/alizia-be/src/utils/dbtest"
 )
@@ -72,12 +73,13 @@ func TestSubjectRepo_ListSubjectsByOrg_NoAreaFilter(t *testing.T) {
 	orgID := uuid.New()
 	sql := `SELECT * FROM "subjects" WHERE organization_id = $1 ORDER BY name ASC LIMIT $2`
 	mock.ExpectQuery(regexp.QuoteMeta(sql)).
-		WithArgs(orgID, 500).
+		WithArgs(orgID, 51).
 		WillReturnRows(sqlmock.NewRows(subjectColumns))
 
-	items, err := repo.ListSubjectsByOrg(context.Background(), orgID, nil)
+	items, more, err := repo.ListSubjectsByOrg(context.Background(), orgID, nil, providers.Pagination{})
 	require.NoError(t, err)
 	assert.Empty(t, items)
+	assert.False(t, more)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -91,11 +93,12 @@ func TestSubjectRepo_ListSubjectsByOrg_WithAreaFilter(t *testing.T) {
 	rows := sqlmock.NewRows(subjectColumns).
 		AddRow(subjectRow(entities.Subject{ID: 1, OrganizationID: orgID, AreaID: 3, Name: "Física"})...)
 	mock.ExpectQuery(regexp.QuoteMeta(sql)).
-		WithArgs(orgID, areaID, 500).
+		WithArgs(orgID, areaID, 51).
 		WillReturnRows(rows)
 
-	items, err := repo.ListSubjectsByOrg(context.Background(), orgID, &areaID)
+	items, more, err := repo.ListSubjectsByOrg(context.Background(), orgID, &areaID, providers.Pagination{})
 	require.NoError(t, err)
 	assert.Len(t, items, 1)
+	assert.False(t, more)
 	require.NoError(t, mock.ExpectationsWereMet())
 }

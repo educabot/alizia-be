@@ -40,7 +40,7 @@ type UserFilter struct {
 type AreaProvider interface {
 	CreateArea(ctx context.Context, area *entities.Area) (int64, error)
 	GetArea(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Area, error)
-	ListAreas(ctx context.Context, orgID uuid.UUID) ([]entities.Area, error)
+	ListAreas(ctx context.Context, orgID uuid.UUID, p Pagination) ([]entities.Area, bool, error)
 	UpdateArea(ctx context.Context, area *entities.Area) error
 	// CountDependencies reports how many entities reference this area and
 	// would block a destructive operation. Used by DeleteArea to return a 409
@@ -85,7 +85,7 @@ type SubjectProvider interface {
 	GetSubject(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Subject, error)
 	ListSubjectsByArea(ctx context.Context, orgID uuid.UUID, areaID int64) ([]entities.Subject, error)
 	// ListSubjectsByOrg returns all subjects of an org. If areaID is non-nil, filters by area too.
-	ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64) ([]entities.Subject, error)
+	ListSubjectsByOrg(ctx context.Context, orgID uuid.UUID, areaID *int64, p Pagination) ([]entities.Subject, bool, error)
 	// UpdateSubject writes the mutable fields of a subject scoped to
 	// (organization_id, id). Caller loads the current row and mutates the fields
 	// to patch; the repo persists name, description and area_id.
@@ -142,7 +142,7 @@ type TopicProvider interface {
 type CourseProvider interface {
 	CreateCourse(ctx context.Context, course *entities.Course) (int64, error)
 	GetCourse(ctx context.Context, orgID uuid.UUID, id int64) (*entities.Course, error)
-	ListCourses(ctx context.Context, orgID uuid.UUID) ([]entities.Course, error)
+	ListCourses(ctx context.Context, orgID uuid.UUID, p Pagination) ([]entities.Course, bool, error)
 	// UpdateCourse writes the mutable fields of a course scoped to
 	// (organization_id, id). Caller mutates the loaded entity; the repo only
 	// persists whitelisted columns.

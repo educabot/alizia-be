@@ -12,6 +12,7 @@ import (
 
 type ListAreasRequest struct {
 	OrgID uuid.UUID
+	Page  providers.Pagination
 }
 
 func (r ListAreasRequest) Validate() error {
@@ -21,8 +22,13 @@ func (r ListAreasRequest) Validate() error {
 	return nil
 }
 
+type ListAreasResponse struct {
+	Items []entities.Area
+	More  bool
+}
+
 type ListAreas interface {
-	Execute(ctx context.Context, req ListAreasRequest) ([]entities.Area, error)
+	Execute(ctx context.Context, req ListAreasRequest) (*ListAreasResponse, error)
 }
 
 type listAreasImpl struct {
@@ -33,10 +39,14 @@ func NewListAreas(areas providers.AreaProvider) ListAreas {
 	return &listAreasImpl{areas: areas}
 }
 
-func (uc *listAreasImpl) Execute(ctx context.Context, req ListAreasRequest) ([]entities.Area, error) {
+func (uc *listAreasImpl) Execute(ctx context.Context, req ListAreasRequest) (*ListAreasResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
-	return uc.areas.ListAreas(ctx, req.OrgID)
+	items, more, err := uc.areas.ListAreas(ctx, req.OrgID, req.Page)
+	if err != nil {
+		return nil, err
+	}
+	return &ListAreasResponse{Items: items, More: more}, nil
 }

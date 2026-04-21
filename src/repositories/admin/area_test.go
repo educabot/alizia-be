@@ -120,13 +120,13 @@ func TestAreaRepo_ListAreas(t *testing.T) {
 	orgID := uuid.New()
 	mainSQL := `SELECT * FROM "areas" WHERE organization_id = $1 ORDER BY name ASC LIMIT $2`
 	mock.ExpectQuery(regexp.QuoteMeta(mainSQL)).
-		WithArgs(orgID, 500).
+		WithArgs(orgID, 51).
 		WillReturnRows(sqlmock.NewRows(areaColumns))
 
-	// Empty main result → preloads skipped.
-	items, err := repo.ListAreas(context.Background(), orgID)
+	items, more, err := repo.ListAreas(context.Background(), orgID, providers.Pagination{})
 	require.NoError(t, err)
 	assert.Empty(t, items)
+	assert.False(t, more)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

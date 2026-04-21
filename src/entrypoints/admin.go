@@ -419,14 +419,20 @@ func (a *AdminContainer) HandleCreateArea(req web.Request) web.Response {
 }
 
 func (a *AdminContainer) HandleListAreas(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
 	result, err := a.ListAreas.Execute(req.Context(), admin.ListAreasRequest{
 		OrgID: middleware.OrgID(req),
+		Page:  page,
 	})
 	if err != nil {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(mapAreas(result), false))
+	return web.OK(rest.Page(mapAreas(result.Items), result.More))
 }
 
 // HandleGetArea returns a single area with its subjects and coordinators
@@ -738,8 +744,14 @@ func (a *AdminContainer) HandleListUsers(req web.Request) web.Response {
 // HandleListAllSubjects lists subjects across the whole org. Optional
 // ?area_id=N filters by area (verifying the area belongs to the org).
 func (a *AdminContainer) HandleListAllSubjects(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
 	r := admin.ListAllSubjectsRequest{
 		OrgID: middleware.OrgID(req),
+		Page:  page,
 	}
 
 	if aidStr := req.Query("area_id"); aidStr != "" {
@@ -755,7 +767,7 @@ func (a *AdminContainer) HandleListAllSubjects(req web.Request) web.Response {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(mapSubjects(result), false))
+	return web.OK(rest.Page(mapSubjects(result.Items), result.More))
 }
 
 // ---------------------------------------------------------------------------

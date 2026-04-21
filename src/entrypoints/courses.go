@@ -54,14 +54,20 @@ func (c *CoursesContainer) HandleCreateCourse(req web.Request) web.Response {
 }
 
 func (c *CoursesContainer) HandleListCourses(req web.Request) web.Response {
+	page, err := rest.ParsePagination(req)
+	if err != nil {
+		return rest.HandleError(err)
+	}
+
 	result, err := c.ListCourses.Execute(req.Context(), admin.ListCoursesRequest{
 		OrgID: middleware.OrgID(req),
+		Page:  page,
 	})
 	if err != nil {
 		return rest.HandleError(err)
 	}
 
-	return web.OK(rest.Page(mapCourses(result), false))
+	return web.OK(rest.Page(mapCourses(result.Items), result.More))
 }
 
 func (c *CoursesContainer) HandleGetCourse(req web.Request) web.Response {
