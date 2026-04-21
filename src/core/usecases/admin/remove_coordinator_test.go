@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/educabot/alizia-be/src/core/entities"
 	"github.com/educabot/alizia-be/src/core/providers"
@@ -69,4 +70,28 @@ func TestRemoveCoordinator_AssignmentNotFound(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, providers.ErrNotFound)
+}
+
+func TestRemoveCoordinator_ValidationErrors(t *testing.T) {
+	areas := new(mockproviders.MockAreaProvider)
+	coords := new(mockproviders.MockAreaCoordinatorProvider)
+	uc := admin.NewRemoveCoordinator(areas, coords)
+
+	tests := []struct {
+		name string
+		req  admin.RemoveCoordinatorRequest
+	}{
+		{"missing org_id", admin.RemoveCoordinatorRequest{AreaID: 1, UserID: 2}},
+		{"missing area_id", admin.RemoveCoordinatorRequest{OrgID: uuid.New(), UserID: 2}},
+		{"missing user_id", admin.RemoveCoordinatorRequest{OrgID: uuid.New(), AreaID: 1}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := uc.Execute(context.Background(), tt.req)
+			assert.ErrorIs(t, err, providers.ErrValidation)
+		})
+	}
+
+	areas.AssertNotCalled(t, "GetArea", mock.Anything, mock.Anything, mock.Anything)
 }

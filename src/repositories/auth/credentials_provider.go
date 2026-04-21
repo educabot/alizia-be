@@ -1,19 +1,20 @@
 // Package auth provides repository-layer implementations for the auth
 // primitives expected by team-ai-toolkit/auth. Concretely, this package exposes
 // a CredentialsProvider backed by GORM + PostgreSQL that looks up a user by
-// email, verifies the argon2id password hash and returns the AuthenticatedUser
-// shape that the toolkit login handler turns into a signed JWT.
+// email (optionally disambiguated by org slug), verifies the argon2id password
+// hash, and returns the AuthenticatedUser shape that the toolkit login handler
+// turns into a signed JWT.
 //
-// In alizia-be, users.email is globally unique across organizations, so
-// Credentials.OrgSlug is intentionally ignored during lookup. The user's
-// organization is recovered from the row itself and propagated via
-// AuthenticatedUser.Audience so that the downstream TenantMiddleware can
-// extract org_id from the JWT audience claim.
+// In alizia-be, users.email is unique per organization (UNIQUE(email, org_id)),
+// so the same address can exist in multiple tenants. When Credentials.OrgSlug
+// is provided, the lookup is scoped to that org. When it is empty, the lookup
+// rejects the request if the email resolves to more than one user — this
+// prevents a non-deterministic cross-tenant match from leaking into the issued
+// JWT.
 package auth
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	"gorm.io/gorm"
@@ -37,7 +38,7 @@ type userRow struct {
 // userLookup abstracts the DB access needed by the credentials provider so
 // tests can swap in an in-memory fake. Production wiring uses gormUserLookup.
 type userLookup interface {
-	GetByEmail(ctx context.Context, email string) (*userRow, error)
+	FindByEmail(ctx context.Context, email, orgSlug string) ([]*userRow, error)
 	GetRoles(ctx context.Context, userID int64) ([]string, error)
 }
 
@@ -60,16 +61,21 @@ func newProviderWithLookup(lookup userLookup) ttauth.CredentialsProvider {
 }
 
 // Authenticate validates the supplied credentials and returns an
-// AuthenticatedUser suitable for the toolkit login handler. OrgSlug is
-// ignored because alizia-be treats email as globally unique.
+// AuthenticatedUser suitable for the toolkit login handler. OrgSlug is optional:
+// when present the lookup is scoped to that org; when empty, an ambiguous match
+// (same email in multiple orgs) fails with ErrInvalidCredentials.
 func (p *credentialsProvider) Authenticate(ctx context.Context, creds ttauth.Credentials) (*ttauth.AuthenticatedUser, error) {
-	user, err := p.lookup.GetByEmail(ctx, creds.Email)
+	rows, err := p.lookup.FindByEmail(ctx, creds.Email, creds.OrgSlug)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ttauth.ErrInvalidCredentials
-		}
 		return nil, err
 	}
+	// 0 matches → credentials invalid. More than 1 match → ambiguous
+	// (email collides across tenants and caller didn't specify OrgSlug) —
+	// treat as invalid to avoid any cross-tenant leak.
+	if len(rows) != 1 {
+		return nil, ttauth.ErrInvalidCredentials
+	}
+	user := rows[0]
 
 	if user.PasswordHash == nil || *user.PasswordHash == "" {
 		return nil, ttauth.ErrInvalidCredentials
@@ -115,17 +121,26 @@ type gormUserLookup struct {
 	db *gorm.DB
 }
 
-func (g *gormUserLookup) GetByEmail(ctx context.Context, email string) (*userRow, error) {
-	var row userRow
-	err := g.db.WithContext(ctx).
-		Table("users").
-		Select("id, organization_id, first_name, last_name, email, avatar_url, password_hash").
-		Where("email = ?", email).
-		Take(&row).Error
-	if err != nil {
+// FindByEmail returns every user matching the given email. When orgSlug is
+// non-empty, the query joins organizations and restricts to that slug, so the
+// result contains at most one row. An empty slice (not ErrRecordNotFound) is
+// returned for a miss — the caller distinguishes ambiguous vs missing by length.
+func (g *gormUserLookup) FindByEmail(ctx context.Context, email, orgSlug string) ([]*userRow, error) {
+	var rows []*userRow
+	q := g.db.WithContext(ctx).
+		Table("users AS u").
+		Select("u.id, u.organization_id, u.first_name, u.last_name, u.email, u.avatar_url, u.password_hash").
+		Where("u.email = ?", email)
+
+	if orgSlug != "" {
+		q = q.Joins("JOIN organizations AS o ON o.id = u.organization_id").
+			Where("o.slug = ?", orgSlug)
+	}
+
+	if err := q.Find(&rows).Error; err != nil {
 		return nil, err
 	}
-	return &row, nil
+	return rows, nil
 }
 
 func (g *gormUserLookup) GetRoles(ctx context.Context, userID int64) ([]string, error) {

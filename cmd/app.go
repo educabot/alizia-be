@@ -23,7 +23,11 @@ type App struct {
 
 func NewApp(cfg *config.Config) *App {
 	db, err := dbconn.NewPostgresConnector(dbconn.PostgresConfig{
-		URL: cfg.DatabaseURL,
+		URL:                cfg.DatabaseURL,
+		MaxOpenConnections: cfg.DBMaxOpenConns,
+		MaxIdleConnections: cfg.DBMaxIdleConns,
+		ConnMaxLifetime:    cfg.DBConnMaxLifetime,
+		ConnMaxIdleTime:    cfg.DBConnMaxIdleTime,
 	}).Connect()
 	if err != nil {
 		log.Fatal("failed to connect to database: ", err)

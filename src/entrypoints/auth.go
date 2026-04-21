@@ -23,9 +23,14 @@ import (
 )
 
 // loginRequest is the JSON body accepted by POST /api/v1/auth/login.
+// OrgSlug is optional: when present, it scopes the lookup to that org so an
+// email that exists in multiple tenants resolves deterministically. When
+// absent, a collision (same email in >1 org) is treated as invalid credentials
+// by the provider to avoid cross-tenant ambiguity.
 type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	OrgSlug  string `json:"org_slug,omitempty"`
 }
 
 // loginResponse is the body returned on successful authentication. The token
@@ -55,6 +60,7 @@ func NewLoginHandler(provider ttauth.CredentialsProvider, toker tokens.Toker, du
 		user, err := provider.Authenticate(req.Context(), ttauth.Credentials{
 			Email:    email,
 			Password: body.Password,
+			OrgSlug:  strings.TrimSpace(body.OrgSlug),
 		})
 		if err != nil {
 			if errors.Is(err, ttauth.ErrInvalidCredentials) {

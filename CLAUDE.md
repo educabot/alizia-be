@@ -15,6 +15,7 @@ Go backend for **Alizia**, a multi-tenant educational planning platform. Coordin
 - One file = one responsibility (especially in usecases)
 - Usecases NEVER import infrastructure — only providers (interfaces) and entities
 - Every usecase Request struct must have a `Validate() error` method returning `providers.ErrValidation` (wrapped with `fmt.Errorf("%w: ...", ...)`), called as the first statement of `Execute`. Always validate tenant scope (`OrgID`) plus all other required fields
+- HTTP handlers in `src/entrypoints/` must return explicit `xxxResponse` DTOs (lowercase, file-local) and map entities with `mapXxx(e entities.Xxx) xxxResponse` / `mapXxxs(es []entities.Xxx) []xxxResponse`. Never return raw GORM entities — DTOs are the public API contract and protect against accidental field exposure (`password_hash`, `profile_data`, internal timestamps). Reference pattern: `timeSlotResponse` in `src/entrypoints/courses.go`. `mapXxxs` must use `make([]T, len(in))` so empty lists serialize as `[]`, not `null`.
 
 ## Architecture
 

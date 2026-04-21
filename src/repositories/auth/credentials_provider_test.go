@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/gorm"
 
 	ttauth "github.com/educabot/team-ai-toolkit/auth"
 )
@@ -18,12 +17,12 @@ type mockUserLookup struct {
 	mock.Mock
 }
 
-func (m *mockUserLookup) GetByEmail(ctx context.Context, email string) (*userRow, error) {
-	args := m.Called(ctx, email)
+func (m *mockUserLookup) FindByEmail(ctx context.Context, email, orgSlug string) ([]*userRow, error) {
+	args := m.Called(ctx, email, orgSlug)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*userRow), args.Error(1)
+	return args.Get(0).([]*userRow), args.Error(1)
 }
 
 func (m *mockUserLookup) GetRoles(ctx context.Context, userID int64) ([]string, error) {
@@ -50,8 +49,8 @@ func ptr[T any](v T) *T { return &v }
 
 func TestCredentialsProvider_EmailNotFound_ReturnsInvalidCredentials(t *testing.T) {
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "missing@test.com").
-		Return(nil, gorm.ErrRecordNotFound)
+	lookup.On("FindByEmail", mock.Anything, "missing@test.com", "").
+		Return([]*userRow{}, nil)
 
 	provider := newProviderWithLookup(lookup)
 
@@ -67,14 +66,14 @@ func TestCredentialsProvider_EmailNotFound_ReturnsInvalidCredentials(t *testing.
 func TestCredentialsProvider_WrongPassword_ReturnsInvalidCredentials(t *testing.T) {
 	hash := makeHashFixture(t, "correct-password")
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "user@test.com").Return(&userRow{
+	lookup.On("FindByEmail", mock.Anything, "user@test.com", "").Return([]*userRow{{
 		ID:             42,
 		OrganizationID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
 		FirstName:      "Ana",
 		LastName:       "Admin",
 		Email:          "user@test.com",
 		PasswordHash:   &hash,
-	}, nil)
+	}}, nil)
 
 	provider := newProviderWithLookup(lookup)
 
@@ -89,13 +88,13 @@ func TestCredentialsProvider_WrongPassword_ReturnsInvalidCredentials(t *testing.
 
 func TestCredentialsProvider_NilPasswordHash_ReturnsInvalidCredentials(t *testing.T) {
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "nohash@test.com").Return(&userRow{
+	lookup.On("FindByEmail", mock.Anything, "nohash@test.com", "").Return([]*userRow{{
 		ID:             7,
 		OrganizationID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
 		FirstName:      "Nope",
 		Email:          "nohash@test.com",
 		PasswordHash:   nil,
-	}, nil)
+	}}, nil)
 
 	provider := newProviderWithLookup(lookup)
 
@@ -111,7 +110,7 @@ func TestCredentialsProvider_NilPasswordHash_ReturnsInvalidCredentials(t *testin
 func TestCredentialsProvider_LookupError_PropagatesAsIs(t *testing.T) {
 	boom := errors.New("db is down")
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "user@test.com").Return(nil, boom)
+	lookup.On("FindByEmail", mock.Anything, "user@test.com", "").Return(nil, boom)
 
 	provider := newProviderWithLookup(lookup)
 
@@ -130,14 +129,14 @@ func TestCredentialsProvider_RolesLookupError_PropagatesAsIs(t *testing.T) {
 	boom := errors.New("roles query failed")
 
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "user@test.com").Return(&userRow{
+	lookup.On("FindByEmail", mock.Anything, "user@test.com", "").Return([]*userRow{{
 		ID:             99,
 		OrganizationID: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
 		FirstName:      "Ana",
 		LastName:       "Admin",
 		Email:          "user@test.com",
 		PasswordHash:   &hash,
-	}, nil)
+	}}, nil)
 	lookup.On("GetRoles", mock.Anything, int64(99)).Return(nil, boom)
 
 	provider := newProviderWithLookup(lookup)
@@ -157,7 +156,7 @@ func TestCredentialsProvider_HappyPath_ReturnsAuthenticatedUserWithAudience(t *t
 	orgID := "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
 
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "admin@neuquen.edu.ar").Return(&userRow{
+	lookup.On("FindByEmail", mock.Anything, "admin@neuquen.edu.ar", "neuquen").Return([]*userRow{{
 		ID:             1,
 		OrganizationID: orgID,
 		FirstName:      "Ana",
@@ -165,7 +164,7 @@ func TestCredentialsProvider_HappyPath_ReturnsAuthenticatedUserWithAudience(t *t
 		Email:          "admin@neuquen.edu.ar",
 		AvatarURL:      ptr(avatar),
 		PasswordHash:   &hash,
-	}, nil)
+	}}, nil)
 	lookup.On("GetRoles", mock.Anything, int64(1)).Return([]string{"admin"}, nil)
 
 	provider := newProviderWithLookup(lookup)
@@ -173,7 +172,7 @@ func TestCredentialsProvider_HappyPath_ReturnsAuthenticatedUserWithAudience(t *t
 	user, err := provider.Authenticate(context.Background(), ttauth.Credentials{
 		Email:    "admin@neuquen.edu.ar",
 		Password: "admin123",
-		OrgSlug:  "neuquen", // intentionally set, must be ignored by the provider
+		OrgSlug:  "neuquen",
 	})
 
 	assert.NoError(t, err)
@@ -193,14 +192,14 @@ func TestCredentialsProvider_NoLastName_UsesFirstNameOnly(t *testing.T) {
 	orgID := "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
 
 	lookup := &mockUserLookup{}
-	lookup.On("GetByEmail", mock.Anything, "solo@test.com").Return(&userRow{
+	lookup.On("FindByEmail", mock.Anything, "solo@test.com", "").Return([]*userRow{{
 		ID:             5,
 		OrganizationID: orgID,
 		FirstName:      "Solo",
 		LastName:       "",
 		Email:          "solo@test.com",
 		PasswordHash:   &hash,
-	}, nil)
+	}}, nil)
 	lookup.On("GetRoles", mock.Anything, int64(5)).Return([]string{"teacher"}, nil)
 
 	provider := newProviderWithLookup(lookup)
@@ -215,5 +214,28 @@ func TestCredentialsProvider_NoLastName_UsesFirstNameOnly(t *testing.T) {
 		assert.Equal(t, "Solo", user.Name)
 		assert.Equal(t, "", user.Avatar)
 	}
+	lookup.AssertExpectations(t)
+}
+
+// TestCredentialsProvider_AmbiguousEmail_RejectsWithoutOrgSlug verifies the
+// security property that an email existing in multiple orgs cannot log in
+// without explicitly disambiguating by OrgSlug. Without this, Take()-style
+// lookups could issue a JWT bound to a non-deterministic tenant.
+func TestCredentialsProvider_AmbiguousEmail_RejectsWithoutOrgSlug(t *testing.T) {
+	hash := makeHashFixture(t, "admin123")
+	lookup := &mockUserLookup{}
+	lookup.On("FindByEmail", mock.Anything, "shared@test.com", "").Return([]*userRow{
+		{ID: 10, OrganizationID: "org-a", FirstName: "A", Email: "shared@test.com", PasswordHash: &hash},
+		{ID: 11, OrganizationID: "org-b", FirstName: "B", Email: "shared@test.com", PasswordHash: &hash},
+	}, nil)
+
+	provider := newProviderWithLookup(lookup)
+
+	_, err := provider.Authenticate(context.Background(), ttauth.Credentials{
+		Email:    "shared@test.com",
+		Password: "admin123",
+	})
+
+	assert.ErrorIs(t, err, ttauth.ErrInvalidCredentials)
 	lookup.AssertExpectations(t)
 }

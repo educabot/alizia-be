@@ -22,7 +22,7 @@ func TestComplete_Success(t *testing.T) {
 	ctx := context.Background()
 
 	users.On("FindByID", ctx, orgID, int64(1)).Return(&entities.User{ID: 1}, nil)
-	users.On("CompleteOnboarding", ctx, int64(1)).Return(nil)
+	users.On("CompleteOnboarding", ctx, orgID, int64(1)).Return(nil)
 
 	err := uc.Execute(ctx, onboarding.CompleteRequest{OrgID: orgID, UserID: 1})
 
@@ -56,7 +56,7 @@ func TestComplete_Idempotent(t *testing.T) {
 	// First call: user not yet completed → CompleteOnboarding must be invoked
 	users.On("FindByID", ctx, orgID, int64(1)).
 		Return(&entities.User{ID: 1, OnboardingCompletedAt: nil}, nil).Once()
-	users.On("CompleteOnboarding", ctx, int64(1)).Return(nil).Once()
+	users.On("CompleteOnboarding", ctx, orgID, int64(1)).Return(nil).Once()
 
 	err := uc.Execute(ctx, onboarding.CompleteRequest{OrgID: orgID, UserID: 1})
 	assert.NoError(t, err)

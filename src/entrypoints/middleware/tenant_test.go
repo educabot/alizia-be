@@ -30,14 +30,14 @@ func setupClaimsRequest(orgID string, userID string) *web.MockRequest {
 
 func TestTenantMiddleware_ValidOrgID(t *testing.T) {
 	orgID := uuid.New()
-	req := setupClaimsRequest(orgID.String(), "user-123")
+	req := setupClaimsRequest(orgID.String(), "42")
 
 	mw := middleware.TenantMiddleware()
 	resp := mw(req)
 
 	assert.Equal(t, 0, resp.Status)
 	assert.Equal(t, orgID, req.Values[middleware.OrgIDKey])
-	assert.Equal(t, "user-123", req.Values[middleware.UserIDKey])
+	assert.Equal(t, int64(42), req.Values[middleware.UserIDKey])
 }
 
 func TestTenantMiddleware_MissingClaims(t *testing.T) {
@@ -52,7 +52,7 @@ func TestTenantMiddleware_MissingClaims(t *testing.T) {
 func TestTenantMiddleware_EmptyAudience(t *testing.T) {
 	req := web.NewMockRequest()
 	claims := &tokens.Claims{
-		ID:    "user-123",
+		ID:    "42",
 		Email: "test@example.com",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Audience: jwt.ClaimStrings{},
@@ -67,7 +67,25 @@ func TestTenantMiddleware_EmptyAudience(t *testing.T) {
 }
 
 func TestTenantMiddleware_InvalidOrgUUID(t *testing.T) {
-	req := setupClaimsRequest("not-a-uuid", "user-123")
+	req := setupClaimsRequest("not-a-uuid", "42")
+
+	mw := middleware.TenantMiddleware()
+	resp := mw(req)
+
+	assert.Equal(t, http.StatusUnauthorized, resp.Status)
+}
+
+func TestTenantMiddleware_InvalidUserID(t *testing.T) {
+	req := setupClaimsRequest(uuid.New().String(), "user-abc")
+
+	mw := middleware.TenantMiddleware()
+	resp := mw(req)
+
+	assert.Equal(t, http.StatusUnauthorized, resp.Status)
+}
+
+func TestTenantMiddleware_ZeroUserID(t *testing.T) {
+	req := setupClaimsRequest(uuid.New().String(), "0")
 
 	mw := middleware.TenantMiddleware()
 	resp := mw(req)
@@ -77,7 +95,7 @@ func TestTenantMiddleware_InvalidOrgUUID(t *testing.T) {
 
 func TestOrgID_ReturnsUUID(t *testing.T) {
 	orgID := uuid.New()
-	req := setupClaimsRequest(orgID.String(), "user-123")
+	req := setupClaimsRequest(orgID.String(), "42")
 
 	mw := middleware.TenantMiddleware()
 	mw(req)
@@ -93,17 +111,17 @@ func TestOrgID_ReturnsNilWhenMissing(t *testing.T) {
 }
 
 func TestUserID_ReturnsID(t *testing.T) {
-	req := setupClaimsRequest(uuid.New().String(), "user-abc")
+	req := setupClaimsRequest(uuid.New().String(), "123")
 
 	mw := middleware.TenantMiddleware()
 	mw(req)
 
 	got := middleware.UserID(req)
-	assert.Equal(t, "user-abc", got)
+	assert.Equal(t, int64(123), got)
 }
 
-func TestUserID_ReturnsEmptyWhenMissing(t *testing.T) {
+func TestUserID_ReturnsZeroWhenMissing(t *testing.T) {
 	req := web.NewMockRequest()
 	got := middleware.UserID(req)
-	assert.Equal(t, "", got)
+	assert.Equal(t, int64(0), got)
 }

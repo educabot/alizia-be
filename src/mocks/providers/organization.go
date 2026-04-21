@@ -28,3 +28,11 @@ func (m *MockOrganizationProvider) FindBySlug(ctx context.Context, slug string) 
 	}
 	return args.Get(0).(*entities.Organization), args.Error(1)
 }
+
+func (m *MockOrganizationProvider) UpdateConfig(ctx context.Context, id uuid.UUID, configPatch map[string]any) (*entities.Organization, error) {
+	args := m.Called(ctx, id, configPatch)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entities.Organization), args.Error(1)
+}

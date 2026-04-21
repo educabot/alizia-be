@@ -16,7 +16,8 @@ var (
 
 // Alizia-specific errors
 var (
-	ErrDocNotFound      = bcerrors.New("coordination document not found")
-	ErrTopicMaxLevel    = bcerrors.New("topic exceeds max level")
-	ErrSharedClassLimit = bcerrors.New("shared classes limit exceeded")
+	ErrDocNotFound        = bcerrors.New("coordination document not found")
+	ErrTopicMaxLevel      = bcerrors.New("topic exceeds max level")
+	ErrSharedClassLimit   = bcerrors.New("shared classes limit exceeded")
+	ErrActivityMaxReached = bcerrors.New("activity templates limit reached for moment")
 )
