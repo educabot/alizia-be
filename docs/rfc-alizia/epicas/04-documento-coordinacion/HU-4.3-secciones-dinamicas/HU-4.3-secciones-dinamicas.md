@@ -15,10 +15,13 @@
 - [ ] Endpoint `PATCH /api/v1/coordination-documents/:id` permite editar secciones individuales
 - [ ] Editar una section_key que no existe en la config → 422
 - [ ] Secciones de tipo `text` almacenan `{ value: "..." }`
-- [ ] Secciones de tipo `select_text` almacenan `{ selected_option: "...", value: "..." }`
+- [ ] Secciones de tipo `select_text` almacenan `{ selected_option: "...", value: "...", variants: {...} }`
 - [ ] Endpoint `POST /api/v1/coordination-documents/:id/generate` genera contenido IA para todas las secciones
+- [ ] Para secciones `select_text`: la IA genera **una variante por cada opción** disponible. El coordinador también puede escribir una opción a mano
 - [ ] La generación usa el `ai_prompt` de cada sección en la config
-- [ ] El placeholder `{selected_option}` se reemplaza con la opción elegida
+- [ ] Solo tipos `text` y `select_text` en MVP
+- [ ] Secciones editables en estado `in_progress` y `published` (con warning en published)
+- [ ] **No hay botón "Regenerar" separado** — la re-generación de secciones individuales va por el chat con Alizia
 
 ## Tareas
 
@@ -61,6 +64,20 @@
 }
 ```
 
+### Generación de variantes para `select_text` (P6 — Decisión)
+
+Para secciones de tipo `select_text`, la IA genera **una variante por cada opción** disponible en `options`. Además, el coordinador puede **escribir una opción a mano** que no esté en la lista predefinida.
+
+**Flujo:**
+1. POST /generate dispara la generación de secciones
+2. Para cada sección `text`: se genera 1 contenido
+3. Para cada sección `select_text`: se generan N contenidos (uno por opción)
+4. Las variantes se almacenan todas en el JSONB
+5. El coordinador ve las N variantes, elige la que más le gusta, o escribe una propia
+6. Al seleccionar, `selected_option` y `value` se actualizan
+
+**Costo:** N llamadas a la IA por sección select_text (ej: 3 opciones = 3 generaciones). Aceptable para MVP dado que las secciones son pocas.
+
 ### JSONB sections del documento
 
 ```json
@@ -70,7 +87,27 @@
   },
   "methodological_strategy": {
     "selected_option": "proyecto",
-    "value": "Implementaremos un proyecto interdisciplinario..."
+    "value": "Implementaremos un proyecto interdisciplinario...",
+    "variants": {
+      "proyecto": "Implementaremos un proyecto interdisciplinario...",
+      "taller_laboratorio": "Se desarrollará un taller de laboratorio...",
+      "ateneo_debate": "Se organizará un ateneo de debate..."
+    }
+  }
+}
+```
+
+### Opción manual del coordinador
+
+Si el coordinador quiere escribir su propia opción en vez de elegir una variante generada:
+
+```json
+{
+  "methodological_strategy": {
+    "selected_option": "custom",
+    "custom_option_label": "Aprendizaje basado en problemas",
+    "value": "Texto escrito por el coordinador...",
+    "variants": { ... }
   }
 }
 ```
@@ -89,9 +126,31 @@
 
 El PATCH hace merge: solo actualiza las keys enviadas, no sobreescribe todo.
 
+### Re-generación via chat (P7 — Decisión)
+
+**No hay botón "Regenerar"** en la UI. Si el coordinador quiere regenerar una sección, le pide a Alizia en el chat:
+
+> "Alizia, reescribí el eje problemático enfocándote más en sustentabilidad"
+
+Alizia usa `update_section(section_key, content)` para actualizar la sección. Esto protege las ediciones manuales de otras secciones y da control granular al coordinador.
+
+La generación inicial (POST /generate) sigue existiendo como primer paso después del wizard.
+
+### Manejo de errores de IA (P17 — Decisión)
+
+- Timeout: reducido (configurable, por defecto 45s por llamada)
+- Si falla (timeout, 5xx, rate limit): **1 reintento automático**
+- Si falla 2 veces: error al usuario con mensaje amigable
+- Para generación multi-sección: si algunas secciones se generaron OK pero otras fallan, **guardar las exitosas** y reportar error parcial
+
 ## Test cases
 
 - 4.10: PATCH section válida → contenido actualizado
 - 4.11: PATCH section_key inválida (no existe en config) → 422
-- 4.12: POST generate → todas las secciones generadas con IA
-- 4.13: Sección select_text sin selected_option → 422
+- 4.12: POST generate con sección text → contenido generado
+- 4.13: POST generate con sección select_text → N variantes generadas (una por opción)
+- 4.14: Elegir variante → selected_option y value actualizados
+- 4.15: Escribir opción manual → custom_option_label guardado
+- 4.16: Sección select_text sin selected_option al publicar → validación en HU-4.5
+- 4.17: PATCH sección en documento published → 200 con warning
+- 4.18: Falla IA parcial → secciones exitosas guardadas, error reportado
