@@ -16,6 +16,62 @@ Sistema multi-tenant de planificacion educativa anual. Cada organizacion (colegi
 
 **Multi-tenancy**: todas las tablas principales tienen `organization_id` (incluido `users`, que pertenece a una unica org). La config de org controla: niveles de topics, secciones del doc de coordinacion, clases compartidas, tipos de recursos, etc.
 
+---
+
+## Estado de implementación (actualizado 2026-04-23)
+
+> **Convención:** Las tablas marcadas con ✅ están implementadas en código (migraciones + entidades + repositorios + endpoints). Las marcadas con ⏳ están diseñadas en este RFC pero **pendientes de implementación** en épicas futuras.
+
+| Tabla | Estado | Épica |
+|-------|--------|-------|
+| organizations | ✅ Implementada | 1, 3 |
+| users | ✅ Implementada | 1, 2 |
+| user_roles | ✅ Implementada | 1 |
+| areas | ✅ Implementada | 3 |
+| area_coordinators | ✅ Implementada | 1, 3 |
+| subjects | ✅ Implementada | 3 |
+| topics | ✅ Implementada | 3 |
+| courses | ✅ Implementada | 3 |
+| students | ✅ Implementada | 3 |
+| course_subjects | ✅ Implementada | 3 |
+| time_slots | ✅ Implementada | 3 |
+| time_slot_subjects | ✅ Implementada | 3 |
+| activities | ✅ Implementada | 3 |
+| coordination_documents | ⏳ Pendiente | 4 |
+| coord_doc_topics | ⏳ Pendiente | 4 |
+| coordination_document_subjects | ⏳ Pendiente | 4 |
+| coord_doc_subject_topics | ⏳ Pendiente | 4 |
+| coord_doc_classes | ⏳ Pendiente | 4 |
+| coord_doc_class_topics | ⏳ Pendiente | 4 |
+| teacher_lesson_plans | ⏳ Pendiente | 5 |
+| lesson_plan_topics | ⏳ Pendiente | 5 |
+| lesson_plan_moment_fonts | ⏳ Pendiente | 5 |
+| fonts | ⏳ Pendiente | 5 |
+| resource_types | ⏳ Pendiente | 6 |
+| organization_resource_types | ⏳ Pendiente | 6 |
+| resources | ⏳ Pendiente | 6 |
+
+### Diferencias código vs diseño original
+
+| Aspecto | Diseño RFC original | Implementación real |
+|---------|-------------------|-------------------|
+| `organizations.id` | `SERIAL` (integer) | `UUID` (uuid.UUID) |
+| Todos los demás IDs | `SERIAL` (int32) | `BIGSERIAL` (int64) |
+| `users.name` | Campo único `name` | Separado en `first_name` + `last_name` (migración 000003) |
+| `users` extra | Solo campos base | Agregados `onboarding_completed_at` (migración 004) y `profile_data JSONB` (migración 005) |
+| `courses.year` | Campo `year INTEGER` | **Eliminado** en migración 000013 (solo existe `school_year` en `course_subjects`) |
+| `course_subjects` | Sin `organization_id` | Agregado `organization_id UUID` para tenant scope directo |
+| `areas` constraint | Sin unique | Agregado `UNIQUE(organization_id, name)` (migración 011) |
+| `topics` index | Básico | Agregado composite index `(organization_id, parent_id)` (migración 012) |
+| `organizations.config` | Sin index | Agregado GIN index para queries JSONB (migración 006) |
+| Password hashing | bcrypt (RFC) | argon2id (implementación) |
+| Triggers 2, 3, 4 | En DB (plpgsql) | Resueltos en capa Go (usecases) — solo trigger 1 (`validate_time_slot_subject`) está en DB |
+| CRUD operations | Solo CREATE + READ | CRUD completo con DELETE (dependency check → 409) y UPDATE (partial) para todas las entidades |
+| Cycle detection topics | No mencionado | Implementado en usecase `UpdateTopic` con traversal transitivo |
+| Paginación | limit default 20, max 100 | limit default 50, max 200 |
+
+---
+
 ## Enums
 
 ```sql
@@ -32,7 +88,7 @@ CREATE TYPE resource_status AS ENUM ('draft', 'active');
 ```mermaid
 erDiagram
     organizations {
-        SERIAL id PK
+        UUID id PK
         VARCHAR name
         VARCHAR slug UK
         JSONB config
@@ -41,27 +97,31 @@ erDiagram
     }
 
     users {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         VARCHAR email UK
-        VARCHAR name
+        VARCHAR first_name
+        VARCHAR last_name
         TEXT password_hash
         TEXT avatar_url
+        TIMESTAMP onboarding_completed_at "NULL hasta completar onboarding"
+        JSONB profile_data "DEFAULT {} datos de perfil configurables por org"
         TIMESTAMP created_at
+        TIMESTAMP updated_at
         ___ ___ "Docentes, coordinadores, admins. Pertenecen a una unica org"
     }
 
     user_roles {
-        SERIAL id PK
-        INTEGER user_id FK
+        BIGSERIAL id PK
+        BIGINT user_id FK
         member_role role
         UNIQUE user_id_role
         ___ ___ "Roles del usuario en su org: teacher, coordinator, admin. Puede tener varios"
     }
 
     areas {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         VARCHAR name
         TEXT description
         TIMESTAMP created_at
@@ -69,17 +129,17 @@ erDiagram
     }
 
     area_coordinators {
-        SERIAL id PK
-        INTEGER area_id FK
-        INTEGER user_id FK
+        BIGSERIAL id PK
+        BIGINT area_id FK
+        BIGINT user_id FK
         UNIQUE area_id_user_id
         ___ ___ "Que usuarios coordinan que areas (M2M)"
     }
 
     subjects {
-        SERIAL id PK
-        INTEGER organization_id FK
-        INTEGER area_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
+        BIGINT area_id FK
         VARCHAR name
         TEXT description
         TIMESTAMP created_at
@@ -87,9 +147,9 @@ erDiagram
     }
 
     topics {
-        SERIAL id PK
-        INTEGER organization_id FK
-        INTEGER parent_id FK "self-ref, NULL=raiz"
+        BIGSERIAL id PK
+        UUID organization_id FK
+        BIGINT parent_id FK "self-ref, NULL=raiz"
         VARCHAR name
         TEXT description
         INTEGER level "precalculado, arranca en 1"
@@ -98,26 +158,26 @@ erDiagram
     }
 
     courses {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         VARCHAR name
         TIMESTAMP created_at
-        ___ ___ "Grupos de alumnos (ej: 2do 1era)"
     }
 
     students {
-        SERIAL id PK
-        INTEGER course_id FK
+        BIGSERIAL id PK
+        BIGINT course_id FK
         VARCHAR name
         TIMESTAMP created_at
         ___ ___ "Alumnos de un curso. Solo lectura informativa"
     }
 
     course_subjects {
-        SERIAL id PK
-        INTEGER course_id FK
-        INTEGER subject_id FK
-        INTEGER teacher_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
+        BIGINT course_id FK
+        BIGINT subject_id FK
+        BIGINT teacher_id FK
         DATE start_date
         DATE end_date
         INTEGER school_year
@@ -126,8 +186,8 @@ erDiagram
     }
 
     time_slots {
-        SERIAL id PK
-        INTEGER course_id FK
+        BIGSERIAL id PK
+        BIGINT course_id FK
         SMALLINT day_of_week
         TIME start_time
         TIME end_time
@@ -136,71 +196,71 @@ erDiagram
     }
 
     time_slot_subjects {
-        SERIAL id PK
-        INTEGER time_slot_id FK
-        INTEGER course_subject_id FK
+        BIGSERIAL id PK
+        BIGINT time_slot_id FK
+        BIGINT course_subject_id FK
         UNIQUE time_slot_id_course_subject_id
         ___ ___ "course_subjects por slot. 2 registros = clase compartida"
     }
 
     coordination_documents {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         VARCHAR name
-        INTEGER area_id FK
+        BIGINT area_id FK
         DATE start_date
         DATE end_date
         coord_doc_status status "DEFAULT pending"
         JSONB sections "dinamico segun org config coord_doc_sections"
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        ___ ___ "OUTPUT PRINCIPAL. Planificacion anual de un area con secciones dinamicas"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. OUTPUT PRINCIPAL. Planificacion anual de un area con secciones dinamicas"
     }
 
     coord_doc_topics {
-        SERIAL id PK
-        INTEGER coordination_document_id FK
-        INTEGER topic_id FK
+        BIGSERIAL id PK
+        BIGINT coordination_document_id FK
+        BIGINT topic_id FK
         UNIQUE coordination_document_id_topic_id
-        ___ ___ "Junction: topics seleccionados para el doc al nivel de topic_selection_level"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Junction: topics seleccionados para el doc al nivel de topic_selection_level"
     }
 
     coordination_document_subjects {
-        SERIAL id PK
-        INTEGER coordination_document_id FK
-        INTEGER subject_id FK
+        BIGSERIAL id PK
+        BIGINT coordination_document_id FK
+        BIGINT subject_id FK
         INTEGER class_count
-        ___ ___ "Disciplinas incluidas en el doc con cantidad de clases en el periodo"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Disciplinas incluidas en el doc con cantidad de clases en el periodo"
     }
 
     coord_doc_subject_topics {
-        SERIAL id PK
-        INTEGER coord_doc_subject_id FK
-        INTEGER topic_id FK
+        BIGSERIAL id PK
+        BIGINT coord_doc_subject_id FK
+        BIGINT topic_id FK
         UNIQUE coord_doc_subject_id_topic_id
-        ___ ___ "Junction: topics asignados a una disciplina dentro del doc"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Junction: topics asignados a una disciplina dentro del doc"
     }
 
     coord_doc_classes {
-        SERIAL id PK
-        INTEGER coord_doc_subject_id FK
+        BIGSERIAL id PK
+        BIGINT coord_doc_subject_id FK
         INTEGER class_number
         VARCHAR title
         TEXT objective
-        ___ ___ "Plan de clases por disciplina generado por IA: numero, titulo, objetivo"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Plan de clases por disciplina generado por IA: numero, titulo, objetivo"
     }
 
     coord_doc_class_topics {
-        SERIAL id PK
-        INTEGER coord_doc_class_id FK
-        INTEGER topic_id FK
+        BIGSERIAL id PK
+        BIGINT coord_doc_class_id FK
+        BIGINT topic_id FK
         UNIQUE coord_doc_class_id_topic_id
-        ___ ___ "Junction: topics cubiertos en cada clase individual"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Junction: topics cubiertos en cada clase individual"
     }
 
     activities {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         class_moment moment
         VARCHAR name
         TEXT description
@@ -210,9 +270,9 @@ erDiagram
     }
 
     teacher_lesson_plans {
-        SERIAL id PK
-        INTEGER course_subject_id FK
-        INTEGER coordination_document_id FK
+        BIGSERIAL id PK
+        BIGINT course_subject_id FK
+        BIGINT coordination_document_id FK
         INTEGER class_number
         VARCHAR title
         TEXT objective
@@ -225,78 +285,78 @@ erDiagram
         resources_mode resources_mode
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        ___ ___ "Planificación docente. Momentos con actividades + contenido IA"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Planificación docente. Momentos con actividades + contenido IA"
     }
 
     lesson_plan_topics {
-        SERIAL id PK
-        INTEGER lesson_plan_id FK
-        INTEGER topic_id FK
+        BIGSERIAL id PK
+        BIGINT lesson_plan_id FK
+        BIGINT topic_id FK
         UNIQUE lesson_plan_id_topic_id
-        ___ ___ "Junction: topics cubiertos en un lesson plan"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Junction: topics cubiertos en un lesson plan"
     }
 
     lesson_plan_moment_fonts {
-        SERIAL id PK
-        INTEGER lesson_plan_id FK
+        BIGSERIAL id PK
+        BIGINT lesson_plan_id FK
         class_moment moment "NULL = global (aplica a todos los momentos)"
-        INTEGER font_id FK
+        BIGINT font_id FK
         UNIQUE lesson_plan_id_moment_font_id
-        ___ ___ "Junction: font por momento o global en un lesson plan"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Junction: font por momento o global en un lesson plan"
     }
 
     fonts {
-        SERIAL id PK
-        INTEGER organization_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
         VARCHAR name
         TEXT description
         TEXT file_url
         VARCHAR file_type
         TEXT thumbnail_url
-        INTEGER area_id FK
+        BIGINT area_id FK
         BOOLEAN is_validated
         TIMESTAMP created_at
-        ___ ___ "Fuentes educativas (PDFs, videos, docs). is_validated = aprobado por coordinadores"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Fuentes educativas (PDFs, videos, docs). is_validated = aprobado por coordinadores"
     }
 
     resource_types {
-        SERIAL id PK
+        BIGSERIAL id PK
         VARCHAR key UK "ej: lecture_guide, course_sheet"
         VARCHAR name
         TEXT description
         TEXT prompt "default AI prompt"
         JSONB output_schema "default output structure"
-        INTEGER organization_id FK "NULL = publico, set = privado"
+        UUID organization_id FK "NULL = publico, set = privado"
         BOOLEAN requires_font "DEFAULT false"
         BOOLEAN is_active "DEFAULT true"
         TIMESTAMP created_at
-        ___ ___ "Tipos de recurso con prompt IA y output_schema. NULL org = publico"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Tipos de recurso con prompt IA y output_schema. NULL org = publico"
     }
 
     organization_resource_types {
-        SERIAL id PK
-        INTEGER organization_id FK
-        INTEGER resource_type_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
+        BIGINT resource_type_id FK
         BOOLEAN enabled "DEFAULT true"
         TEXT custom_prompt "NULL = usa default"
         JSONB custom_output_schema "NULL = usa default"
         UNIQUE organization_id_resource_type_id
-        ___ ___ "Override por org de tipos publicos: enable/disable + custom prompt/schema"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Override por org de tipos publicos: enable/disable + custom prompt/schema"
     }
 
     resources {
-        SERIAL id PK
-        INTEGER organization_id FK
-        INTEGER resource_type_id FK
+        BIGSERIAL id PK
+        UUID organization_id FK
+        BIGINT resource_type_id FK
         VARCHAR title
         JSONB content "estructura segun resource_type.output_schema"
-        INTEGER user_id FK
-        INTEGER font_id FK "nullable, fuente seleccionada al crear"
-        INTEGER course_subject_id FK "nullable, contexto de creacion"
+        BIGINT user_id FK
+        BIGINT font_id FK "nullable, fuente seleccionada al crear"
+        BIGINT course_subject_id FK "nullable, contexto de creacion"
         resource_status status "DEFAULT draft"
         TIMESTAMP created_at
         TIMESTAMP updated_at
-        ___ ___ "Recurso generado por docente. content JSONB segun output_schema del tipo"
+        ___ ___ "⏳ PENDIENTE — diseñado, no implementado aún. Recurso generado por docente. content JSONB segun output_schema del tipo"
     }
 
     %% Relationships
@@ -445,7 +505,7 @@ flowchart TD
 | Tabla | Descripción |
 |-------|-------------|
 | `organizations` | Tenant. Cada cliente (universidad, colegio) es una org con config custom |
-| `users` | Docentes, coordinadores, admins. Auth con `password_hash` (bcrypt). Pertenecen a una unica org via `organization_id` FK |
+| `users` | Docentes, coordinadores, admins. Auth con `password_hash` (argon2id). Campos `first_name` + `last_name` (separados), `onboarding_completed_at`, `profile_data` JSONB. Pertenecen a una unica org via `organization_id` FK |
 | `user_roles` | Roles del usuario en su org (teacher, coordinator, admin). Un usuario puede tener varios roles |
 | `areas` | Agrupación de disciplinas (ej: "Ciencias"). Opcional según config |
 | `area_coordinators` | Qué usuarios coordinan qué áreas (M2M) |
@@ -456,20 +516,20 @@ flowchart TD
 | `course_subjects` | Instancia: curso + disciplina + docente + periodo lectivo |
 | `time_slots` | Slots horarios semanales de un curso (día + hora inicio/fin) |
 | `time_slot_subjects` | Qué course_subject(s) se dictan en cada slot. 2 registros = clase compartida |
-| `coordination_documents` | Output principal: planificación anual. `sections` JSONB dinámico según `config.coord_doc_sections` |
-| `coord_doc_topics` | Junction: topics seleccionados para un documento de coordinación (antes `topic_ids[]`) |
-| `coordination_document_subjects` | Disciplinas incluidas en un doc de coordinación con `class_count` (antes JSONB `subjects_data`) |
-| `coord_doc_subject_topics` | Junction: topics asignados a una disciplina dentro del documento (antes `subjects_data.*.category_ids[]`) |
-| `coord_doc_classes` | Plan de clase por disciplina: class_number, title, objective (antes JSONB `class_plan`) |
-| `coord_doc_class_topics` | Junction: topics de cada clase individual (antes `class_plan.*.topic_ids[]`) |
+| `coordination_documents` | ⏳ Output principal: planificación anual. `sections` JSONB dinámico según `config.coord_doc_sections` |
+| `coord_doc_topics` | ⏳ Junction: topics seleccionados para un documento de coordinación (antes `topic_ids[]`) |
+| `coordination_document_subjects` | ⏳ Disciplinas incluidas en un doc de coordinación con `class_count` (antes JSONB `subjects_data`) |
+| `coord_doc_subject_topics` | ⏳ Junction: topics asignados a una disciplina dentro del documento (antes `subjects_data.*.category_ids[]`) |
+| `coord_doc_classes` | ⏳ Plan de clase por disciplina: class_number, title, objective (antes JSONB `class_plan`) |
+| `coord_doc_class_topics` | ⏳ Junction: topics de cada clase individual (antes `class_plan.*.topic_ids[]`) |
 | `activities` | Actividades didácticas con `moment` enum (apertura, desarrollo, cierre) |
-| `teacher_lesson_plans` | Planificación docente: objetivo, contenido, momentos con actividades |
-| `lesson_plan_topics` | Junction: topics cubiertos en un lesson plan (antes `topic_ids[]`) |
-| `lesson_plan_moment_fonts` | Junction: font asignado por momento en un lesson plan (antes JSONB `moment_font_ids`) |
-| `fonts` | **Fuentes educativas** (del espanol "fuentes", NO tipografia). PDFs, videos, documentos de referencia curados. `is_validated = true` = aprobado por coordinadores y visible para docentes en la API. Pertenecen a un `area_id` |
-| `resource_types` | Tipos de recurso (lecture_guide, course_sheet, etc). `organization_id` NULL = público (visible para todas las orgs), set = privado (solo para esa org). Incluye prompt y output_schema por defecto. `requires_font` indica si el flujo de creación requiere seleccionar una fuente |
-| `organization_resource_types` | Override por org de tipos públicos: enable/disable + custom prompt/output_schema. Si no hay registro, el tipo público se muestra con defaults |
-| `resources` | Instancia de un recurso creado por un docente. FK a `resource_types` para saber el tipo. `font_id` opcional (fuente seleccionada al crear, si el tipo lo requiere) |
+| `teacher_lesson_plans` | ⏳ Planificación docente: objetivo, contenido, momentos con actividades |
+| `lesson_plan_topics` | ⏳ Junction: topics cubiertos en un lesson plan (antes `topic_ids[]`) |
+| `lesson_plan_moment_fonts` | ⏳ Junction: font asignado por momento en un lesson plan (antes JSONB `moment_font_ids`) |
+| `fonts` | ⏳ **Fuentes educativas** (del espanol "fuentes", NO tipografia). PDFs, videos, documentos de referencia curados. `is_validated = true` = aprobado por coordinadores y visible para docentes en la API. Pertenecen a un `area_id` |
+| `resource_types` | ⏳ Tipos de recurso (lecture_guide, course_sheet, etc). `organization_id` NULL = público (visible para todas las orgs), set = privado (solo para esa org). Incluye prompt y output_schema por defecto. `requires_font` indica si el flujo de creación requiere seleccionar una fuente |
+| `organization_resource_types` | ⏳ Override por org de tipos públicos: enable/disable + custom prompt/output_schema. Si no hay registro, el tipo público se muestra con defaults |
+| `resources` | ⏳ Instancia de un recurso creado por un docente. FK a `resource_types` para saber el tipo. `font_id` opcional (fuente seleccionada al crear, si el tipo lo requiere) |
 
 ---
 
@@ -991,6 +1051,11 @@ CREATE TRIGGER trg_cascade_topic_levels
 | `trg_validate_topic_level` | `topics` | BEFORE INSERT/UPDATE | Calcula level y valida max_levels |
 | `trg_cascade_topic_levels` | `topics` | AFTER UPDATE | Recalcula levels de descendientes al mover topic |
 
+> **Nota de implementación (2026-04-23):** Solo el trigger 1 (`trg_validate_time_slot_subject`) está implementado como trigger SQL en la base de datos. Los triggers 2, 3 y 4 (`validate_time_slot_max_subjects`, `validate_topic_level`, `cascade_topic_levels`) se resolvieron en la capa de aplicación Go (usecases) en lugar de en la DB. Esto simplifica el debugging y permite mensajes de error más descriptivos. Las validaciones equivalentes son:
+> - **Max subjects por slot** → `CreateTimeSlot` usecase valida `len(CourseSubjectIDs)` y `shared_classes_enabled`
+> - **Topic level** → `CreateTopic` / `UpdateTopic` usecases computan level y validan contra `config.topic_max_levels`
+> - **Cascade levels** → `UpdateTopic` usecase usa `descendantsOf()` para re-computar niveles del subárbol + detección de ciclos
+
 > **Nota:** Las validaciones de momentos didacticos (1 apertura, 1-3 desarrollo, 1 cierre) se hacen en la capa de aplicacion (usecase), no en DB, porque `teacher_lesson_plans.moments` es JSONB y no se puede validar con constraints SQL simples.
 
 ---
@@ -1097,7 +1162,7 @@ GORM crea indices automaticos para columnas con tag `index` en los structs. Los 
 
 | Tabla | Columna | Motivo |
 |-------|---------|--------|
-| `users` | `password_hash` | Auth con bcrypt |
+| `users` | `password_hash` | Auth con argon2id |
 | `coordination_documents` | `updated_at` | Se actualiza frecuentemente (PATCH, chat, IA) |
 | `resources` | `course_subject_id` | Vincula el recurso a su contexto de creación |
 | `resources` | `resource_type_id` | FK a `resource_types` (antes VARCHAR hardcodeado) |

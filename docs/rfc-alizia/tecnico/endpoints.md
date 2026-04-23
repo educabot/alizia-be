@@ -7,10 +7,14 @@ Todos los endpoints requieren autenticacion via Bearer token (JWT via team-ai-to
 **Convenciones:**
 - Autenticacion: `Authorization: Bearer <JWT>`
 - Content-Type: `application/json`
-- Paginacion: query params `limit` (default 20, max 100) y `offset` (default 0)
+- Paginacion: query params `limit` (default 50, max 200) y `offset` (default 0)
 - Respuesta paginada: `{ "items": [...], "more": true|false }`
 - Filtro por org: automatico via JWT claims (el backend extrae `organization_id` del token)
 - Errores: ver [errores.md](./errores.md) para catalogo completo
+
+---
+
+> **Estado de implementación (2026-04-23):** Los endpoints marcados con ✅ están implementados y testeados. Los marcados con ⏳ están diseñados pero pendientes de implementación en épicas futuras (4+).
 
 ---
 
@@ -27,7 +31,53 @@ Health check. No requiere autenticacion.
 
 ---
 
-## Admin (Fase 2)
+## Organización (Fase 2) ✅
+
+### `GET /api/v1/organizations/me`
+
+Obtener la organización del usuario autenticado.
+
+**Roles:** Todos
+
+**Response `200`:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "Universidad Nacional",
+  "slug": "univ-nacional",
+  "config": { ... }
+}
+```
+
+> **Nota:** El path usa `/me` en lugar de `/:id` — la org se resuelve desde el JWT del usuario. No es posible consultar otras organizaciones.
+
+**Errores:** `NOT_FOUND`
+
+---
+
+### `PATCH /api/v1/organizations/me/config`
+
+Actualizar configuración de la organización (merge parcial JSONB).
+
+**Roles:** admin
+
+**Request:**
+```json
+{
+  "shared_classes_enabled": true,
+  "topic_max_levels": 4
+}
+```
+
+Solo se actualizan las keys enviadas (shallow merge). Las keys no enviadas se preservan.
+
+**Response `200`:** Organización actualizada (mismo schema que GET).
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+## Admin (Fase 2) ✅
 
 ### `POST /api/v1/areas`
 
@@ -130,6 +180,30 @@ Asignar coordinador a un area.
 
 ---
 
+### `DELETE /api/v1/areas/:id/coordinators/:user_id` ✅
+
+Remover coordinador de un área.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`
+
+---
+
+### `DELETE /api/v1/areas/:id` ✅
+
+Eliminar área. Rechaza si tiene disciplinas asociadas.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`, `CONFLICT` (409 — tiene subjects dependientes)
+
+---
+
 ### `POST /api/v1/subjects`
 
 Crear disciplina.
@@ -185,6 +259,41 @@ Listar disciplinas de la org.
   "more": false
 }
 ```
+
+---
+
+### `PATCH /api/v1/subjects/:id` ✅
+
+Actualizar disciplina (nombre, descripción, mover de área).
+
+**Roles:** coordinator, admin
+
+**Request:**
+```json
+{
+  "name": "Matemática Aplicada",
+  "description": "Actualizada",
+  "area_id": 2
+}
+```
+
+Todos los campos son opcionales. `area_id` permite mover la disciplina a otra área (validada en la misma org).
+
+**Response `200`:** Subject actualizado.
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+### `DELETE /api/v1/subjects/:id` ✅
+
+Eliminar disciplina. Rechaza si tiene course_subjects asociados.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`, `CONFLICT` (409 — tiene course_subjects dependientes)
 
 ---
 
@@ -291,6 +400,37 @@ Detalle de curso con students y schedule.
 
 ---
 
+### `PATCH /api/v1/courses/:id` ✅
+
+Actualizar curso (nombre).
+
+**Roles:** admin
+
+**Request:**
+```json
+{
+  "name": "3ro 2da"
+}
+```
+
+**Response `200`:** Curso actualizado con students y course_subjects precargados.
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+### `DELETE /api/v1/courses/:id` ✅
+
+Eliminar curso. Rechaza si tiene dependencias.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`, `CONFLICT` (409 — tiene course_subjects, students o time_slots)
+
+---
+
 ### `POST /api/v1/courses/:id/time-slots`
 
 Crear time slot para un curso.
@@ -332,6 +472,32 @@ Para clase compartida, enviar 2 IDs:
 ```
 
 **Errores:** `VALIDATION_ERROR`, `NOT_FOUND` (course o course_subject), `SHARED_CLASSES_DISABLED`, `COURSE_SUBJECT_WRONG_COURSE`, `TIME_SLOT_OVERLAP`
+
+---
+
+### `GET /api/v1/courses/:id/schedule` ✅
+
+Obtener grilla horaria completa del curso.
+
+**Roles:** Todos
+
+**Response `200`:**
+```json
+[
+  {
+    "id": 1,
+    "course_id": 1,
+    "day": 1,
+    "start_time": "08:00",
+    "end_time": "09:30",
+    "subjects": [
+      { "course_subject_id": 1, "subject_name": "Matemáticas", "teacher_name": "Doc. García" }
+    ]
+  }
+]
+```
+
+**Errores:** `NOT_FOUND`
 
 ---
 
@@ -404,6 +570,41 @@ Listar topics como arbol.
 
 ---
 
+### `PATCH /api/v1/topics/:id` ✅
+
+Actualizar topic (nombre, descripción, reparentar).
+
+**Roles:** coordinator, admin
+
+**Request:**
+```json
+{
+  "name": "Nuevo nombre",
+  "description": "Nueva descripción",
+  "parent_id": 5
+}
+```
+
+Cambiar `parent_id` re-computa niveles del subárbol. Incluye **detección de ciclos** — rechaza si el nuevo parent es descendiente del topic. Rechaza si algún descendiente excedería `config.topic_max_levels`.
+
+**Response `200`:** Topic actualizado.
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`, `TOPIC_EXCEEDS_MAX_LEVELS`, `TOPIC_CYCLE_DETECTED`
+
+---
+
+### `DELETE /api/v1/topics/:id` ✅
+
+Eliminar topic. Solo permite eliminar hojas (sin hijos).
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`, `CONFLICT` (409 — tiene topics hijos)
+
+---
+
 ### `POST /api/v1/course-subjects`
 
 Crear asignacion curso + disciplina + docente.
@@ -449,6 +650,88 @@ Listar asignaciones de la org.
 **Query params:** `limit`, `offset`, `course_id`, `subject_id`, `teacher_id` (todos opcionales)
 
 **Response `200`:** Paginado con items de course_subject (mismo schema que POST response).
+
+---
+
+### `GET /api/v1/course-subjects/:id` ✅
+
+Detalle de asignación curso-disciplina con subject y teacher precargados.
+
+**Roles:** Todos
+
+**Response `200`:**
+```json
+{
+  "id": 1,
+  "course_id": 1,
+  "subject_id": 1,
+  "teacher_id": 5,
+  "school_year": 2026,
+  "start_date": "2026-03-01",
+  "end_date": "2026-11-30",
+  "subject": { "id": 1, "name": "Matemáticas" },
+  "teacher": { "id": 5, "first_name": "Juan", "last_name": "García" }
+}
+```
+
+**Errores:** `NOT_FOUND`
+
+---
+
+### `PATCH /api/v1/course-subjects/:id` ✅
+
+Actualizar asignación (teacher, fechas, school_year).
+
+**Roles:** admin
+
+**Request:**
+```json
+{
+  "teacher_id": 6,
+  "start_date": "2026-04-01",
+  "end_date": "2026-12-15",
+  "school_year": 2026
+}
+```
+
+Todos los campos opcionales. Valida que el nuevo teacher pertenezca a la misma org. Valida `start_date <= end_date`.
+
+**Response `200`:** Course subject actualizado con relaciones precargadas.
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+### `DELETE /api/v1/course-subjects/:id` ✅
+
+Eliminar asignación. Rechaza si tiene time_slot_subjects.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`, `CONFLICT` (409 — tiene time_slot_subjects dependientes)
+
+---
+
+### `GET /api/v1/course-subjects/:id/shared-class-numbers` ✅
+
+Obtener números de clases compartidas para un course_subject.
+
+**Roles:** Todos
+
+**Query params:** `total_classes` (requerido)
+
+**Response `200`:**
+```json
+{
+  "course_subject_id": 1,
+  "total_classes": 20,
+  "shared_class_numbers": [3, 8, 15]
+}
+```
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
 
 ---
 
@@ -511,7 +794,95 @@ Listar actividades de la org.
 
 ---
 
-## Coordination Documents (Fase 3)
+### `GET /api/v1/activities/:id` ✅
+
+Detalle de actividad.
+
+**Roles:** Todos
+
+**Response `200`:**
+```json
+{
+  "id": 3,
+  "moment": "desarrollo",
+  "name": "Trabajo en grupo",
+  "description": "Los alumnos trabajan colaborativamente",
+  "duration_minutes": 30
+}
+```
+
+**Errores:** `NOT_FOUND`
+
+---
+
+### `PATCH /api/v1/activities/:id` ✅
+
+Actualizar actividad.
+
+**Roles:** admin
+
+**Request:**
+```json
+{
+  "name": "Trabajo colaborativo",
+  "description": "Actualizada",
+  "duration_minutes": 25,
+  "moment": "desarrollo"
+}
+```
+
+Todos los campos opcionales. Para setear `description` o `duration_minutes` a null, enviar null explícito.
+
+**Response `200`:** Actividad actualizada.
+
+**Errores:** `NOT_FOUND`, `VALIDATION_ERROR`
+
+---
+
+### `DELETE /api/v1/activities/:id` ✅
+
+Eliminar actividad.
+
+**Roles:** admin
+
+**Response `204`:** Sin body.
+
+**Errores:** `NOT_FOUND`
+
+---
+
+## Usuarios (Fase 2) ✅
+
+### `GET /api/v1/users`
+
+Listar usuarios de la organización.
+
+**Roles:** admin
+
+**Query params:** `limit`, `offset`, `role` (teacher|coordinator|admin), `search` (busca en email, first_name, last_name), `area_id` (filtra coordinadores de un área)
+
+**Response `200`:**
+```json
+{
+  "items": [
+    {
+      "id": 5,
+      "email": "docente@example.com",
+      "first_name": "Juan",
+      "last_name": "García",
+      "avatar_url": null,
+      "roles": ["teacher"]
+    }
+  ],
+  "more": false
+}
+```
+
+---
+
+## Coordination Documents (Fase 3) ⏳ Pendiente
+
+> **⏳ No implementado aún.** Los endpoints de esta sección están diseñados pero pendientes de desarrollo. El código tiene entidades y providers definidos pero sin implementación completa de usecases, handlers ni migraciones.
 
 ### `POST /api/v1/coordination-documents`
 
@@ -830,7 +1201,9 @@ Chat con Alizia. Soporta function calling para modificar el documento.
 
 ---
 
-## Teaching (Fase 5)
+## Teaching (Fase 5) ⏳ Pendiente
+
+> **⏳ No implementado aún.** Los endpoints de esta sección están diseñados pero pendientes de desarrollo. El código tiene entidades y providers definidos pero sin implementación completa de usecases, handlers ni migraciones.
 
 ### `GET /api/v1/course-subjects/:id/lesson-plans`
 
@@ -1050,7 +1423,9 @@ Cambiar estado del lesson plan.
 
 ---
 
-## Resources (Fase 6)
+## Resources (Fase 6) ⏳ Pendiente
+
+> **⏳ No implementado aún.** Los endpoints de esta sección están diseñados pero pendientes de desarrollo. El código tiene entidades y providers definidos pero sin implementación completa de usecases, handlers ni migraciones.
 
 ### `GET /api/v1/resource-types`
 
@@ -1234,7 +1609,9 @@ Generar contenido del recurso con IA.
 
 ---
 
-## AI — Chat general (Fase 4)
+## AI — Chat general (Fase 4) ⏳ Pendiente
+
+> **⏳ No implementado aún.** Los endpoints de esta sección están diseñados pero pendientes de desarrollo. El código tiene entidades y providers definidos pero sin implementación completa de usecases, handlers ni migraciones.
 
 ### `POST /api/v1/chat`
 

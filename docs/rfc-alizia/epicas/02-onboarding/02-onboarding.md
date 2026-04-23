@@ -91,3 +91,16 @@ Un usuario nuevo (coordinador o docente) ingresa a la plataforma por primera vez
 - Tour: coordinador ve pasos de coordinación, docente ve pasos de planificación
 - Tour: feature flag desactivado → paso del tour se oculta
 - Tour: usuario con múltiples roles → ve pasos de ambos roles
+
+---
+
+## Estado de implementación (2026-04-23)
+
+| HU | Estado | Notas |
+|----|--------|-------|
+| HU-2.1 Detección Primer Ingreso | ✅ 100% | Migración + endpoint completos |
+| HU-2.2 Formulario de Perfil | ✅ 100% | Validación dinámica contra schema de org config |
+| HU-2.3 Product Tour | ✅ 100% | Filtrado por roles + feature flags + fallback default |
+| HU-2.4 Config Onboarding por Org | ✅ 100% | Schema en organizations.config implementado |
+
+Épica 2 está **100% implementada** según el diseño RFC. No hay gaps ni extras significativos.

@@ -76,3 +76,22 @@ La plataforma opera con múltiples roles (coordinador, docente, y potencialmente
 - Multi-tenancy: Tests T1–T4 (isolation entre orgs)
 
 Ver [testing.md](../../operaciones/testing.md) para la matriz completa.
+
+---
+
+## Estado de implementación (2026-04-23)
+
+| HU | Estado | Notas |
+|----|--------|-------|
+| HU-1.1 Autenticación JWT | ✅ 90% | Login + logout + middleware implementados. **⏳ Refresh token NO implementado** (T-1.1.6 parcial). Rate limit en login (10/min). Login acepta `org_slug` opcional |
+| HU-1.2 Modelo Usuarios/Roles | ✅ 100% | Implementado con cambios: `organizations.id` es UUID (no SERIAL), `users.name` separado en `first_name` + `last_name`, IDs BIGSERIAL. Password hash usa argon2id (no bcrypt) |
+| HU-1.3 Middleware Autorización | ✅ 100% | RequireRole + chain Auth→Tenant→Role implementados |
+| HU-1.4 Asignación Organizacional | ✅ 100%+ | Además del POST assign, se agregó DELETE `/areas/:id/coordinators/:user_id` para remover coordinadores |
+
+### Extras implementados no documentados en HUs originales
+- `GET /api/v1/users` — Listar usuarios con filtros (role, search, area_id) + paginación
+- Rate limiting: 10 req/min en POST /auth/login
+- Login con `org_slug` opcional para resolver organización
+
+### Pendiente (diseñado pero no implementado)
+- **Refresh token** (T-1.1.6): rotación de tokens con 30d absoluto / 7d inactividad — a implementar en épica futura

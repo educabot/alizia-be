@@ -95,3 +95,52 @@ Cada provincia tiene su propio diseño curricular, terminología y estructura de
 - Time slots: crear clase compartida con subjects de distinto curso → error (trigger)
 - Activities: crear actividad con momento inválido → error
 - Multi-tenancy: listar datos solo filtra por org del JWT
+
+---
+
+## Estado de implementación (2026-04-23)
+
+| HU | Estado | Notas |
+|----|--------|-------|
+| HU-3.1 Organizaciones y Config | ✅ 100% | Path cambió: `/organizations/me` en vez de `/:id` (más seguro, scoped a JWT). `organizations.id` es UUID |
+| HU-3.2 Áreas y Disciplinas | ✅ 100%+ | CRUD completo. Extras: DELETE area (con dependency check), PATCH + DELETE subject, UNIQUE(org_id, name) en areas, DELETE coordinator |
+| HU-3.3 Topics Jerarquía | ✅ 100%+ | CRUD completo. Extras: PATCH con detección de ciclos y re-cómputo de niveles, DELETE (solo hojas). Triggers de nivel resueltos en Go (no SQL) |
+| HU-3.4 Cursos/Alumnos/Asignaciones | ✅ 100%+ | CRUD completo. Extras: PATCH + DELETE course, GET/PATCH/DELETE course-subject, `courses.year` eliminado (solo `school_year` en course_subjects) |
+| HU-3.5 Grilla Horaria | ✅ 100%+ | Extras: GET schedule, GET shared-class-numbers. Trigger max_subjects resuelto en Go. Solo trigger `validate_time_slot_subject` en DB |
+| HU-3.6 Actividades Didácticas | ✅ 100%+ | CRUD completo. Extras: GET por ID, PATCH, DELETE |
+
+### Endpoints extras implementados (no en RFC original)
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `DELETE /areas/:id` | DELETE | Borrar área (409 si tiene subjects) |
+| `DELETE /areas/:id/coordinators/:user_id` | DELETE | Remover coordinador |
+| `PATCH /subjects/:id` | PATCH | Actualizar disciplina (nombre, descripción, mover de área) |
+| `DELETE /subjects/:id` | DELETE | Borrar disciplina (409 si tiene course_subjects) |
+| `PATCH /topics/:id` | PATCH | Actualizar topic (con cycle detection + level recompute) |
+| `DELETE /topics/:id` | DELETE | Borrar topic (solo hojas) |
+| `PATCH /courses/:id` | PATCH | Actualizar curso (nombre) |
+| `DELETE /courses/:id` | DELETE | Borrar curso (409 si dependencias) |
+| `GET /course-subjects` | GET | Listar con filtros (course_id, subject_id, teacher_id) |
+| `GET /course-subjects/:id` | GET | Detalle con subject y teacher precargados |
+| `PATCH /course-subjects/:id` | PATCH | Actualizar (teacher, dates, school_year) |
+| `DELETE /course-subjects/:id` | DELETE | Borrar (409 si time_slot_subjects) |
+| `GET /courses/:id/schedule` | GET | Grilla horaria completa del curso |
+| `GET /course-subjects/:id/shared-class-numbers` | GET | Clases compartidas |
+| `GET /activities/:id` | GET | Detalle de actividad |
+| `PATCH /activities/:id` | PATCH | Actualizar actividad |
+| `DELETE /activities/:id` | DELETE | Borrar actividad |
+
+### Patrones implementados no documentados
+- **Dependency checking en DELETEs**: todos los DELETE verifican dependencias y retornan 409 Conflict si existen, en vez de cascade silencioso
+- **Paginación uniforme**: `{items: [], more: bool}` con limit default 50, max 200
+- **Detección de ciclos en topics**: UpdateTopic previene parent loops via traversal transitivo
+- **Partial updates**: todos los PATCH son parciales (solo campos enviados se actualizan)
+
+### Diferencias de schema vs RFC original
+- `organizations.id`: UUID (no SERIAL)
+- `courses.year`: eliminado (solo `school_year` en course_subjects)
+- Todos los IDs: BIGSERIAL (no SERIAL)
+- `areas`: UNIQUE(organization_id, name) agregado
+- `course_subjects`: `organization_id` agregado para tenant scope directo
+- Triggers 2-4 del RFC: resueltos en Go usecases, no como triggers SQL
